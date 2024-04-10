@@ -1,0 +1,38 @@
+[package]
+cairo-version = "2.5.4"
+name = "ls"
+version = "0.0.0"
+edition = "2023_10"
+
+[cairo]
+sierra-replace-ids = true
+
+[dependencies]
+dojo = { git = "https://github.com/dojoengine/dojo", tag = "v0.6.0-alpha.13" }
+token = { git = "https://github.com/dojoengine/origami", tag = "v0.6.0-alpha.13" }
+
+[[target.dojo]]
+
+[tool.dojo]
+initializer_class_hash = "0xbeef"
+
+[tool.dojo.env]
+# Katana
+rpc_url = "http://localhost:5050/"
+account_address = "0x6162896d1d7ab204c7ccac6dd5f8e9e7c25ecd5ae4fcb4ad32e57786bb46e03"
+private_key = "0x1800000000300000180000000000030000000000003006001800006600"
+
+# Dev
+# rpc_url = "https://api.cartridge.gg/x/paved-dev/katana/"
+# account_address = "0x68d2fe2d7b67ef40d9567f96fdc6925eb6c8a103ecde715a17c108afc3652e5"
+# private_key = "0x69c450373bce35581f17586b7a4fdc9ad49ba30ea4340607df8f08864f36a8a"
+
+# Realms
+# rpc_url = "https://api.cartridge.gg/x/realms/katana/"
+# account_address = "0x379900b695d11ec52b13557de5ebd864eb2f36f14ff56560b028992585b7515"
+# private_key = "0x62bb13afe7963fd97e568db915e331956ddc4ba13dda9b787a6648a5b840626"
+
+# Sepolia
+# rpc_url = "https://starknet-sepolia.infura.io/v3/c28442cb88584a618a5dc751cd73f387"
+# account_address = "0x059b1a0c489b635d7c7f43594d187362ddd2dcea6c82db4eef2579fd185b3753"
+# private_key = "0xaf7f0b88b7ee7faf8065517cd565d9f9dcd013dd2382a0f1e6b3559f0fe57a"

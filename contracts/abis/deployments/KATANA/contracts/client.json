@@ -1,0 +1,262 @@
+[
+  {
+    "type": "impl",
+    "name": "DojoResourceProviderImpl",
+    "interface_name": "dojo::world::IDojoResourceProvider"
+  },
+  {
+    "type": "interface",
+    "name": "dojo::world::IDojoResourceProvider",
+    "items": [
+      {
+        "type": "function",
+        "name": "dojo_resource",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "WorldProviderImpl",
+    "interface_name": "dojo::world::IWorldProvider"
+  },
+  {
+    "type": "struct",
+    "name": "dojo::world::IWorldDispatcher",
+    "members": [
+      {
+        "name": "contract_address",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "dojo::world::IWorldProvider",
+    "items": [
+      {
+        "type": "function",
+        "name": "world",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "dojo::world::IWorldDispatcher"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ClientImpl",
+    "interface_name": "ls::systems::client::IClient"
+  },
+  {
+    "type": "interface",
+    "name": "ls::systems::client::IClient",
+    "items": [
+      {
+        "type": "function",
+        "name": "register",
+        "inputs": [
+          {
+            "name": "world",
+            "type": "dojo::world::IWorldDispatcher"
+          },
+          {
+            "name": "id",
+            "type": "core::felt252"
+          },
+          {
+            "name": "game_id",
+            "type": "core::felt252"
+          },
+          {
+            "name": "name",
+            "type": "core::felt252"
+          },
+          {
+            "name": "url",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "change_url",
+        "inputs": [
+          {
+            "name": "world",
+            "type": "dojo::world::IWorldDispatcher"
+          },
+          {
+            "name": "id",
+            "type": "core::felt252"
+          },
+          {
+            "name": "url",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "rate",
+        "inputs": [
+          {
+            "name": "world",
+            "type": "dojo::world::IWorldDispatcher"
+          },
+          {
+            "name": "id",
+            "type": "core::felt252"
+          },
+          {
+            "name": "rating",
+            "type": "core::integer::u8"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "increment_play_count",
+        "inputs": [
+          {
+            "name": "world",
+            "type": "dojo::world::IWorldDispatcher"
+          },
+          {
+            "name": "id",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "ls::models::client::Client",
+    "members": [
+      {
+        "name": "id",
+        "type": "core::felt252"
+      },
+      {
+        "name": "game_id",
+        "type": "core::felt252"
+      },
+      {
+        "name": "name",
+        "type": "core::felt252"
+      },
+      {
+        "name": "url",
+        "type": "core::felt252"
+      },
+      {
+        "name": "rating",
+        "type": "core::integer::u8"
+      },
+      {
+        "name": "player_address",
+        "type": "core::felt252"
+      },
+      {
+        "name": "play_count",
+        "type": "core::felt252"
+      },
+      {
+        "name": "vote_count",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ls::systems::client::client::RegisteredClient",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "client",
+        "type": "ls::models::client::Client",
+        "kind": "data"
+      },
+      {
+        "name": "block",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ls::systems::client::client::ChangeUrl",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "client",
+        "type": "ls::models::client::Client",
+        "kind": "data"
+      },
+      {
+        "name": "block",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ls::systems::client::client::Rate",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "client",
+        "type": "ls::models::client::Client",
+        "kind": "data"
+      },
+      {
+        "name": "block",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ls::systems::client::client::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "RegisteredClient",
+        "type": "ls::systems::client::client::RegisteredClient",
+        "kind": "nested"
+      },
+      {
+        "name": "ChangeUrl",
+        "type": "ls::systems::client::client::ChangeUrl",
+        "kind": "nested"
+      },
+      {
+        "name": "Rate",
+        "type": "ls::systems::client::client::Rate",
+        "kind": "nested"
+      }
+    ]
+  }
+]

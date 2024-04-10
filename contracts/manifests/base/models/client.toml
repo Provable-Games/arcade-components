@@ -1,0 +1,44 @@
+kind = "DojoModel"
+class_hash = "0x592277281102655eeda977f03b457823f25b253eb00ad11992a9392056c86ca"
+abi = "abis/base/models/client.json"
+name = "ls::models::client::client"
+
+[[members]]
+name = "id"
+type = "felt252"
+key = true
+
+[[members]]
+name = "game_id"
+type = "felt252"
+key = false
+
+[[members]]
+name = "name"
+type = "felt252"
+key = false
+
+[[members]]
+name = "url"
+type = "felt252"
+key = false
+
+[[members]]
+name = "rating"
+type = "u8"
+key = false
+
+[[members]]
+name = "player_address"
+type = "felt252"
+key = true
+
+[[members]]
+name = "play_count"
+type = "felt252"
+key = false
+
+[[members]]
+name = "vote_count"
+type = "felt252"
+key = false

@@ -1,0 +1,7 @@
+kind = "DojoContract"
+class_hash = "0x66a416c35f87067fe2e3ea8f56c7b8005344cfcb748087955270a629c62efe"
+abi = "abis/base/contracts/client.json"
+reads = []
+writes = []
+computed = []
+name = "ls::systems::client::client"
