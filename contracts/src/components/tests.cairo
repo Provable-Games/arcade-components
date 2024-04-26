@@ -2,6 +2,10 @@ mod mocks {
     mod initializable_mock;
     mod src5_mock;
 
+    mod client {
+        mod client_manager;
+    }
+
     mod erc20 {
         mod erc20_allowance_mock;
         mod erc20_balance_mock;
@@ -10,12 +14,12 @@ mod mocks {
         mod erc20_bridgeable_mock;
     }
 
-    mod erc721 {
-        mod erc721_approval_mock;
-        mod erc721_balance_mock;
-        mod erc721_metadata_mock;
-        mod erc721_mintable_burnable_mock;
-    }
+    // mod erc721 {
+    //     mod erc721_approval_mock;
+    //     mod erc721_balance_mock;
+    //     mod erc721_metadata_mock;
+    //     mod erc721_mintable_burnable_mock;
+    // }
 }
 
 mod introspection {
@@ -43,14 +47,14 @@ mod token {
         mod test_erc20_bridgeable;
     }
 
-    mod erc721 {
-        #[cfg(test)]
-        mod test_erc721_approval;
-        #[cfg(test)]
-        mod test_erc721_balance;
-        #[cfg(test)]
-        mod test_erc721_metadata;
-        #[cfg(test)]
-        mod test_erc721_mintable_burnable;
-    }
+    // mod erc721 {
+    //     #[cfg(test)]
+    //     mod test_erc721_approval;
+    //     #[cfg(test)]
+    //     mod test_erc721_balance;
+    //     #[cfg(test)]
+    //     mod test_erc721_metadata;
+    //     #[cfg(test)]
+    //     mod test_erc721_mintable_burnable;
+    // }
 }

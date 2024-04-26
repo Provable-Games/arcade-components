@@ -21,12 +21,12 @@ struct ERC721MetaModel {
 trait IERC721Metadata<TState> {
     fn name(self: @TState) -> felt252;
     fn symbol(self: @TState) -> felt252;
-    fn token_uri(self: @TState, token_id: u128) -> felt252;
+    fn token_uri(self: @TState, token_id: u256) -> felt252;
 }
 
 #[starknet::interface]
 trait IERC721MetadataCamel<TState> {
-    fn tokenURI(self: @TState, tokenId: u128) -> felt252;
+    fn tokenURI(self: @TState, tokenId: u256) -> felt252;
 }
 
 ///
@@ -59,7 +59,7 @@ mod erc721_metadata_component {
         fn symbol(self: @ComponentState<TContractState>) -> felt252 {
             self.get_meta().symbol
         }
-        fn token_uri(self: @ComponentState<TContractState>, token_id: u128) -> felt252 {
+        fn token_uri(self: @ComponentState<TContractState>, token_id: u256) -> felt252 {
             self.get_uri()
         }
     }
@@ -71,7 +71,7 @@ mod erc721_metadata_component {
         +IWorldProvider<TContractState>,
         +Drop<TContractState>,
     > of IERC721MetadataCamel<ComponentState<TContractState>> {
-        fn tokenURI(self: @ComponentState<TContractState>, tokenId: u128) -> felt252 {
+        fn tokenURI(self: @ComponentState<TContractState>, tokenId: u256) -> felt252 {
             self.get_uri()
         }
     }
