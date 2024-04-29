@@ -28,7 +28,7 @@ trait IERC721OwnerCamel<TState> {
 }
 
 ///
-/// ERC20Balance Component
+/// ERC721Owner Component
 ///
 #[starknet::component]
 mod erc721_owner_component {

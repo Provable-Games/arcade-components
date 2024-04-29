@@ -7,23 +7,25 @@ use starknet::ContractAddress;
 #[derive(Model, Copy, Drop, Serde)]
 struct ClientRegistrationModel {
     #[key]
-    id: u128,
-    game_id: u128,
-    name: felt252,
-    url: felt252,
+    id: u64,
+    game_id: u64,
+    name: felt252, // TODO: replace with ByteArray in new dojo version
+    url: felt252, // TODO: replace with ByteArray in new dojo version
 }
 
 #[starknet::interface]
 trait IClientRegistration<TState> {
-    fn register(
+    fn register_client(
         ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
     );
     fn change_url(self: @TState, id: u256, url: felt252);
-    fn initialize(ref self: TState, name: felt252, symbol: felt252, base_uri: felt252);
 }
 
 #[starknet::interface]
 trait IClientRegistrationCamel<TState> {
+    fn registerClient(
+        ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
+    );
     fn changeUrl(self: @TState, id: u256, url: felt252);
 }
 
@@ -74,19 +76,19 @@ mod client_registration_component {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        Register: Register,
+        RegisterClient: RegisterClient,
         ChangeUrl: ChangeUrl,
     }
 
-    #[derive(Drop, starknet::Event)]
-    struct Register {
+    #[derive(Copy, Drop, Serde, starknet::Event)]
+    struct RegisterClient {
         id: u256,
         game_id: u256,
         name: felt252,
         url: felt252,
     }
 
-    #[derive(Drop, starknet::Event)]
+    #[derive(Copy, Drop, Serde, starknet::Event)]
     struct ChangeUrl {
         id: u256,
         game_id: u256,
@@ -99,31 +101,16 @@ mod client_registration_component {
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
-        impl ERC721Approval: erc721_approval_comp::HasComponent<TContractState>,
-        impl ERC721Balance: erc721_balance_comp::HasComponent<TContractState>,
-        impl ERC721Metadata: erc721_metadata_comp::HasComponent<TContractState>,
-        impl ERC721Mintable: erc721_mintable_comp::HasComponent<TContractState>,
-        impl ERC721Owner: erc721_owner_comp::HasComponent<TContractState>,
         +Drop<TContractState>,
     > of IClientRegistration<ComponentState<TContractState>> {
-        fn register(
+        fn register_client(
             ref self: ComponentState<TContractState>, id: u256, game_id: u256, name: felt252, url: felt252
         ) {
             self.set_client(id, game_id, name, url);
-            let mut erc721_mintable = get_dep_component_mut!(ref self, ERC721Mintable);
-            let caller = get_caller_address();
-            erc721_mintable.mint(caller, id)
         }
 
         fn change_url(self: @ComponentState<TContractState>, id: u256, url: felt252) {
             self.set_url(id, url)
-        }
-
-        fn initialize(
-            ref self: ComponentState<TContractState>, name: felt252, symbol: felt252, base_uri: felt252
-        ) {
-            let mut erc721_metadata = get_dep_component_mut!(ref self, ERC721Metadata);
-            erc721_metadata.initialize(name, symbol, base_uri)
         }
     }
 
@@ -132,9 +119,14 @@ mod client_registration_component {
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
-        impl ERC721Mintable: erc721_mintable_comp::HasComponent<TContractState>,
         +Drop<TContractState>,
     > of IClientRegistrationCamel<ComponentState<TContractState>> {
+        fn registerClient(
+            ref self: ComponentState<TContractState>, id: u256, game_id: u256, name: felt252, url: felt252
+        ) {
+            self.set_client(id, game_id, name, url);
+        }
+
         fn changeUrl(self: @ComponentState<TContractState>, id: u256, url: felt252) {
             self.set_url(id, url)
         }
@@ -145,7 +137,6 @@ mod client_registration_component {
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
-        impl ERC721Mintable: erc721_mintable_comp::HasComponent<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
         fn get_client(self: @ComponentState<TContractState>, id: u256) -> ClientRegistrationModel {
@@ -156,7 +147,7 @@ mod client_registration_component {
             set!(
                 self.get_contract().world(),
                 ClientRegistrationModel {
-                    id: id.low, game_id: game_id.low, name, url
+                    id: id.low.try_into().unwrap(), game_id: game_id.low.try_into().unwrap(), name, url
                 }
             )
         }

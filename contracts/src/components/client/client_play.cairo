@@ -7,14 +7,14 @@ use starknet::ContractAddress;
 #[derive(Model, Copy, Drop, Serde)]
 struct ClientPlayTotalModel {
     #[key]
-    id: u128,
+    id: u64,
     play_count: u128
 }
 
 #[derive(Model, Copy, Drop, Serde)]
 struct ClientPlayPlayerModel {
     #[key]
-    id: u128,
+    id: u64,
     #[key]
     player_address: ContractAddress,
     play_count: u128
@@ -62,7 +62,7 @@ mod client_play_component {
         Play: Play,
     }
 
-    #[derive(Drop, starknet::Event)]
+    #[derive(Copy, Drop, Serde, starknet::Event)]
     struct Play {
         player_address: ContractAddress,
         game_id: u128
@@ -125,11 +125,11 @@ mod client_play_component {
         }
 
         fn set_play_total(self: @ComponentState<TContractState>, id: u256, play_count: u256) {
-            set!(self.get_contract().world(), ClientPlayTotalModel { id: id.low, play_count: play_count.low })
+            set!(self.get_contract().world(), ClientPlayTotalModel { id: id.low.try_into().unwrap(), play_count: play_count.low })
         }
 
         fn set_play_player(self: @ComponentState<TContractState>, id: u256, player_address: ContractAddress, play_count: u256) {
-            set!(self.get_contract().world(), ClientPlayPlayerModel { id: id.low, player_address, play_count: play_count.low })
+            set!(self.get_contract().world(), ClientPlayPlayerModel { id: id.low.try_into().unwrap(), player_address, play_count: play_count.low })
         }
     }
 }

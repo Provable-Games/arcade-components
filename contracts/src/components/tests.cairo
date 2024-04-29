@@ -3,7 +3,7 @@ mod mocks {
     mod src5_mock;
 
     mod client {
-        mod client_manager;
+        mod client_developer_mock;
     }
 
     mod erc20 {
@@ -22,6 +22,11 @@ mod mocks {
     // }
 }
 
+mod client {
+    #[cfg(test)]
+    mod test_client_developer;
+}
+
 mod introspection {
     #[cfg(test)]
     mod test_src5;
@@ -31,7 +36,6 @@ mod security {
     #[cfg(test)]
     mod test_initializable;
 }
-
 
 mod token {
     mod erc20 {

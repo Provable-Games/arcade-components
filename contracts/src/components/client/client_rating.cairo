@@ -7,7 +7,7 @@ use starknet::ContractAddress;
 #[derive(Model, Copy, Drop, Serde)]
 struct ClientRatingTotalModel {
     #[key]
-    id: u128,
+    id: u64,
     rating: u8,
     vote_count: u128,
 }
@@ -15,7 +15,7 @@ struct ClientRatingTotalModel {
 #[derive(Model, Copy, Drop, Serde)]
 struct ClientRatingPlayerModel {
     #[key]
-    id: u128,
+    id: u64,
     #[key]
     player_address: ContractAddress,
     rating: u8,
@@ -66,7 +66,7 @@ mod client_rating_component {
     }
 
 
-    #[derive(Drop, starknet::Event)]
+    #[derive(Copy, Drop, Serde, starknet::Event)]
     struct Rate {
         id: u256,
         rating: u8,
@@ -143,14 +143,14 @@ mod client_rating_component {
         fn set_total_rating(self: @ComponentState<TContractState>, id: u256, rating: u8, vote_count: u256) {
             set!(
                 self.get_contract().world(),
-                ClientRatingTotalModel { id: id.low, rating, vote_count: vote_count.low}
+                ClientRatingTotalModel { id: id.low.try_into().unwrap(), rating, vote_count: vote_count.low}
             );
         }
 
         fn set_player_rating(self: @ComponentState<TContractState>, id: u256, player_address: ContractAddress, rating: u8, vote_count: u256) {
             set!(
                 self.get_contract().world(),
-                ClientRatingPlayerModel { id: id.low, player_address, rating, vote_count: vote_count.low}
+                ClientRatingPlayerModel { id: id.low.try_into().unwrap(), player_address, rating, vote_count: vote_count.low}
             );
         }
     }

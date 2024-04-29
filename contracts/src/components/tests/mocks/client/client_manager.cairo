@@ -19,9 +19,15 @@ trait IClientManager<TState> {
     );
 
     // IClient
-    fn register(
+    fn register_developer(
         ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
     );
+    fn register_client(
+        ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
+    );
+    fn change_github_username(self: @TState, id: u256, username: felt252);
+    fn change_telegram_handle(self: @TState, id: u256, handle: felt252);
+    fn change_x_handle(self: @TState, id: u256, handle: felt252); 
     fn change_url(self: @TState, id: u256, url: felt252);
     fn get_rating_total(self: @TState, id: u256) -> u8;
     fn get_rating_player(self: @TState, id: u256, player_address: ContractAddress) -> u8;
@@ -31,6 +37,15 @@ trait IClientManager<TState> {
     fn play(self: @TState, id: u256);
 
     // IClientCamelOnly
+    fn registerDeveloper(
+        ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
+    );
+    fn registerClient(
+        ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
+    );
+    fn changeGithubUsername(self: @TState, id: u256, username: felt252);
+    fn changeTelegramHandle(self: @TState, id: u256, handle: felt252);
+    fn changeXHandle(self: @TState, id: u256, handle: felt252); 
     fn changeUrl(self: @TState, id: u256, url: felt252);
     fn getRatingTotal(self: @TState, id: u256) -> u8;
     fn getRatingPlayer(self: @TState, id: u256, player_address: ContractAddress) -> u8;
@@ -53,15 +68,20 @@ trait IClientManagerMockInit<TState> {
 mod client_manager_mock {
     use starknet::ContractAddress;
 
+    use ls::components::client::client_developer::client_developer_component;
     use ls::components::client::client_play::client_play_component;
     use ls::components::client::client_rating::client_rating_component;
     use ls::components::client::client_registration::client_registration_component;
     use ls::components::token::erc721::erc721_approval::erc721_approval_component;
     use ls::components::token::erc721::erc721_balance::erc721_balance_component;
+    use ls::components::token::erc721::erc721_enumerable::erc721_enumerable_component;
     use ls::components::token::erc721::erc721_metadata::erc721_metadata_component;
     use ls::components::token::erc721::erc721_mintable::erc721_mintable_component;
     use ls::components::token::erc721::erc721_owner::erc721_owner_component;
 
+    component!(
+        path: client_developer_component, storage: client_developer, event: ClientDeveloperEvent
+    );
     component!(
         path: client_play_component, storage: client_play, event: ClientPlayEvent
     );
@@ -75,11 +95,20 @@ mod client_manager_mock {
         path: erc721_approval_component, storage: erc721_approval, event: ERC721ApprovalEvent
     );
     component!(path: erc721_balance_component, storage: erc721_balance, event: ERC721BalanceEvent);
+    component!(path: erc721_enumerable_component, storage: erc721_enumerable, event: ERC721EnumerableEvent);
     component!(
         path: erc721_metadata_component, storage: erc721_metadata, event: ERC721MetadataEvent
     );
     component!(path: erc721_mintable_component, storage: erc721_mintable, event: ERC721MintableEvent);
     component!(path: erc721_owner_component, storage: erc721_owner, event: ERC721OwnerEvent);
+
+    #[abi(embed_v0)]
+    impl ClientDeveloperImpl =
+        client_developer_component::ClientDeveloperImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl ClientDeveloperCamelImpl =
+        client_developer_component::ClientDeveloperCamelImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl ClientPlayImpl =
@@ -122,6 +151,14 @@ mod client_manager_mock {
         erc721_balance_component::ERC721BalanceCamelImpl<ContractState>;
 
     #[abi(embed_v0)]
+    impl ERC721EnumerableImpl =
+        erc721_enumerable_component::ERC721EnumerableImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl ERC721EnumerableCamelImpl =
+        erc721_enumerable_component::ERC721EnumerableCamelImpl<ContractState>;
+
+    #[abi(embed_v0)]
     impl ERC721MetadataImpl =
         erc721_metadata_component::ERC721MetadataImpl<ContractState>;
 
@@ -129,17 +166,21 @@ mod client_manager_mock {
     impl ERC721OwnerImpl =
         erc721_owner_component::ERC721OwnerImpl<ContractState>;
 
+    impl ClientDeveloperInternalImpl = client_developer_component::InternalImpl<ContractState>;
     impl ClientPlayInternalImpl = client_play_component::InternalImpl<ContractState>;
     impl ClientRatingInternalImpl = client_rating_component::InternalImpl<ContractState>;
     impl ClientRegistrationInternalImpl = client_registration_component::InternalImpl<ContractState>;
     impl ERC721ApprovalInternalImpl = erc721_approval_component::InternalImpl<ContractState>;
     impl ERC721BalanceInternalImpl = erc721_balance_component::InternalImpl<ContractState>;
+    impl ERC721EnumerableInternalImpl = erc721_enumerable_component::InternalImpl<ContractState>;
     impl ERC721MetadataInternalImpl = erc721_metadata_component::InternalImpl<ContractState>;
     impl ERC721MintableInternalImpl = erc721_mintable_component::InternalImpl<ContractState>;
     impl ERC721OwnerInternalImpl = erc721_owner_component::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        client_developer: client_developer_component::Storage,
         #[substorage(v0)]
         client_play: client_play_component::Storage,
         #[substorage(v0)]
@@ -151,6 +192,8 @@ mod client_manager_mock {
         #[substorage(v0)]
         erc721_balance: erc721_balance_component::Storage,
         #[substorage(v0)]
+        erc721_enumerable: erc721_enumerable_component::Storage,
+        #[substorage(v0)]
         erc721_metadata: erc721_metadata_component::Storage,
         #[substorage(v0)]
         erc721_mintable: erc721_mintable_component::Storage,
@@ -161,11 +204,13 @@ mod client_manager_mock {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
+        ClientDeveloperEvent: client_developer_component::Event,
         ClientPlayEvent: client_play_component::Event,
         ClientRatingEvent: client_rating_component::Event,
         ClientRegistrationEvent: client_registration_component::Event,
         ERC721ApprovalEvent: erc721_approval_component::Event,
         ERC721BalanceEvent: erc721_balance_component::Event,
+        ERC721EnumerableEvent: erc721_enumerable_component::Event,
         ERC721MetadataEvent: erc721_metadata_component::Event,
         ERC721MintableEvent: erc721_mintable_component::Event,
         ERC721OwnerEvent: erc721_owner_component::Event,
@@ -176,7 +221,7 @@ mod client_manager_mock {
     impl InitializerImpl of super::IClientManagerMockInit<ContractState> {
         fn initializer(ref self: ContractState, name: felt252, symbol: felt252, base_uri: felt252) {
             // mint to recipient
-            self.client_registration.initialize(name, symbol, base_uri);
+            self.erc721_metadata.initialize(name, symbol, base_uri);
         }
     }
 
