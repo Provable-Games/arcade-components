@@ -65,7 +65,7 @@ trait IClientManagerMockInit<TState> {
 }
 
 #[dojo::contract]
-mod client_manager_mock {
+mod client_registration_mock {
     use starknet::ContractAddress;
 
     use ls::components::client::client_developer::client_developer_component;

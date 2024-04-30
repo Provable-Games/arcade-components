@@ -4,6 +4,9 @@ mod mocks {
 
     mod client {
         mod client_developer_mock;
+        mod client_play_mock;
+        mod client_rating_mock;
+        mod client_registration_mock;
     }
 
     mod erc20 {
@@ -25,6 +28,12 @@ mod mocks {
 mod client {
     #[cfg(test)]
     mod test_client_developer;
+    #[cfg(test)]
+    mod test_client_play;
+    #[cfg(test)]
+    mod test_client_rating;
+    #[cfg(test)]
+    mod test_client_registration;
 }
 
 mod introspection {

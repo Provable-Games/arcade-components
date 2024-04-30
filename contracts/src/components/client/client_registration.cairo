@@ -7,7 +7,7 @@ use starknet::ContractAddress;
 #[derive(Model, Copy, Drop, Serde)]
 struct ClientRegistrationModel {
     #[key]
-    id: u64,
+    client_id: u64,
     game_id: u64,
     name: felt252, // TODO: replace with ByteArray in new dojo version
     url: felt252, // TODO: replace with ByteArray in new dojo version
@@ -16,17 +16,17 @@ struct ClientRegistrationModel {
 #[starknet::interface]
 trait IClientRegistration<TState> {
     fn register_client(
-        ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
+        ref self: TState, client_id: u256, game_id: u256, name: felt252, url: felt252
     );
-    fn change_url(self: @TState, id: u256, url: felt252);
+    fn change_url(self: @TState, client_id: u256, url: felt252);
 }
 
 #[starknet::interface]
 trait IClientRegistrationCamel<TState> {
     fn registerClient(
-        ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252
+        ref self: TState, client_id: u256, game_id: u256, name: felt252, url: felt252
     );
-    fn changeUrl(self: @TState, id: u256, url: felt252);
+    fn changeUrl(self: @TState, client_id: u256, url: felt252);
 }
 
 
@@ -62,8 +62,8 @@ mod client_registration_component {
     use erc721_mintable_comp::InternalImpl as ERC721MintableInternal;
     use erc721_owner_comp::InternalImpl as ERC721OwnerInternal;
 
-    // Errors
-    mod errors {
+    mod Errors {
+        const NOT_DEVELOPER: felt252 = 'Client: Not developer';
         const CLIENT_ALREADY_REGISTERED: felt252 = 'Client: Client registered';
         const SAME_URL: felt252 = 'Client: URL must be different';
     }
@@ -82,7 +82,7 @@ mod client_registration_component {
 
     #[derive(Copy, Drop, Serde, starknet::Event)]
     struct RegisterClient {
-        id: u256,
+        client_id: u256,
         game_id: u256,
         name: felt252,
         url: felt252,
@@ -90,7 +90,7 @@ mod client_registration_component {
 
     #[derive(Copy, Drop, Serde, starknet::Event)]
     struct ChangeUrl {
-        id: u256,
+        client_id: u256,
         game_id: u256,
         name: felt252,
         url: felt252,
@@ -101,16 +101,24 @@ mod client_registration_component {
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
+        impl ERC721Approval: erc721_approval_comp::HasComponent<TContractState>,
+        impl ERC721Balance: erc721_balance_comp::HasComponent<TContractState>,
+        impl ERC721Owner: erc721_owner_comp::HasComponent<TContractState>,
         +Drop<TContractState>,
     > of IClientRegistration<ComponentState<TContractState>> {
         fn register_client(
-            ref self: ComponentState<TContractState>, id: u256, game_id: u256, name: felt252, url: felt252
+            ref self: ComponentState<TContractState>, client_id: u256, game_id: u256, name: felt252, url: felt252
         ) {
-            self.set_client(id, game_id, name, url);
+            let mut erc721_balance = get_dep_component_mut!(ref self, ERC721Balance);
+            assert(
+                erc721_balance.get_balance(get_caller_address()).amount != 0,
+                Errors::NOT_DEVELOPER
+            );
+            self.set_client(client_id, game_id, name, url);
         }
 
-        fn change_url(self: @ComponentState<TContractState>, id: u256, url: felt252) {
-            self.set_url(id, url)
+        fn change_url(self: @ComponentState<TContractState>, client_id: u256, url: felt252) {
+            self.set_url(client_id, url)
         }
     }
 
@@ -122,13 +130,13 @@ mod client_registration_component {
         +Drop<TContractState>,
     > of IClientRegistrationCamel<ComponentState<TContractState>> {
         fn registerClient(
-            ref self: ComponentState<TContractState>, id: u256, game_id: u256, name: felt252, url: felt252
+            ref self: ComponentState<TContractState>, client_id: u256, game_id: u256, name: felt252, url: felt252
         ) {
-            self.set_client(id, game_id, name, url);
+            self.set_client(client_id, game_id, name, url);
         }
 
-        fn changeUrl(self: @ComponentState<TContractState>, id: u256, url: felt252) {
-            self.set_url(id, url)
+        fn changeUrl(self: @ComponentState<TContractState>, client_id: u256, url: felt252) {
+            self.set_url(client_id, url)
         }
     }
 
@@ -139,25 +147,29 @@ mod client_registration_component {
         +IWorldProvider<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
-        fn get_client(self: @ComponentState<TContractState>, id: u256) -> ClientRegistrationModel {
-            get!(self.get_contract().world(), id.low, (ClientRegistrationModel))
+        fn get_client(self: @ComponentState<TContractState>, client_id: u256) -> ClientRegistrationModel {
+            get!(self.get_contract().world(), client_id.low, (ClientRegistrationModel))
         }
 
-        fn set_client(self: @ComponentState<TContractState>, id: u256, game_id: u256, name: felt252, url: felt252) {
+        fn set_client(ref self: ComponentState<TContractState>, client_id: u256, game_id: u256, name: felt252, url: felt252) {
             set!(
                 self.get_contract().world(),
                 ClientRegistrationModel {
-                    id: id.low.try_into().unwrap(), game_id: game_id.low.try_into().unwrap(), name, url
+                    client_id: client_id.low.try_into().unwrap(), game_id: game_id.low.try_into().unwrap(), name, url
                 }
-            )
+            );
+
+            let register_client_event = RegisterClient { client_id, game_id, name, url };
+            self.emit(register_client_event.clone());
+            emit!(self.get_contract().world(), (Event::RegisterClient(register_client_event)));
         }
 
-        fn set_url(self: @ComponentState<TContractState>, id: u256, url: felt252) {
-            let client_meta = self.get_client(id);
+        fn set_url(self: @ComponentState<TContractState>, client_id: u256, url: felt252) {
+            let client_meta = self.get_client(client_id);
             set!(
                 self.get_contract().world(),
                 ClientRegistrationModel {
-                    id: client_meta.id, game_id: client_meta.game_id, name: client_meta.name, url
+                    client_id: client_meta.client_id, game_id: client_meta.game_id, name: client_meta.name, url
                 }
             )
         }

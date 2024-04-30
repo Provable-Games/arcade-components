@@ -18,6 +18,16 @@ const OTHER_ID: felt252 = 'OTHER_ID';
 const GITHUB_USERNAME: felt252 = 'GITHUB_USERNAME';
 const TELEGRAM_HANDLE: felt252 = 'TELEGRAM_HANDLE';
 const X_HANDLE: felt252 = 'X_HANDLE';
+const NEW_GITHUB_USERNAME: felt252 = 'NEW_GITHUB_USERNAME';
+const NEW_TELEGRAM_HANDLE: felt252 = 'NEW_TELEGRAM_HANDLE';
+const NEW_X_HANDLE: felt252 = 'NEW_X_HANDLE';
+const CLIENT_ID: u256 = 345;
+const RATING: u8 = 64;
+const VOTE_COUNT: u256 = 200;
+const CLIENT_NAME: felt252 = 'CLIENT_NAME';
+const GAME_ID: u256 = 32;
+const GAME_NAME: felt252 = 'GAME_NAME';
+const GAME_URL: felt252 = 'GAME_URL';
 
 fn ADMIN() -> ContractAddress {
     contract_address_const::<'ADMIN'>()
