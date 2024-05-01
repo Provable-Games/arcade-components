@@ -290,25 +290,18 @@ mod erc721_enumerable_component {
 
         fn remove_token_from_all_tokens_enumeration(
             ref self: ComponentState<TContractState>, token_id: u256
-        ) {
-            // To prevent a gap in the tokens array, we store the last token in the index of the token to delete, and
-            // then delete the last slot (swap and pop).
-    
-            let last_token_index = self.get_total_supply().total_supply.into();
+        ) { 
+            let last_token_index = self.get_total_supply().total_supply.into() - 1;
             let token_index = self.get_index_by_token(token_id).index.into();
     
-            // When the token to delete is the last token, the swap operation is unnecessary. However, since this occurs so
-            // rarely (when the last minted token is burnt) that we still do the swap here to avoid the gas cost of adding
-            // an 'if' statement (like in _removeTokenFromOwnerEnumeration)
             let last_token_id = self.get_token_by_index(last_token_index).token_id.into();
     
             self.set_token_by_index(token_index, last_token_id); // Move the last token to the slot of the to-delete token
             self.set_index_by_token(last_token_id, token_index); // Update the moved token's index
     
-            // This also deletes the contents at the last position of the array
             self.set_index_by_token(token_id, 0);
             self.set_token_by_index(last_token_id, 0);
-            self.set_total_supply(last_token_index - 1);
+            self.set_total_supply(last_token_index);
         }
 
         fn set_total_supply(
