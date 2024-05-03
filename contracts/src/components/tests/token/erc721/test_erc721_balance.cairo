@@ -59,7 +59,9 @@ fn assert_only_event_transfer(
 
 fn STATE() -> (IWorldDispatcher, erc721_balance_mock::ContractState) {
     let world = spawn_test_world(
-        array![erc_721_balance_model::TEST_CLASS_HASH, erc_721_token_approval_model::TEST_CLASS_HASH,]
+        array![
+            erc_721_balance_model::TEST_CLASS_HASH, erc_721_token_approval_model::TEST_CLASS_HASH,
+        ]
     );
 
     let mut state = erc721_balance_mock::contract_state_for_testing();
@@ -157,7 +159,9 @@ fn test_erc721_balance_unauthorized() {
 
 fn setup() -> (IWorldDispatcher, IERC721BalanceMockDispatcher) {
     let world = spawn_test_world(
-        array![erc_721_token_approval_model::TEST_CLASS_HASH, erc_721_balance_model::TEST_CLASS_HASH,]
+        array![
+            erc_721_token_approval_model::TEST_CLASS_HASH, erc_721_balance_model::TEST_CLASS_HASH,
+        ]
     );
 
     // deploy contract

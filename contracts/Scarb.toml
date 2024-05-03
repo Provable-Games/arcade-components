@@ -7,8 +7,8 @@ version = "0.0.0"
 sierra-replace-ids = true
 
 [dependencies]
-dojo = { git = "https://github.com/dojoengine/dojo", tag = "v0.6.0-alpha.13" }
-token = { git = "https://github.com/dojoengine/origami", tag = "v0.6.0-alpha.13" }
+dojo = { git = "https://github.com/dojoengine/dojo", tag = "v0.7.0-alpha.0" }
+token = { git = "https://github.com/dojoengine/origami", tag = "v0.7.0-alpha.0" }
 
 [[target.dojo]]
 
@@ -18,8 +18,9 @@ initializer_class_hash = "0xbeef"
 [tool.dojo.env]
 # Katana
 rpc_url = "http://localhost:5050/"
-account_address = "0x6162896d1d7ab204c7ccac6dd5f8e9e7c25ecd5ae4fcb4ad32e57786bb46e03"
-private_key = "0x1800000000300000180000000000030000000000003006001800006600"
+account_address = "0xb3ff441a68610b30fd5e2abbf3a1548eb6ba6f3559f2862bf2dc757e5828ca"
+private_key = "0x2bbf4f9fd0bbb2e60b0316c1fe0b76cf7a4d0198bd493ced9b8df2a3a24d68a"
+world_address = "0x542bba2d9adbb6bf229b6ca6934eea2b6b794b083760ccc1f1bda09511ab04c" # Update this line with your world address
 
 # Dev
 # rpc_url = "https://api.cartridge.gg/x/paved-dev/katana/"

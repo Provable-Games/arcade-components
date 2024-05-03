@@ -23,6 +23,12 @@ mod components {
     mod tests;
 }
 
+mod presets {
+    mod client_manager;
+    #[cfg(test)]
+    mod test_client_manager;
+}
+
 #[cfg(test)]
 mod tests {
     mod constants;

@@ -69,22 +69,14 @@ struct ERC721EnumerableOwnerTotalModel {
 trait IERC721Enumerable<TState> {
     fn total_supply(self: @TState) -> u256;
     fn token_by_index(self: @TState, index: u256) -> u256;
-    fn token_of_owner_by_index(
-        ref self: TState,
-        owner: ContractAddress,
-        index: u256,
-    ) -> u256;
+    fn token_of_owner_by_index(ref self: TState, owner: ContractAddress, index: u256,) -> u256;
 }
 
 #[starknet::interface]
 trait IERC721EnumerableCamel<TState> {
     fn totalSupply(self: @TState) -> u256;
     fn tokenByIndex(self: @TState, index: u256) -> u256;
-    fn tokenOfOwnerByIndex(
-        ref self: TState,
-        owner: ContractAddress,
-        index: u256,
-    ) -> u256;
+    fn tokenOfOwnerByIndex(ref self: TState, owner: ContractAddress, index: u256,) -> u256;
 }
 
 ///
@@ -138,25 +130,19 @@ mod erc721_enumerable_component {
             self.get_total_supply().total_supply.into()
         }
 
-        fn token_by_index(
-            self: @ComponentState<TContractState>, index: u256) -> u256 {
+        fn token_by_index(self: @ComponentState<TContractState>, index: u256) -> u256 {
             let total_supply = self.get_total_supply().total_supply.into();
-            assert(
-                index < total_supply, Errors::INDEX_INVALID
-            );
+            assert(index < total_supply, Errors::INDEX_INVALID);
             self.get_token_by_index(index).token_id.into()
         }
 
         fn token_of_owner_by_index(
-            ref self: ComponentState<TContractState>, owner: ContractAddress, index: u256) -> u256 {
+            ref self: ComponentState<TContractState>, owner: ContractAddress, index: u256
+        ) -> u256 {
             let mut erc721_balance = get_dep_component_mut!(ref self, ERC721Balance);
             let owner_balance = erc721_balance.get_balance(owner).amount.into();
-            assert(
-                index < owner_balance, Errors::OWNER_INDEX_INVALID
-            );
-            assert(
-                owner.is_non_zero(), Errors::INVALID_OWNER
-            );
+            assert(index < owner_balance, Errors::OWNER_INDEX_INVALID);
+            assert(owner.is_non_zero(), Errors::INVALID_OWNER);
             self.get_token_of_owner_by_index(owner, index).token_id.into()
         }
     }
@@ -175,12 +161,9 @@ mod erc721_enumerable_component {
             self.get_total_supply().total_supply.into()
         }
 
-        fn tokenByIndex(
-            self: @ComponentState<TContractState>, index: u256) -> u256 {
+        fn tokenByIndex(self: @ComponentState<TContractState>, index: u256) -> u256 {
             let total_supply = self.get_total_supply().total_supply.into();
-            assert(
-                index < total_supply, Errors::INDEX_INVALID
-            );
+            assert(index < total_supply, Errors::INDEX_INVALID);
             self.get_token_by_index(index).token_id.into()
         }
 
@@ -189,12 +172,8 @@ mod erc721_enumerable_component {
         ) -> u256 {
             let mut erc721_balance = get_dep_component_mut!(ref self, ERC721Balance);
             let owner_balance = erc721_balance.get_balance(owner).amount.into();
-            assert(
-                index < owner_balance, Errors::OWNER_INDEX_INVALID
-            );
-            assert(
-                owner.is_non_zero(), Errors::INVALID_OWNER
-            );
+            assert(index < owner_balance, Errors::OWNER_INDEX_INVALID);
+            assert(owner.is_non_zero(), Errors::INVALID_OWNER);
             self.get_token_of_owner_by_index(owner, index).token_id.into()
         }
     }
@@ -210,19 +189,17 @@ mod erc721_enumerable_component {
         impl ERC721Owner: erc721_owner_comp::HasComponent<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
-        fn get_total_supply(
-            self: @ComponentState<TContractState>
-        ) -> ERC721EnumerableTotalModel {
-            get!(
-                self.get_contract().world(), get_contract_address(), (ERC721EnumerableTotalModel)
-            )
+        fn get_total_supply(self: @ComponentState<TContractState>) -> ERC721EnumerableTotalModel {
+            get!(self.get_contract().world(), get_contract_address(), (ERC721EnumerableTotalModel))
         }
 
         fn get_token_by_index(
             self: @ComponentState<TContractState>, index: u256
         ) -> ERC721EnumerableIndexModel {
             get!(
-                self.get_contract().world(), (get_contract_address(), index.low), (ERC721EnumerableIndexModel)
+                self.get_contract().world(),
+                (get_contract_address(), index.low),
+                (ERC721EnumerableIndexModel)
             )
         }
 
@@ -230,7 +207,9 @@ mod erc721_enumerable_component {
             self: @ComponentState<TContractState>, owner: ContractAddress, index: u256
         ) -> ERC721EnumerableOwnerIndexModel {
             get!(
-                self.get_contract().world(), (get_contract_address(), owner, index.low), (ERC721EnumerableOwnerIndexModel)
+                self.get_contract().world(),
+                (get_contract_address(), owner, index.low),
+                (ERC721EnumerableOwnerIndexModel)
             )
         }
 
@@ -238,7 +217,9 @@ mod erc721_enumerable_component {
             self: @ComponentState<TContractState>, token_id: u256
         ) -> ERC721EnumerableTokenModel {
             get!(
-                self.get_contract().world(), (get_contract_address(), token_id.low), (ERC721EnumerableTokenModel)
+                self.get_contract().world(),
+                (get_contract_address(), token_id.low),
+                (ERC721EnumerableTokenModel)
             )
         }
 
@@ -246,7 +227,9 @@ mod erc721_enumerable_component {
             self: @ComponentState<TContractState>, owner: ContractAddress, token_id: u256
         ) -> ERC721EnumerableOwnerTokenModel {
             get!(
-                self.get_contract().world(), (get_contract_address(), owner, token_id.low), (ERC721EnumerableOwnerTokenModel)
+                self.get_contract().world(),
+                (get_contract_address(), owner, token_id.low),
+                (ERC721EnumerableOwnerTokenModel)
             )
         }
 
@@ -274,15 +257,24 @@ mod erc721_enumerable_component {
             let mut erc721_balance = get_dep_component_mut!(ref self, ERC721Balance);
             let last_token_index = erc721_balance.get_balance(from).amount.into();
             let token_index = self.get_index_by_token(token_id).index.into();
-    
+
             // When the token to delete is the last token, the swap operation is unnecessary
             if (token_index != last_token_index) {
-                let last_token_id = self.get_token_of_owner_by_index(from, last_token_index).token_id.into();
-    
-                self.set_token_of_owner_by_index(from, token_index, last_token_id); // Move the last token to the slot of the to-delete token
-                self.set_index_of_owner_by_token(from, last_token_id, token_index); // Update the moved token's index
+                let last_token_id = self
+                    .get_token_of_owner_by_index(from, last_token_index)
+                    .token_id
+                    .into();
+
+                self
+                    .set_token_of_owner_by_index(
+                        from, token_index, last_token_id
+                    ); // Move the last token to the slot of the to-delete token
+                self
+                    .set_index_of_owner_by_token(
+                        from, last_token_id, token_index
+                    ); // Update the moved token's index
             }
-    
+
             // This also deletes the contents at the last position of the array
             self.set_index_of_owner_by_token(from, token_id, 0);
             self.set_token_of_owner_by_index(from, last_token_index, 0);
@@ -290,64 +282,82 @@ mod erc721_enumerable_component {
 
         fn remove_token_from_all_tokens_enumeration(
             ref self: ComponentState<TContractState>, token_id: u256
-        ) { 
+        ) {
             let last_token_index = self.get_total_supply().total_supply.into() - 1;
             let token_index = self.get_index_by_token(token_id).index.into();
-    
+
             let last_token_id = self.get_token_by_index(last_token_index).token_id.into();
-    
-            self.set_token_by_index(token_index, last_token_id); // Move the last token to the slot of the to-delete token
+
+            self
+                .set_token_by_index(
+                    token_index, last_token_id
+                ); // Move the last token to the slot of the to-delete token
             self.set_index_by_token(last_token_id, token_index); // Update the moved token's index
-    
+
             self.set_index_by_token(token_id, 0);
             self.set_token_by_index(last_token_id, 0);
             self.set_total_supply(last_token_index);
         }
 
-        fn set_total_supply(
-            self: @ComponentState<TContractState>, total_supply: u256
-        ) {
+        fn set_total_supply(self: @ComponentState<TContractState>, total_supply: u256) {
             set!(
                 self.get_contract().world(),
-                ERC721EnumerableTotalModel { token: get_contract_address(), total_supply: total_supply.low }
+                ERC721EnumerableTotalModel {
+                    token: get_contract_address(), total_supply: total_supply.low
+                }
             );
         }
 
-        fn set_token_by_index(
-            self: @ComponentState<TContractState>, index: u256, token_id: u256
-        ) {
+        fn set_token_by_index(self: @ComponentState<TContractState>, index: u256, token_id: u256) {
             set!(
                 self.get_contract().world(),
-                ERC721EnumerableIndexModel { token: get_contract_address(), index: index.low, token_id: token_id.low }
+                ERC721EnumerableIndexModel {
+                    token: get_contract_address(), index: index.low, token_id: token_id.low
+                }
             );
         }
 
         fn set_token_of_owner_by_index(
-            self: @ComponentState<TContractState>, owner: ContractAddress, index: u256, token_id: u256
+            self: @ComponentState<TContractState>,
+            owner: ContractAddress,
+            index: u256,
+            token_id: u256
         ) {
             set!(
                 self.get_contract().world(),
-                ERC721EnumerableOwnerIndexModel { token: get_contract_address(), owner: owner, index: index.low, token_id: token_id.low }
+                ERC721EnumerableOwnerIndexModel {
+                    token: get_contract_address(),
+                    owner: owner,
+                    index: index.low,
+                    token_id: token_id.low
+                }
             );
         }
 
-        fn set_index_by_token(
-            self: @ComponentState<TContractState>, token_id: u256, index: u256
-        ) {
+        fn set_index_by_token(self: @ComponentState<TContractState>, token_id: u256, index: u256) {
             set!(
                 self.get_contract().world(),
-                ERC721EnumerableTokenModel { token: get_contract_address(), token_id: token_id.low, index: index.low }
+                ERC721EnumerableTokenModel {
+                    token: get_contract_address(), token_id: token_id.low, index: index.low
+                }
             );
         }
 
         fn set_index_of_owner_by_token(
-            self: @ComponentState<TContractState>, owner: ContractAddress, token_id: u256, index: u256
+            self: @ComponentState<TContractState>,
+            owner: ContractAddress,
+            token_id: u256,
+            index: u256
         ) {
             set!(
                 self.get_contract().world(),
-                ERC721EnumerableOwnerTokenModel { token: get_contract_address(), owner: owner, token_id: token_id.low, index: index.low }
+                ERC721EnumerableOwnerTokenModel {
+                    token: get_contract_address(),
+                    owner: owner,
+                    token_id: token_id.low,
+                    index: index.low
+                }
             );
         }
-
     }
 }

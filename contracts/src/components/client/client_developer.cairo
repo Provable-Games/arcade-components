@@ -18,9 +18,7 @@ trait IClientDeveloper<TState> {
     fn register_developer(
         ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
     );
-    // fn get_developer(
-    //     self: @TState, id: u256
-    // );
+    fn get_developer(self: @TState, id: u256) -> ClientDeveloperModel;
     fn change_github_username(ref self: TState, id: u256, username: felt252);
     fn change_telegram_handle(ref self: TState, id: u256, handle: felt252);
     fn change_x_handle(ref self: TState, id: u256, handle: felt252);
@@ -32,9 +30,7 @@ trait IClientDeveloperCamel<TState> {
     fn registerDeveloper(
         ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
     );
-    // fn getDeveloper(
-    //     self: @TState, id: u256
-    // );
+    fn getDeveloper(self: @TState, id: u256) -> ClientDeveloperModel;
     fn changeGithubUsername(ref self: TState, id: u256, username: felt252);
     fn changeTelegramHandle(ref self: TState, id: u256, handle: felt252);
     fn changeXHandle(ref self: TState, id: u256, handle: felt252);
@@ -88,22 +84,13 @@ mod client_developer_component {
     #[derive(Drop, starknet::Event)]
     enum Event {
         RegisterDeveloper: RegisterDeveloper,
-        UpdateDeveloper: UpdateDeveloper,
     }
 
     #[derive(Copy, Drop, Serde, starknet::Event)]
     struct RegisterDeveloper {
-        id: u256, 
-        github_username: felt252, 
-        telegram_handle: felt252, 
-        x_handle: felt252
-    }
-
-    #[derive(Copy, Drop, Serde, starknet::Event)]
-    struct UpdateDeveloper {
         id: u256,
-        github_username: felt252, 
-        telegram_handle: felt252, 
+        github_username: felt252,
+        telegram_handle: felt252,
         x_handle: felt252
     }
 
@@ -121,34 +108,38 @@ mod client_developer_component {
         +Drop<TContractState>,
     > of IClientDeveloper<ComponentState<TContractState>> {
         fn register_developer(
-            ref self: ComponentState<TContractState>, github_username: felt252, telegram_handle: felt252, x_handle: felt252
+            ref self: ComponentState<TContractState>,
+            github_username: felt252,
+            telegram_handle: felt252,
+            x_handle: felt252
         ) {
             let mut erc721_balance = get_dep_component_mut!(ref self, ERC721Balance);
             let mut erc721_enumerable = get_dep_component_mut!(ref self, ERC721Enumerable);
             let total_supply = erc721_enumerable.get_total_supply().total_supply.into();
-            let id = total_supply;
             assert(
                 erc721_balance.get_balance(get_caller_address()).amount == 0,
                 Errors::DEVELOPER_ALREADY_REGISTERED
             );
-            self.set_developer(id, github_username, telegram_handle, x_handle);
+            self.set_developer(total_supply, github_username, telegram_handle, x_handle);
             let mut erc721_mintable = get_dep_component_mut!(ref self, ERC721Mintable);
             let caller = get_caller_address();
-            erc721_mintable.mint(caller, id);
+            erc721_mintable.mint(caller, total_supply);
             erc721_enumerable.set_total_supply(total_supply + 1);
         }
 
-        // fn get_developer(
-        //     self: @ComponentState<TContractState>, id: u256
-        // ) {
-        //     self.get_developer(id).
-        // };
+        fn get_developer(self: @ComponentState<TContractState>, id: u256) -> ClientDeveloperModel {
+            self.get_developer_internal(id)
+        }
 
-        fn change_github_username(ref self: ComponentState<TContractState>, id: u256, username: felt252) {
+        fn change_github_username(
+            ref self: ComponentState<TContractState>, id: u256, username: felt252
+        ) {
             self.set_github_username(id, username)
         }
 
-        fn change_telegram_handle(ref self: ComponentState<TContractState>, id: u256, handle: felt252) {
+        fn change_telegram_handle(
+            ref self: ComponentState<TContractState>, id: u256, handle: felt252
+        ) {
             self.set_telegram_handle(id, handle)
         }
 
@@ -157,7 +148,10 @@ mod client_developer_component {
         }
 
         fn initialize(
-            ref self: ComponentState<TContractState>, name: felt252, symbol: felt252, base_uri: felt252
+            ref self: ComponentState<TContractState>,
+            name: felt252,
+            symbol: felt252,
+            base_uri: felt252
         ) {
             let mut erc721_metadata = get_dep_component_mut!(ref self, ERC721Metadata);
             erc721_metadata.initialize(name, symbol, base_uri)
@@ -178,16 +172,27 @@ mod client_developer_component {
         +Drop<TContractState>,
     > of IClientDeveloperCamel<ComponentState<TContractState>> {
         fn registerDeveloper(
-            ref self: ComponentState<TContractState>, github_username: felt252, telegram_handle: felt252, x_handle: felt252
+            ref self: ComponentState<TContractState>,
+            github_username: felt252,
+            telegram_handle: felt252,
+            x_handle: felt252
         ) {
             self.register_developer(github_username, telegram_handle, x_handle)
         }
 
-        fn changeGithubUsername(ref self: ComponentState<TContractState>, id: u256, username: felt252) {
+        fn getDeveloper(self: @ComponentState<TContractState>, id: u256) -> ClientDeveloperModel {
+            self.get_developer(id)
+        }
+
+        fn changeGithubUsername(
+            ref self: ComponentState<TContractState>, id: u256, username: felt252
+        ) {
             self.set_github_username(id, username)
         }
 
-        fn changeTelegramHandle(ref self: ComponentState<TContractState>, id: u256, handle: felt252) {
+        fn changeTelegramHandle(
+            ref self: ComponentState<TContractState>, id: u256, handle: felt252
+        ) {
             self.set_telegram_handle(id, handle)
         }
 
@@ -204,11 +209,19 @@ mod client_developer_component {
         // impl ERC721Mintable: erc721_mintable_comp::HasComponent<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
-        fn get_developer(self: @ComponentState<TContractState>, id: u256) -> ClientDeveloperModel {
+        fn get_developer_internal(
+            self: @ComponentState<TContractState>, id: u256
+        ) -> ClientDeveloperModel {
             get!(self.get_contract().world(), id.low, (ClientDeveloperModel))
         }
 
-        fn set_developer(ref self: ComponentState<TContractState>, id: u256, github_username: felt252, telegram_handle: felt252, x_handle: felt252) {
+        fn set_developer(
+            ref self: ComponentState<TContractState>,
+            id: u256,
+            github_username: felt252,
+            telegram_handle: felt252,
+            x_handle: felt252
+        ) {
             set!(
                 self.get_contract().world(),
                 ClientDeveloperModel {
@@ -216,51 +229,56 @@ mod client_developer_component {
                 }
             );
 
-            let register_developer_event = RegisterDeveloper { id, github_username, telegram_handle, x_handle };
+            let register_developer_event = RegisterDeveloper {
+                id, github_username, telegram_handle, x_handle
+            };
             self.emit(register_developer_event.clone());
-            emit!(self.get_contract().world(), (Event::RegisterDeveloper(register_developer_event)));
+            emit!(
+                self.get_contract().world(), (Event::RegisterDeveloper(register_developer_event))
+            );
         }
 
-        fn set_github_username(ref self: ComponentState<TContractState>, id: u256, username: felt252) {
-            let developer_meta = self.get_developer(id);
+        fn set_github_username(
+            ref self: ComponentState<TContractState>, id: u256, username: felt252
+        ) {
+            let developer_meta = self.get_developer_internal(id);
             set!(
                 self.get_contract().world(),
                 ClientDeveloperModel {
-                    id: developer_meta.id, github_username: username, telegram_handle: developer_meta.telegram_handle, x_handle: developer_meta.x_handle
+                    id: developer_meta.id,
+                    github_username: username,
+                    telegram_handle: developer_meta.telegram_handle,
+                    x_handle: developer_meta.x_handle
                 }
             );
-
-            let update_developer_event = UpdateDeveloper { id, github_username: username, telegram_handle: developer_meta.telegram_handle, x_handle: developer_meta.x_handle };
-            self.emit(update_developer_event.clone());
-            emit!(self.get_contract().world(), (Event::UpdateDeveloper(update_developer_event)));
         }
 
-        fn set_telegram_handle(ref self: ComponentState<TContractState>, id: u256, handle: felt252) {
-            let developer_meta = self.get_developer(id);
+        fn set_telegram_handle(
+            ref self: ComponentState<TContractState>, id: u256, handle: felt252
+        ) {
+            let developer_meta = self.get_developer_internal(id);
             set!(
                 self.get_contract().world(),
                 ClientDeveloperModel {
-                    id: developer_meta.id, github_username: developer_meta.github_username, telegram_handle: handle, x_handle: developer_meta.x_handle
+                    id: developer_meta.id,
+                    github_username: developer_meta.github_username,
+                    telegram_handle: handle,
+                    x_handle: developer_meta.x_handle
                 }
             );
-
-            let update_developer_event = UpdateDeveloper { id, github_username: developer_meta.github_username, telegram_handle: handle, x_handle: developer_meta.x_handle };
-            self.emit(update_developer_event.clone());
-            emit!(self.get_contract().world(), (Event::UpdateDeveloper(update_developer_event)));
         }
 
         fn set_x_handle(ref self: ComponentState<TContractState>, id: u256, handle: felt252) {
-            let developer_meta = self.get_developer(id);
+            let developer_meta = self.get_developer_internal(id);
             set!(
                 self.get_contract().world(),
                 ClientDeveloperModel {
-                    id: developer_meta.id, github_username: developer_meta.github_username, telegram_handle: developer_meta.telegram_handle, x_handle: handle
+                    id: developer_meta.id,
+                    github_username: developer_meta.github_username,
+                    telegram_handle: developer_meta.telegram_handle,
+                    x_handle: handle
                 }
             );
-
-            let update_developer_event = UpdateDeveloper { id, github_username: developer_meta.github_username, telegram_handle: developer_meta.telegram_handle, x_handle: handle };
-            self.emit(update_developer_event.clone());
-            emit!(self.get_contract().world(), (Event::UpdateDeveloper(update_developer_event)));
         }
     }
 }

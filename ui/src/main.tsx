@@ -1,10 +1,17 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.tsx";
+import { setup } from "./dojo/generated/setup.ts";
+import { DojoProvider } from "./dojo/DojoContext.tsx";
+import { dojoConfig } from "../dojoConfig.ts";
+import "./index.css";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const setupResult = await setup(dojoConfig);
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+    <DojoProvider value={setupResult}>
+      <App />
+    </DojoProvider>
+  </React.StrictMode>
+);

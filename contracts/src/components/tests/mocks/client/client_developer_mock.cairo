@@ -16,11 +16,15 @@ mod client_developer_mock {
         path: erc721_approval_component, storage: erc721_approval, event: ERC721ApprovalEvent
     );
     component!(path: erc721_balance_component, storage: erc721_balance, event: ERC721BalanceEvent);
-    component!(path: erc721_enumerable_component, storage: erc721_enumerable, event: ERC721EnumerableEvent);
+    component!(
+        path: erc721_enumerable_component, storage: erc721_enumerable, event: ERC721EnumerableEvent
+    );
     component!(
         path: erc721_metadata_component, storage: erc721_metadata, event: ERC721MetadataEvent
     );
-    component!(path: erc721_mintable_component, storage: erc721_mintable, event: ERC721MintableEvent);
+    component!(
+        path: erc721_mintable_component, storage: erc721_mintable, event: ERC721MintableEvent
+    );
     component!(path: erc721_owner_component, storage: erc721_owner, event: ERC721OwnerEvent);
 
 
@@ -30,7 +34,7 @@ mod client_developer_mock {
 
     #[abi(embed_v0)]
     impl ClientDeveloperCamelImpl =
-    client_developer_component::ClientDeveloperCamelImpl<ContractState>;
+        client_developer_component::ClientDeveloperCamelImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl ERC721ApprovalImpl =
@@ -61,8 +65,7 @@ mod client_developer_mock {
         erc721_metadata_component::ERC721MetadataImpl<ContractState>;
 
     #[abi(embed_v0)]
-    impl ERC721OwnerImpl =
-        erc721_owner_component::ERC721OwnerImpl<ContractState>;
+    impl ERC721OwnerImpl = erc721_owner_component::ERC721OwnerImpl<ContractState>;
 
     impl ClientDeveloperInternalImpl = client_developer_component::InternalImpl<ContractState>;
     impl ERC721ApprovalInternalImpl = erc721_approval_component::InternalImpl<ContractState>;

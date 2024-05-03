@@ -79,7 +79,9 @@ mod erc721_owner_component {
     > of InternalTrait<TContractState> {
         fn get_owner(self: @ComponentState<TContractState>, token_id: u256) -> ERC721OwnerModel {
             get!(
-                self.get_contract().world(), (get_contract_address(), token_id.low), (ERC721OwnerModel)
+                self.get_contract().world(),
+                (get_contract_address(), token_id.low),
+                (ERC721OwnerModel)
             )
         }
 

@@ -3,16 +3,11 @@ mod client_rating_mock {
     use ls::components::client::client_play::client_play_component;
     use ls::components::client::client_rating::client_rating_component;
 
-    component!(
-        path: client_play_component, storage: client_play, event: ClientPlayEvent
-    );
-    component!(
-        path: client_rating_component, storage: client_rating, event: ClientRatingEvent
-    );
+    component!(path: client_play_component, storage: client_play, event: ClientPlayEvent);
+    component!(path: client_rating_component, storage: client_rating, event: ClientRatingEvent);
 
     #[abi(embed_v0)]
-    impl ClientPlayImpl =
-        client_play_component::ClientPlayImpl<ContractState>;
+    impl ClientPlayImpl = client_play_component::ClientPlayImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl ClientRatingImpl =

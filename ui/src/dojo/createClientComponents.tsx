@@ -10,8 +10,11 @@ export function createClientComponents({
 }) {
   return {
     ...contractComponents,
-    Game: overridableComponent(contractComponents.Game),
-    Player: overridableComponent(contractComponents.Player),
-    Tile: overridableComponent(contractComponents.Tile),
+    ClientDeveloper: overridableComponent(
+      contractComponents.ClientDeveloperModel
+    ),
+    ClientRegistration: overridableComponent(
+      contractComponents.ClientRegistrationModel
+    ),
   };
 }

@@ -3,11 +3,13 @@ use starknet::ContractAddress;
 use integer::BoundedInt;
 use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 use dojo::test_utils::spawn_test_world;
-use ls::tests::constants::{ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CLIENT_ID, RATING, VOTE_COUNT};
+use ls::tests::constants::{
+    ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CLIENT_ID, RATING, VOTE_COUNT
+};
 use ls::tests::utils;
 
 use ls::components::client::client_play::{
-    client_play_total_model, ClientPlayTotalModel, client_play_player_model, ClientPlayPlayerModel, 
+    client_play_total_model, ClientPlayTotalModel, client_play_player_model, ClientPlayPlayerModel,
 };
 use ls::components::client::client_play::client_play_component;
 use ls::components::client::client_play::client_play_component::{
@@ -15,7 +17,8 @@ use ls::components::client::client_play::client_play_component::{
 };
 
 use ls::components::client::client_rating::{
-    client_rating_total_model, ClientRatingTotalModel, client_rating_player_model, ClientRatingPlayerModel, 
+    client_rating_total_model, ClientRatingTotalModel, client_rating_player_model,
+    ClientRatingPlayerModel,
 };
 use ls::components::client::client_rating::client_rating_component;
 use ls::components::client::client_rating::client_rating_component::{
@@ -52,7 +55,11 @@ fn assert_only_rate(
 //
 
 fn STATE() -> (IWorldDispatcher, client_rating_mock::ContractState) {
-    let world = spawn_test_world(array![client_rating_total_model::TEST_CLASS_HASH, client_rating_player_model::TEST_CLASS_HASH]);
+    let world = spawn_test_world(
+        array![
+            client_rating_total_model::TEST_CLASS_HASH, client_rating_player_model::TEST_CLASS_HASH
+        ]
+    );
 
     let mut state = client_rating_mock::contract_state_for_testing();
     state.world_dispatcher.write(world);
@@ -68,6 +75,7 @@ fn test_client_calculate_new_rating() {
 
     testing::set_caller_address(OWNER());
     assert(state.client_rating.calculate_new_rating(RATING, 0, 0) == RATING, 'should be RATING');
+// TODO: test for multiple vote_counts and a larger total_rating
 }
 
 #[test]
@@ -82,11 +90,12 @@ fn test_client_rating() {
     assert_event_rate(ZERO(), CLIENT_ID, OWNER(), RATING);
     assert(state.client_rating.get_rating_total(CLIENT_ID) == RATING, 'Should be RATING');
     assert(state.client_rating.get_rating_player(CLIENT_ID, OWNER()) == RATING, 'Should be RATING');
+// TODO: test for multiple vote_counts and a larger total_rating
 }
 
 #[test]
-#[should_panic(expected: ('Client: Not enough games',))]
-fn test_client_not_enough_games() {
+#[should_panic(expected: ('Client: No votes remaining',))]
+fn test_client_no_votes_remaining() {
     let (_world, mut state) = STATE();
 
     testing::set_caller_address(OWNER());
@@ -95,3 +104,8 @@ fn test_client_not_enough_games() {
     state.client_rating.rate(CLIENT_ID, RATING);
     state.client_rating.rate(CLIENT_ID, RATING);
 }
+// TODO: add rating cap test
+
+// TODO: verify all properties on model
+
+

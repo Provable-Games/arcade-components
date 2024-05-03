@@ -3,19 +3,20 @@ use starknet::ContractAddress;
 use integer::BoundedInt;
 use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 use dojo::test_utils::spawn_test_world;
-use ls::tests::constants::{ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CLIENT_ID, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE, CLIENT_NAME, GAME_ID, GAME_NAME, GAME_URL};
+use ls::tests::constants::{
+    ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CLIENT_ID, GITHUB_USERNAME, TELEGRAM_HANDLE,
+    X_HANDLE, CLIENT_NAME, DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL, NEW_URL
+};
 use ls::tests::utils;
 
-use ls::components::client::client_developer::{
-    client_developer_model, ClientDeveloperModel
-};
+use ls::components::client::client_developer::{client_developer_model, ClientDeveloperModel};
 use ls::components::client::client_developer::client_developer_component;
 use ls::components::client::client_developer::client_developer_component::{
     RegisterDeveloper, ClientDeveloperImpl, InternalImpl as ClientDeveloperInternalImpl
 };
 
 use ls::components::client::client_play::{
-    client_play_total_model, ClientPlayTotalModel, client_play_player_model, ClientPlayPlayerModel, 
+    client_play_total_model, ClientPlayTotalModel, client_play_player_model, ClientPlayPlayerModel,
 };
 use ls::components::client::client_play::client_play_component;
 use ls::components::client::client_play::client_play_component::{
@@ -23,7 +24,8 @@ use ls::components::client::client_play::client_play_component::{
 };
 
 use ls::components::client::client_rating::{
-    client_rating_total_model, ClientRatingTotalModel, client_rating_player_model, ClientRatingPlayerModel, 
+    client_rating_total_model, ClientRatingTotalModel, client_rating_player_model,
+    ClientRatingPlayerModel,
 };
 use ls::components::client::client_rating::client_rating_component;
 use ls::components::client::client_rating::client_rating_component::{
@@ -31,11 +33,17 @@ use ls::components::client::client_rating::client_rating_component::{
 };
 
 use ls::components::client::client_registration::{
-    client_registration_model, ClientRegistrationModel, 
+    client_registration_model, ClientRegistrationModel,
 };
 use ls::components::client::client_registration::client_registration_component;
 use ls::components::client::client_registration::client_registration_component::{
-    RegisterClient, ChangeUrl, ClientRegistrationImpl, InternalImpl as ClientRegistrationInternalImpl
+    RegisterClient, ClientRegistrationImpl, InternalImpl as ClientRegistrationInternalImpl
+};
+
+use ls::components::token::erc721::erc721_balance::{erc_721_balance_model, ERC721BalanceModel};
+use ls::components::token::erc721::erc721_balance::erc721_balance_component;
+use ls::components::token::erc721::erc721_balance::erc721_balance_component::{
+    ERC721BalanceImpl, InternalImpl as ERC721BalanceInternalImpl
 };
 
 
@@ -88,6 +96,38 @@ fn test_client_registration() {
 
     state.client_developer.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
     utils::drop_all_events(ZERO());
-    state.client_registration.register_client(CLIENT_ID, GAME_ID, GAME_NAME, GAME_URL);
-    assert_event_register_client(ZERO(), CLIENT_ID, GAME_ID, GAME_NAME, GAME_URL);
+    state.client_registration.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    assert_event_register_client(ZERO(), 0, GAME_ID, GAME_NAME, GAME_URL);
+    assert(state.client_registration.total_clients() == 1, 'Should be 1');
+    assert(state.client_registration.get_client_game(0) == GAME_ID, 'Should be GAME_ID');
+    assert(state.client_registration.get_client_name(0) == GAME_NAME, 'Should be GAME_NAME');
+    assert(state.client_registration.get_client_url(0) == GAME_URL, 'Should be GAME_URL');
 }
+
+#[test]
+fn test_change_url() {
+    let (_world, mut state) = STATE();
+
+    testing::set_caller_address(OWNER());
+
+    state.client_developer.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.client_registration.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    state.client_registration.change_url(0, NEW_URL);
+    assert(state.client_registration.get_client_url(0) == NEW_URL, 'Should be NEW_URL');
+}
+
+// test client registration fails after transfer
+
+#[test]
+#[should_panic(expected: ('Client: Not developer',))]
+fn test_register_after_transfer() {
+    let (_world, mut state) = STATE();
+
+    testing::set_caller_address(OWNER());
+
+    state.client_developer.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.erc721_balance.transfer_from(OWNER(), RECIPIENT(), 0);
+    state.client_registration.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+}
+
+

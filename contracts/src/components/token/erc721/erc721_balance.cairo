@@ -224,6 +224,5 @@ mod erc721_balance_component {
         ) {
             self.transfer_internal(from, to, token_id);
         }
-
     }
 }

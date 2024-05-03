@@ -9,7 +9,7 @@ const VALUE: u256 = 300;
 const ROLE: felt252 = 'ROLE';
 const OTHER_ROLE: felt252 = 'OTHER_ROLE';
 const URI: felt252 = 'URI';
-const TOKEN_ID: u128 = 21;
+const TOKEN_ID: u256 = 21;
 const TOKEN_AMOUNT: u256 = 42;
 const TOKEN_ID_2: u128 = 2;
 const TOKEN_AMOUNT_2: u256 = 69;
@@ -25,9 +25,11 @@ const CLIENT_ID: u256 = 345;
 const RATING: u8 = 64;
 const VOTE_COUNT: u256 = 200;
 const CLIENT_NAME: felt252 = 'CLIENT_NAME';
+const DEVELOPER_ID: u256 = 0;
 const GAME_ID: u256 = 32;
 const GAME_NAME: felt252 = 'GAME_NAME';
 const GAME_URL: felt252 = 'GAME_URL';
+const NEW_URL: felt252 = 'NEW_URL';
 
 fn ADMIN() -> ContractAddress {
     contract_address_const::<'ADMIN'>()

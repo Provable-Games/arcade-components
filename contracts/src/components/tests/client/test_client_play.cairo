@@ -7,7 +7,7 @@ use ls::tests::constants::{ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CLIENT_ID}
 use ls::tests::utils;
 
 use ls::components::client::client_play::{
-    client_play_total_model, ClientPlayTotalModel, client_play_player_model, ClientPlayPlayerModel, 
+    client_play_total_model, ClientPlayTotalModel, client_play_player_model, ClientPlayPlayerModel,
 };
 use ls::components::client::client_play::client_play_component;
 use ls::components::client::client_play::client_play_component::{
@@ -23,17 +23,13 @@ use debug::PrintTrait;
 // events helpers
 //
 
-fn assert_event_play(
-    emitter: ContractAddress, client_id: u256, player_address: ContractAddress
-) {
+fn assert_event_play(emitter: ContractAddress, client_id: u256, player_address: ContractAddress) {
     let event = utils::pop_log::<Play>(emitter).unwrap();
     assert(event.client_id == client_id, 'Invalid `client_id`');
     assert(event.player_address == player_address, 'Invalid `player_address`');
 }
 
-fn assert_only_play(
-    emitter: ContractAddress, client_id: u256, player_address: ContractAddress,
-) {
+fn assert_only_play(emitter: ContractAddress, client_id: u256, player_address: ContractAddress,) {
     assert_event_play(emitter, client_id, player_address);
     utils::assert_no_events_left(emitter);
 }
@@ -43,7 +39,9 @@ fn assert_only_play(
 //
 
 fn STATE() -> (IWorldDispatcher, client_play_mock::ContractState) {
-    let world = spawn_test_world(array![client_play_total_model::TEST_CLASS_HASH, client_play_player_model::TEST_CLASS_HASH]);
+    let world = spawn_test_world(
+        array![client_play_total_model::TEST_CLASS_HASH, client_play_player_model::TEST_CLASS_HASH]
+    );
 
     let mut state = client_play_mock::contract_state_for_testing();
     state.world_dispatcher.write(world);

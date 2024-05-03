@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 
 const ClientTable: React.FC = () => {
-  const [games, setGames] = useState([
+  const [games, _setGames] = useState([
     {
       gameId: "1",
       name: "Survivor",

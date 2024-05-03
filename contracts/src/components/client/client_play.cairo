@@ -22,15 +22,17 @@ struct ClientPlayPlayerModel {
 
 #[starknet::interface]
 trait IClientPlay<TState> {
-    fn get_play_count_total(self:  @TState, client_id: u256) -> u256;
-    fn get_play_count_player(self:  @TState, client_id: u256, player_address: ContractAddress) -> u256;
+    fn get_play_count_total(self: @TState, client_id: u256) -> u256;
+    fn get_play_count_player(
+        self: @TState, client_id: u256, player_address: ContractAddress
+    ) -> u256;
     fn play(ref self: TState, client_id: u256);
 }
 
 #[starknet::interface]
 trait IClientPlayCamel<TState> {
-    fn getPlayCountTotal(self:  @TState, client_id: u256) -> u256;
-    fn getPlayCountPlayer(self:  @TState, client_id: u256, player_address: ContractAddress) -> u256;
+    fn getPlayCountTotal(self: @TState, client_id: u256) -> u256;
+    fn getPlayCountPlayer(self: @TState, client_id: u256, player_address: ContractAddress) -> u256;
 }
 
 ///
@@ -44,9 +46,7 @@ mod client_play_component {
     use super::IClientPlayCamel;
 
     use starknet::ContractAddress;
-    use starknet::info::{
-        get_caller_address, get_contract_address
-    };
+    use starknet::info::{get_caller_address, get_contract_address};
 
     use dojo::world::{
         IWorldProvider, IWorldProviderDispatcher, IWorldDispatcher, IWorldDispatcherTrait
@@ -79,7 +79,9 @@ mod client_play_component {
             self.get_play_total(client_id).play_count.into()
         }
 
-        fn get_play_count_player(self: @ComponentState<TContractState>, client_id: u256, player_address: ContractAddress) -> u256 {
+        fn get_play_count_player(
+            self: @ComponentState<TContractState>, client_id: u256, player_address: ContractAddress
+        ) -> u256 {
             self.get_play_player(client_id, player_address).play_count.into()
         }
 
@@ -108,7 +110,9 @@ mod client_play_component {
             self.get_play_total(client_id).play_count.into()
         }
 
-        fn getPlayCountPlayer(self: @ComponentState<TContractState>, client_id: u256, player_address: ContractAddress) -> u256 {
+        fn getPlayCountPlayer(
+            self: @ComponentState<TContractState>, client_id: u256, player_address: ContractAddress
+        ) -> u256 {
             self.get_play_player(client_id, player_address).play_count.into()
         }
     }
@@ -120,22 +124,46 @@ mod client_play_component {
         +IWorldProvider<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
-        fn get_play_total(self: @ComponentState<TContractState>, client_id: u256) -> ClientPlayTotalModel {
+        fn get_play_total(
+            self: @ComponentState<TContractState>, client_id: u256
+        ) -> ClientPlayTotalModel {
             get!(self.get_contract().world(), (client_id.low), ClientPlayTotalModel)
         }
 
-        fn get_play_player(self: @ComponentState<TContractState>, client_id: u256, player_address: ContractAddress) -> ClientPlayPlayerModel {
-            get!(self.get_contract().world(), (client_id.low, player_address), ClientPlayPlayerModel)
+        fn get_play_player(
+            self: @ComponentState<TContractState>, client_id: u256, player_address: ContractAddress
+        ) -> ClientPlayPlayerModel {
+            get!(
+                self.get_contract().world(), (client_id.low, player_address), ClientPlayPlayerModel
+            )
         }
 
-        fn set_play_total(self: @ComponentState<TContractState>, client_id: u256, play_count: u256) {
-            set!(self.get_contract().world(), ClientPlayTotalModel { client_id: client_id.low.try_into().unwrap(), play_count: play_count.low })
+        fn set_play_total(
+            self: @ComponentState<TContractState>, client_id: u256, play_count: u256
+        ) {
+            set!(
+                self.get_contract().world(),
+                ClientPlayTotalModel {
+                    client_id: client_id.low.try_into().unwrap(), play_count: play_count.low
+                }
+            )
         }
 
-        fn set_play_player(self: @ComponentState<TContractState>, client_id: u256, player_address: ContractAddress, play_count: u256) {
-            set!(self.get_contract().world(), ClientPlayPlayerModel { client_id: client_id.low.try_into().unwrap(), player_address, play_count: play_count.low });
+        fn set_play_player(
+            self: @ComponentState<TContractState>,
+            client_id: u256,
+            player_address: ContractAddress,
+            play_count: u256
+        ) {
+            set!(
+                self.get_contract().world(),
+                ClientPlayPlayerModel {
+                    client_id: client_id.low.try_into().unwrap(),
+                    player_address,
+                    play_count: play_count.low
+                }
+            );
         }
     }
 }
-
 

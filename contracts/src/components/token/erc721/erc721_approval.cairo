@@ -208,7 +208,9 @@ mod erc721_approval_component {
             assert(owner != to, Errors::APPROVAL_TO_OWNER);
             set!(
                 self.get_contract().world(),
-                ERC721TokenApprovalModel { token: get_contract_address(), token_id: token_id.low, address: to, }
+                ERC721TokenApprovalModel {
+                    token: get_contract_address(), token_id: token_id.low, address: to,
+                }
             );
             if emit {
                 let approval_event = Approval { owner, spender: to, token_id };

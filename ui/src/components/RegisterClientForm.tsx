@@ -9,7 +9,7 @@ interface RegisterFormData {
   url: string;
 }
 
-const RegisterForm: React.FC = () => {
+const RegisterClientForm: React.FC = () => {
   const [formData, setFormData] = useState<RegisterFormData>({
     gameId: "",
     name: "",
@@ -71,4 +71,4 @@ const RegisterForm: React.FC = () => {
   );
 };
 
-export default RegisterForm;
+export default RegisterClientForm;
