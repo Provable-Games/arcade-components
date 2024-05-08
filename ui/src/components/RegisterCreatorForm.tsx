@@ -1,40 +1,25 @@
 // src/components/GameForm.tsx
 
 import React, { useState } from "react";
-import { TextField, Button, Box } from "@mui/material";
+import { TextField, Typography, Button, Box } from "@mui/material";
 import { useDojo } from "../dojo/useDojo";
-import { Entity } from "@dojoengine/recs";
-// import { Direction } from "./utils";
-import { useComponentValue } from "@dojoengine/react";
-import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { stringToFelt } from "../utils";
 
-interface RegisterDeveloperData {
+interface RegisterCreatorData {
   githubUsername: string;
   telegramHandle: string;
   xHandle: string;
 }
 
-const RegisterDeveloperForm: React.FC = () => {
+const RegisterCreatorForm: React.FC = () => {
   const {
     setup: {
-      systemCalls: { registerDeveloper },
-      clientComponents: { ClientDeveloper },
+      systemCalls: { registerCreator },
     },
     account,
   } = useDojo();
 
-  // entity id we are syncing
-  const entityId = getEntityIdFromKeys([
-    BigInt(account?.account.address),
-  ]) as Entity;
-
-  // get current component values
-  const clientDeveloper = useComponentValue(ClientDeveloper, entityId);
-
-  console.log(clientDeveloper);
-
-  const [formData, setFormData] = useState<RegisterDeveloperData>({
+  const [formData, setFormData] = useState<RegisterCreatorData>({
     githubUsername: "",
     telegramHandle: "",
     xHandle: "",
@@ -47,18 +32,29 @@ const RegisterDeveloperForm: React.FC = () => {
     });
   };
 
+  const isFormComplete = (): boolean => {
+    return (
+      Boolean(formData.githubUsername) &&
+      Boolean(formData.telegramHandle) &&
+      Boolean(formData.xHandle)
+    );
+  };
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log("Submitted data:", formData);
-    registerDeveloper(account.account, {
-      githubUsername: parseInt(stringToFelt(formData.githubUsername)),
-      telegramHandle: parseInt(stringToFelt(formData.telegramHandle)),
-      xHandle: parseInt(stringToFelt(formData.xHandle)),
+    registerCreator(account.account, {
+      githubUsername: BigInt(stringToFelt(formData.githubUsername)),
+      telegramHandle: BigInt(stringToFelt(formData.telegramHandle)),
+      xHandle: BigInt(stringToFelt(formData.xHandle)),
     });
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+      <Typography variant="h5" component="h2" sx={{ textAlign: "left" }}>
+        Register Creator
+      </Typography>
       <TextField
         margin="normal"
         required
@@ -93,11 +89,17 @@ const RegisterDeveloperForm: React.FC = () => {
         value={formData.xHandle}
         onChange={handleChange}
       />
-      <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
+      <Button
+        type="submit"
+        fullWidth
+        variant="contained"
+        sx={{ mt: 3, mb: 2 }}
+        disabled={!isFormComplete()}
+      >
         Submit
       </Button>
     </Box>
   );
 };
 
-export default RegisterDeveloperForm;
+export default RegisterCreatorForm;

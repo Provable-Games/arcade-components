@@ -3,7 +3,7 @@ mod constants;
 // TODO: remove for origami lib
 mod components {
     mod client {
-        mod client_developer;
+        mod client_creator;
         mod client_play;
         mod client_rating;
         mod client_registration;

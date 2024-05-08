@@ -20,7 +20,7 @@ trait IClientManager<TState> {
     fn totalSupply(self: @TState) -> u256;
 
     // IClient
-    fn register_developer(
+    fn register_creator(
         ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
     );
     fn register_client(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
@@ -37,7 +37,7 @@ trait IClientManager<TState> {
 
     // IClientCamelOnly
     fn tokenUri(ref self: TState, token_id: u256) -> felt252;
-    fn registerDeveloper(
+    fn registerCreator(
         ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
     );
     fn registerClient(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
@@ -66,7 +66,7 @@ trait IClientManagerInit<TState> {
 mod ClientManager {
     use starknet::ContractAddress;
 
-    use ls::components::client::client_developer::client_developer_component;
+    use ls::components::client::client_creator::client_creator_component;
     use ls::components::client::client_play::client_play_component;
     use ls::components::client::client_rating::client_rating_component;
     use ls::components::client::client_registration::client_registration_component;
@@ -78,7 +78,7 @@ mod ClientManager {
     use ls::components::token::erc721::erc721_owner::erc721_owner_component;
 
     component!(
-        path: client_developer_component, storage: client_developer, event: ClientDeveloperEvent
+        path: client_creator_component, storage: client_creator, event: ClientCreatorEvent
     );
     component!(path: client_play_component, storage: client_play, event: ClientPlayEvent);
     component!(path: client_rating_component, storage: client_rating, event: ClientRatingEvent);
@@ -103,12 +103,12 @@ mod ClientManager {
     component!(path: erc721_owner_component, storage: erc721_owner, event: ERC721OwnerEvent);
 
     #[abi(embed_v0)]
-    impl ClientDeveloperImpl =
-        client_developer_component::ClientDeveloperImpl<ContractState>;
+    impl ClientCreatorImpl =
+        client_creator_component::ClientCreatorImpl<ContractState>;
 
     #[abi(embed_v0)]
-    impl ClientDeveloperCamelImpl =
-        client_developer_component::ClientDeveloperCamelImpl<ContractState>;
+    impl ClientCreatorCamelImpl =
+        client_creator_component::ClientCreatorCamelImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl ClientPlayImpl = client_play_component::ClientPlayImpl<ContractState>;
@@ -164,7 +164,7 @@ mod ClientManager {
     #[abi(embed_v0)]
     impl ERC721OwnerImpl = erc721_owner_component::ERC721OwnerImpl<ContractState>;
 
-    impl ClientDeveloperInternalImpl = client_developer_component::InternalImpl<ContractState>;
+    impl ClientCreatorInternalImpl = client_creator_component::InternalImpl<ContractState>;
     impl ClientPlayInternalImpl = client_play_component::InternalImpl<ContractState>;
     impl ClientRatingInternalImpl = client_rating_component::InternalImpl<ContractState>;
     impl ClientRegistrationInternalImpl =
@@ -179,7 +179,7 @@ mod ClientManager {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        client_developer: client_developer_component::Storage,
+        client_creator: client_creator_component::Storage,
         #[substorage(v0)]
         client_play: client_play_component::Storage,
         #[substorage(v0)]
@@ -203,7 +203,7 @@ mod ClientManager {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        ClientDeveloperEvent: client_developer_component::Event,
+        ClientCreatorEvent: client_creator_component::Event,
         ClientPlayEvent: client_play_component::Event,
         ClientRatingEvent: client_rating_component::Event,
         ClientRegistrationEvent: client_registration_component::Event,

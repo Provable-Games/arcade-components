@@ -1,6 +1,6 @@
 #[dojo::contract]
-mod client_developer_mock {
-    use ls::components::client::client_developer::client_developer_component;
+mod client_creator_mock {
+    use ls::components::client::client_creator::client_creator_component;
     use ls::components::token::erc721::erc721_approval::erc721_approval_component;
     use ls::components::token::erc721::erc721_balance::erc721_balance_component;
     use ls::components::token::erc721::erc721_enumerable::erc721_enumerable_component;
@@ -10,7 +10,7 @@ mod client_developer_mock {
     use ls::components::token::erc721::erc721_owner::erc721_owner_component;
 
     component!(
-        path: client_developer_component, storage: client_developer, event: ClientDeveloperEvent
+        path: client_creator_component, storage: client_creator, event: ClientCreatorEvent
     );
     component!(
         path: erc721_approval_component, storage: erc721_approval, event: ERC721ApprovalEvent
@@ -29,12 +29,12 @@ mod client_developer_mock {
 
 
     #[abi(embed_v0)]
-    impl ClientDeveloperImpl =
-        client_developer_component::ClientDeveloperImpl<ContractState>;
+    impl ClientCreatorImpl =
+        client_creator_component::ClientCreatorImpl<ContractState>;
 
     #[abi(embed_v0)]
-    impl ClientDeveloperCamelImpl =
-        client_developer_component::ClientDeveloperCamelImpl<ContractState>;
+    impl ClientCreatorCamelImpl =
+        client_creator_component::ClientCreatorCamelImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl ERC721ApprovalImpl =
@@ -67,7 +67,7 @@ mod client_developer_mock {
     #[abi(embed_v0)]
     impl ERC721OwnerImpl = erc721_owner_component::ERC721OwnerImpl<ContractState>;
 
-    impl ClientDeveloperInternalImpl = client_developer_component::InternalImpl<ContractState>;
+    impl ClientCreatorInternalImpl = client_creator_component::InternalImpl<ContractState>;
     impl ERC721ApprovalInternalImpl = erc721_approval_component::InternalImpl<ContractState>;
     impl ERC721BalanceInternalImpl = erc721_balance_component::InternalImpl<ContractState>;
     impl ERC721EnumerableInternalImpl = erc721_enumerable_component::InternalImpl<ContractState>;
@@ -78,7 +78,7 @@ mod client_developer_mock {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        client_developer: client_developer_component::Storage,
+        client_creator: client_creator_component::Storage,
         #[substorage(v0)]
         erc721_approval: erc721_approval_component::Storage,
         #[substorage(v0)]
@@ -96,7 +96,7 @@ mod client_developer_mock {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        ClientDeveloperEvent: client_developer_component::Event,
+        ClientCreatorEvent: client_creator_component::Event,
         ERC721ApprovalEvent: erc721_approval_component::Event,
         ERC721BalanceEvent: erc721_balance_component::Event,
         ERC721EnumerableEvent: erc721_enumerable_component::Event,

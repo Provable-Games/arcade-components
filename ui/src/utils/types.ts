@@ -1,5 +1,5 @@
-export type Developer = {
-  developerId: number;
+export type Creator = {
+  creatorId: number;
   githubUsername: number;
   telegramHandle: number;
   xHandle: number;
@@ -7,7 +7,7 @@ export type Developer = {
 
 export type Client = {
   clientId: number;
-  developerId: number;
+  creatorId: number;
   gameId: number;
   name: number;
   url: number;

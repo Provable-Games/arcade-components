@@ -5,14 +5,14 @@ use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 use dojo::test_utils::spawn_test_world;
 use ls::tests::constants::{
     ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CLIENT_ID, GITHUB_USERNAME, TELEGRAM_HANDLE,
-    X_HANDLE, CLIENT_NAME, DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL, NEW_URL
+    X_HANDLE, CLIENT_NAME, CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL, NEW_URL
 };
 use ls::tests::utils;
 
-use ls::components::client::client_developer::{client_developer_model, ClientDeveloperModel};
-use ls::components::client::client_developer::client_developer_component;
-use ls::components::client::client_developer::client_developer_component::{
-    RegisterDeveloper, ClientDeveloperImpl, InternalImpl as ClientDeveloperInternalImpl
+use ls::components::client::client_creator::{client_creator_model, ClientCreatorModel};
+use ls::components::client::client_creator::client_creator_component;
+use ls::components::client::client_creator::client_creator_component::{
+    RegisterCreator, ClientCreatorImpl, InternalImpl as ClientCreatorInternalImpl
 };
 
 use ls::components::client::client_play::{
@@ -94,9 +94,9 @@ fn test_client_registration() {
 
     testing::set_caller_address(OWNER());
 
-    state.client_developer.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.client_creator.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
     utils::drop_all_events(ZERO());
-    state.client_registration.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    state.client_registration.register_client(CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL);
     assert_event_register_client(ZERO(), 0, GAME_ID, GAME_NAME, GAME_URL);
     assert(state.client_registration.total_clients() == 1, 'Should be 1');
     assert(state.client_registration.get_client_game(0) == GAME_ID, 'Should be GAME_ID');
@@ -110,8 +110,8 @@ fn test_change_url() {
 
     testing::set_caller_address(OWNER());
 
-    state.client_developer.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
-    state.client_registration.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    state.client_creator.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.client_registration.register_client(CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL);
     state.client_registration.change_url(0, NEW_URL);
     assert(state.client_registration.get_client_url(0) == NEW_URL, 'Should be NEW_URL');
 }
@@ -119,15 +119,15 @@ fn test_change_url() {
 // test client registration fails after transfer
 
 #[test]
-#[should_panic(expected: ('Client: Not developer',))]
+#[should_panic(expected: ('Client: Not creator',))]
 fn test_register_after_transfer() {
     let (_world, mut state) = STATE();
 
     testing::set_caller_address(OWNER());
 
-    state.client_developer.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.client_creator.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
     state.erc721_balance.transfer_from(OWNER(), RECIPIENT(), 0);
-    state.client_registration.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    state.client_registration.register_client(CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL);
 }
 
 

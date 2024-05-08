@@ -2,7 +2,7 @@ import { AccountInterface } from "starknet";
 import { Entity } from "@dojoengine/recs";
 import { uuid } from "@latticexyz/utils";
 import { ClientComponents } from "./createClientComponents";
-import { DeveloperDetails } from "../utils";
+import { CreatorDetails, ClientDetails } from "../utils";
 import {
   getEntityIdFromKeys,
   getEvents,
@@ -16,42 +16,17 @@ export type SystemCalls = ReturnType<typeof createSystemCalls>;
 export function createSystemCalls(
   { client }: { client: IWorld },
   contractComponents: ContractComponents,
-  { ClientDeveloper, ClientRegistration }: ClientComponents
+  { ClientCreator }: ClientComponents
 ) {
-  const registerDeveloper = async (
+  const registerCreator = async (
     account: AccountInterface,
-    developerDetails: DeveloperDetails
+    creatorDetails: CreatorDetails
   ) => {
-    const entityId = getEntityIdFromKeys([BigInt(account.address)]) as Entity;
-
-    // const clientDeveloperId = uuid();
-    // ClientDeveloper.addOverride(clientDeveloperId, {
-    //   entity: entityId,
-    //   value: { player: BigInt(entityId), vec: { x: 10, y: 10 } },
-    // });
-
-    // const movesId = uuid();
-    // ClientRegistration.addOverride(movesId, {
-    //   entity: entityId,
-    //   value: {
-    //     player: BigInt(entityId),
-    //     remaining: 100,
-    //     last_direction: 0,
-    //   },
-    // });
-
     try {
-      const { transaction_hash } =
-        await client.clientDeveloper.registerDeveloper({
-          account,
-          developerDetails,
-        });
-
-      console.log(
-        await account.waitForTransaction(transaction_hash, {
-          retryInterval: 100,
-        })
-      );
+      const { transaction_hash } = await client.clientCreator.registerCreator({
+        account,
+        creatorDetails,
+      });
 
       setComponentsFromEvents(
         contractComponents,
@@ -63,13 +38,94 @@ export function createSystemCalls(
       );
     } catch (e) {
       console.log(e);
-      // ClientDeveloper.removeOverride(clientDeveloperId);
+      // ClientCreator.removeOverride(clientcreatorId);
     } finally {
-      // ClientDeveloper.removeOverride(clientDeveloperId);
+      // ClientCreator.removeOverride(clientcreatorId);
+    }
+  };
+
+  const registerClient = async (
+    account: AccountInterface,
+    clientDetails: ClientDetails
+  ) => {
+    try {
+      const { transaction_hash } =
+        await client.clientRegistration.registerClient({
+          account,
+          clientDetails,
+        });
+
+      setComponentsFromEvents(
+        contractComponents,
+        getEvents(
+          await account.waitForTransaction(transaction_hash, {
+            retryInterval: 100,
+          })
+        )
+      );
+    } catch (e) {
+      console.log(e);
+      // ClientCreator.removeOverride(clientcreatorId);
+    } finally {
+      // ClientCreator.removeOverride(clientcreatorId);
+    }
+  };
+
+  const playClient = async (account: AccountInterface, clientId: bigint) => {
+    try {
+      const { transaction_hash } = await client.clientPlay.play({
+        account,
+        clientId,
+      });
+
+      setComponentsFromEvents(
+        contractComponents,
+        getEvents(
+          await account.waitForTransaction(transaction_hash, {
+            retryInterval: 100,
+          })
+        )
+      );
+    } catch (e) {
+      console.log(e);
+      // ClientCreator.removeOverride(clientcreatorId);
+    } finally {
+      // ClientCreator.removeOverride(clientcreatorId);
+    }
+  };
+
+  const rateClient = async (
+    account: AccountInterface,
+    clientId: bigint,
+    rating: bigint
+  ) => {
+    try {
+      const { transaction_hash } = await client.clientRating.rate({
+        account,
+        clientId,
+        rating,
+      });
+
+      setComponentsFromEvents(
+        contractComponents,
+        getEvents(
+          await account.waitForTransaction(transaction_hash, {
+            retryInterval: 100,
+          })
+        )
+      );
+    } catch (e) {
+      console.log(e);
+      // ClientCreator.removeOverride(clientcreatorId);
+    } finally {
+      // ClientCreator.removeOverride(clientcreatorId);
     }
   };
 
   return {
-    registerDeveloper,
+    registerCreator,
+    registerClient,
+    playClient,
+    rateClient,
   };
 }

@@ -15,7 +15,7 @@ trait IClientManager<TState> {
     fn transferFrom(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u128);
 
     // IClient
-    fn register_developer(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
+    fn register_creator(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
     fn register_client(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
     fn change_github_username(self: @TState, id: u256, username: felt252);
     fn change_telegram_handle(self: @TState, id: u256, handle: felt252);
@@ -29,7 +29,7 @@ trait IClientManager<TState> {
     fn play(self: @TState, id: u256);
 
     // IClientCamelOnly
-    fn registerDeveloper(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
+    fn registercreator(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
     fn registerClient(ref self: TState, id: u256, game_id: u256, name: felt252, url: felt252);
     fn changeGithubUsername(self: @TState, id: u256, username: felt252);
     fn changeTelegramHandle(self: @TState, id: u256, handle: felt252);
@@ -56,7 +56,7 @@ trait IClientManagerMockInit<TState> {
 mod client_registration_mock {
     use starknet::ContractAddress;
 
-    use ls::components::client::client_developer::client_developer_component;
+    use ls::components::client::client_creator::client_creator_component;
     use ls::components::client::client_play::client_play_component;
     use ls::components::client::client_rating::client_rating_component;
     use ls::components::client::client_registration::client_registration_component;
@@ -68,7 +68,7 @@ mod client_registration_mock {
     use ls::components::token::erc721::erc721_owner::erc721_owner_component;
 
     component!(
-        path: client_developer_component, storage: client_developer, event: ClientDeveloperEvent
+        path: client_creator_component, storage: client_creator, event: ClientCreatorEvent
     );
     component!(path: client_play_component, storage: client_play, event: ClientPlayEvent);
     component!(path: client_rating_component, storage: client_rating, event: ClientRatingEvent);
@@ -93,12 +93,12 @@ mod client_registration_mock {
     component!(path: erc721_owner_component, storage: erc721_owner, event: ERC721OwnerEvent);
 
     #[abi(embed_v0)]
-    impl ClientDeveloperImpl =
-        client_developer_component::ClientDeveloperImpl<ContractState>;
+    impl ClientCreatorImpl =
+        client_creator_component::ClientCreatorImpl<ContractState>;
 
     #[abi(embed_v0)]
-    impl ClientDeveloperCamelImpl =
-        client_developer_component::ClientDeveloperCamelImpl<ContractState>;
+    impl ClientCreatorCamelImpl =
+        client_creator_component::ClientCreatorCamelImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl ClientPlayImpl = client_play_component::ClientPlayImpl<ContractState>;
@@ -154,7 +154,7 @@ mod client_registration_mock {
     #[abi(embed_v0)]
     impl ERC721OwnerImpl = erc721_owner_component::ERC721OwnerImpl<ContractState>;
 
-    impl ClientDeveloperInternalImpl = client_developer_component::InternalImpl<ContractState>;
+    impl ClientCreatorInternalImpl = client_creator_component::InternalImpl<ContractState>;
     impl ClientPlayInternalImpl = client_play_component::InternalImpl<ContractState>;
     impl ClientRatingInternalImpl = client_rating_component::InternalImpl<ContractState>;
     impl ClientRegistrationInternalImpl =
@@ -169,7 +169,7 @@ mod client_registration_mock {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        client_developer: client_developer_component::Storage,
+        client_creator: client_creator_component::Storage,
         #[substorage(v0)]
         client_play: client_play_component::Storage,
         #[substorage(v0)]
@@ -193,7 +193,7 @@ mod client_registration_mock {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        ClientDeveloperEvent: client_developer_component::Event,
+        ClientCreatorEvent: client_creator_component::Event,
         ClientPlayEvent: client_play_component::Event,
         ClientRatingEvent: client_rating_component::Event,
         ClientRegistrationEvent: client_registration_component::Event,

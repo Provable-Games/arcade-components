@@ -5,46 +5,46 @@ use starknet::ContractAddress;
 ///
 
 #[derive(Model, Copy, Drop, Serde)]
-struct ClientDeveloperModel {
+struct ClientCreatorModel {
     #[key]
-    id: u64,
+    creator_id: u64,
     github_username: felt252, // TODO: replace with ByteArray in new dojo version
     telegram_handle: felt252, // TODO: replace with ByteArray in new dojo version
     x_handle: felt252, // TODO: replace with ByteArray in new dojo version
 }
 
 #[starknet::interface]
-trait IClientDeveloper<TState> {
-    fn register_developer(
+trait IClientCreator<TState> {
+    fn register_creator(
         ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
     );
-    fn get_developer(self: @TState, id: u256) -> ClientDeveloperModel;
-    fn change_github_username(ref self: TState, id: u256, username: felt252);
-    fn change_telegram_handle(ref self: TState, id: u256, handle: felt252);
-    fn change_x_handle(ref self: TState, id: u256, handle: felt252);
+    fn get_creator(self: @TState, creator_id: u256) -> ClientCreatorModel;
+    fn change_github_username(ref self: TState, creator_id: u256, username: felt252);
+    fn change_telegram_handle(ref self: TState, creator_id: u256, handle: felt252);
+    fn change_x_handle(ref self: TState, creator_id: u256, handle: felt252);
     fn initialize(ref self: TState, name: felt252, symbol: felt252, base_uri: felt252);
 }
 
 #[starknet::interface]
-trait IClientDeveloperCamel<TState> {
-    fn registerDeveloper(
+trait IClientCreatorCamel<TState> {
+    fn registerCreator(
         ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
     );
-    fn getDeveloper(self: @TState, id: u256) -> ClientDeveloperModel;
-    fn changeGithubUsername(ref self: TState, id: u256, username: felt252);
-    fn changeTelegramHandle(ref self: TState, id: u256, handle: felt252);
-    fn changeXHandle(ref self: TState, id: u256, handle: felt252);
+    fn getCreator(self: @TState, creator_id: u256) -> ClientCreatorModel;
+    fn changeGithubUsername(ref self: TState, creator_id: u256, username: felt252);
+    fn changeTelegramHandle(ref self: TState, creator_id: u256, handle: felt252);
+    fn changeXHandle(ref self: TState, creator_id: u256, handle: felt252);
 }
 
 
 ///
-/// ClientRegistration Component
+/// ClientCreator Component
 ///
 #[starknet::component]
-mod client_developer_component {
-    use super::ClientDeveloperModel;
-    use super::IClientDeveloper;
-    use super::IClientDeveloperCamel;
+mod client_creator_component {
+    use super::ClientCreatorModel;
+    use super::IClientCreator;
+    use super::IClientCreatorCamel;
     use core::traits::Into;
     use starknet::ContractAddress;
     use starknet::info::{
@@ -72,7 +72,7 @@ mod client_developer_component {
     use erc721_owner_comp::InternalImpl as ERC721OwnerInternal;
 
     mod Errors {
-        const DEVELOPER_ALREADY_REGISTERED: felt252 = 'Client: Developer registered';
+        const NOT_CREATOR: felt252 = 'Client: Not creator';
     }
 
     // Storage
@@ -83,19 +83,19 @@ mod client_developer_component {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        RegisterDeveloper: RegisterDeveloper,
+        RegisterCreator: RegisterCreator,
     }
 
     #[derive(Copy, Drop, Serde, starknet::Event)]
-    struct RegisterDeveloper {
-        id: u256,
+    struct RegisterCreator {
+        creator_id: u256,
         github_username: felt252,
         telegram_handle: felt252,
         x_handle: felt252
     }
 
-    #[embeddable_as(ClientDeveloperImpl)]
-    impl ClientDeveloper<
+    #[embeddable_as(ClientCreatorImpl)]
+    impl ClientCreator<
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
@@ -106,45 +106,40 @@ mod client_developer_component {
         impl ERC721Mintable: erc721_mintable_comp::HasComponent<TContractState>,
         impl ERC721Owner: erc721_owner_comp::HasComponent<TContractState>,
         +Drop<TContractState>,
-    > of IClientDeveloper<ComponentState<TContractState>> {
-        fn register_developer(
+    > of IClientCreator<ComponentState<TContractState>> {
+        fn register_creator(
             ref self: ComponentState<TContractState>,
             github_username: felt252,
             telegram_handle: felt252,
             x_handle: felt252
         ) {
-            let mut erc721_balance = get_dep_component_mut!(ref self, ERC721Balance);
             let mut erc721_enumerable = get_dep_component_mut!(ref self, ERC721Enumerable);
             let total_supply = erc721_enumerable.get_total_supply().total_supply.into();
-            assert(
-                erc721_balance.get_balance(get_caller_address()).amount == 0,
-                Errors::DEVELOPER_ALREADY_REGISTERED
-            );
-            self.set_developer(total_supply, github_username, telegram_handle, x_handle);
+            self.set_creator(total_supply, github_username, telegram_handle, x_handle);
             let mut erc721_mintable = get_dep_component_mut!(ref self, ERC721Mintable);
             let caller = get_caller_address();
             erc721_mintable.mint(caller, total_supply);
             erc721_enumerable.set_total_supply(total_supply + 1);
         }
 
-        fn get_developer(self: @ComponentState<TContractState>, id: u256) -> ClientDeveloperModel {
-            self.get_developer_internal(id)
+        fn get_creator(self: @ComponentState<TContractState>, creator_id: u256) -> ClientCreatorModel {
+            self.get_creator_internal(creator_id)
         }
 
         fn change_github_username(
-            ref self: ComponentState<TContractState>, id: u256, username: felt252
+            ref self: ComponentState<TContractState>, creator_id: u256, username: felt252
         ) {
-            self.set_github_username(id, username)
+            self.set_github_username(creator_id, username)
         }
 
         fn change_telegram_handle(
-            ref self: ComponentState<TContractState>, id: u256, handle: felt252
+            ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252
         ) {
-            self.set_telegram_handle(id, handle)
+            self.set_telegram_handle(creator_id, handle)
         }
 
-        fn change_x_handle(ref self: ComponentState<TContractState>, id: u256, handle: felt252) {
-            self.set_x_handle(id, handle)
+        fn change_x_handle(ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252) {
+            self.set_x_handle(creator_id, handle)
         }
 
         fn initialize(
@@ -158,8 +153,8 @@ mod client_developer_component {
         }
     }
 
-    #[embeddable_as(ClientDeveloperCamelImpl)]
-    impl ClientDeveloperCamel<
+    #[embeddable_as(ClientCreatorCamelImpl)]
+    impl ClientCreatorCamel<
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
@@ -170,34 +165,34 @@ mod client_developer_component {
         impl ERC721Mintable: erc721_mintable_comp::HasComponent<TContractState>,
         impl ERC721Owner: erc721_owner_comp::HasComponent<TContractState>,
         +Drop<TContractState>,
-    > of IClientDeveloperCamel<ComponentState<TContractState>> {
-        fn registerDeveloper(
+    > of IClientCreatorCamel<ComponentState<TContractState>> {
+        fn registerCreator(
             ref self: ComponentState<TContractState>,
             github_username: felt252,
             telegram_handle: felt252,
             x_handle: felt252
         ) {
-            self.register_developer(github_username, telegram_handle, x_handle)
+            self.register_creator(github_username, telegram_handle, x_handle)
         }
 
-        fn getDeveloper(self: @ComponentState<TContractState>, id: u256) -> ClientDeveloperModel {
-            self.get_developer(id)
+        fn getCreator(self: @ComponentState<TContractState>, creator_id: u256) -> ClientCreatorModel {
+            self.get_creator(creator_id)
         }
 
         fn changeGithubUsername(
-            ref self: ComponentState<TContractState>, id: u256, username: felt252
+            ref self: ComponentState<TContractState>, creator_id: u256, username: felt252
         ) {
-            self.set_github_username(id, username)
+            self.set_github_username(creator_id, username)
         }
 
         fn changeTelegramHandle(
-            ref self: ComponentState<TContractState>, id: u256, handle: felt252
+            ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252
         ) {
-            self.set_telegram_handle(id, handle)
+            self.set_telegram_handle(creator_id, handle)
         }
 
-        fn changeXHandle(ref self: ComponentState<TContractState>, id: u256, handle: felt252) {
-            self.set_x_handle(id, handle)
+        fn changeXHandle(ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252) {
+            self.set_x_handle(creator_id, handle)
         }
     }
 
@@ -206,76 +201,94 @@ mod client_developer_component {
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
-        // impl ERC721Mintable: erc721_mintable_comp::HasComponent<TContractState>,
+        impl ERC721Owner: erc721_owner_comp::HasComponent<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
-        fn get_developer_internal(
-            self: @ComponentState<TContractState>, id: u256
-        ) -> ClientDeveloperModel {
-            get!(self.get_contract().world(), id.low, (ClientDeveloperModel))
+        fn get_creator_internal(
+            self: @ComponentState<TContractState>, creator_id: u256
+        ) -> ClientCreatorModel {
+            get!(self.get_contract().world(), creator_id.low, (ClientCreatorModel))
         }
 
-        fn set_developer(
+        fn set_creator(
             ref self: ComponentState<TContractState>,
-            id: u256,
+            creator_id: u256,
             github_username: felt252,
             telegram_handle: felt252,
             x_handle: felt252
         ) {
             set!(
                 self.get_contract().world(),
-                ClientDeveloperModel {
-                    id: id.low.try_into().unwrap(), github_username, telegram_handle, x_handle
+                ClientCreatorModel {
+                    creator_id: creator_id.low.try_into().unwrap(), github_username, telegram_handle, x_handle
                 }
             );
 
-            let register_developer_event = RegisterDeveloper {
-                id, github_username, telegram_handle, x_handle
+            let register_creator_event = RegisterCreator {
+                creator_id, github_username, telegram_handle, x_handle
             };
-            self.emit(register_developer_event.clone());
+            self.emit(register_creator_event.clone());
             emit!(
-                self.get_contract().world(), (Event::RegisterDeveloper(register_developer_event))
+                self.get_contract().world(), (Event::RegisterCreator(register_creator_event))
             );
         }
 
         fn set_github_username(
-            ref self: ComponentState<TContractState>, id: u256, username: felt252
+            ref self: ComponentState<TContractState>, creator_id: u256, username: felt252
         ) {
-            let developer_meta = self.get_developer_internal(id);
+            let caller = get_caller_address();
+            let mut erc721_owner = get_dep_component_mut!(ref self, ERC721Owner);
+            assert(
+                erc721_owner.get_owner(creator_id).address == caller,
+                Errors::NOT_CREATOR
+            );
+            let creator_meta = self.get_creator_internal(creator_id);
             set!(
                 self.get_contract().world(),
-                ClientDeveloperModel {
-                    id: developer_meta.id,
+                ClientCreatorModel {
+                    creator_id: creator_meta.creator_id,
                     github_username: username,
-                    telegram_handle: developer_meta.telegram_handle,
-                    x_handle: developer_meta.x_handle
+                    telegram_handle: creator_meta.telegram_handle,
+                    x_handle: creator_meta.x_handle
                 }
             );
         }
 
         fn set_telegram_handle(
-            ref self: ComponentState<TContractState>, id: u256, handle: felt252
+            ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252
         ) {
-            let developer_meta = self.get_developer_internal(id);
+            let caller = get_caller_address();
+            let mut erc721_owner = get_dep_component_mut!(ref self, ERC721Owner);
+            assert(
+                erc721_owner.get_owner(creator_id).address == caller,
+                Errors::NOT_CREATOR
+            );
+            let creator_meta = self.get_creator_internal(creator_id);
             set!(
                 self.get_contract().world(),
-                ClientDeveloperModel {
-                    id: developer_meta.id,
-                    github_username: developer_meta.github_username,
+                ClientCreatorModel {
+                    creator_id: creator_meta.creator_id,
+                    github_username: creator_meta.github_username,
                     telegram_handle: handle,
-                    x_handle: developer_meta.x_handle
+                    x_handle: creator_meta.x_handle
                 }
             );
         }
 
-        fn set_x_handle(ref self: ComponentState<TContractState>, id: u256, handle: felt252) {
-            let developer_meta = self.get_developer_internal(id);
+        fn set_x_handle(ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252) {
+            let caller = get_caller_address();
+            let mut erc721_owner = get_dep_component_mut!(ref self, ERC721Owner);
+            assert(
+                erc721_owner.get_owner(creator_id).address == caller,
+                Errors::NOT_CREATOR
+            );
+            let creator_meta = self.get_creator_internal(creator_id);
             set!(
                 self.get_contract().world(),
-                ClientDeveloperModel {
-                    id: developer_meta.id,
-                    github_username: developer_meta.github_username,
-                    telegram_handle: developer_meta.telegram_handle,
+                ClientCreatorModel {
+                    creator_id: creator_meta.creator_id,
+                    github_username: creator_meta.github_username,
+                    telegram_handle: creator_meta.telegram_handle,
                     x_handle: handle
                 }
             );

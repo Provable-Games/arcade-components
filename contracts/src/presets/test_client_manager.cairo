@@ -5,14 +5,14 @@ use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 use dojo::test_utils::spawn_test_world;
 use ls::tests::constants::{
     ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CLIENT_ID, GITHUB_USERNAME, TELEGRAM_HANDLE,
-    X_HANDLE, CLIENT_NAME, DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL, NAME, SYMBOL, URI, RATING
+    X_HANDLE, CLIENT_NAME, CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL, NAME, SYMBOL, URI, RATING
 };
 use ls::tests::utils;
 
-use ls::components::client::client_developer::{client_developer_model, ClientDeveloperModel};
-use ls::components::client::client_developer::client_developer_component;
-use ls::components::client::client_developer::client_developer_component::{
-    RegisterDeveloper, ClientDeveloperImpl, InternalImpl as ClientDeveloperInternalImpl
+use ls::components::client::client_creator::{client_creator_model, ClientCreatorModel};
+use ls::components::client::client_creator::client_creator_component;
+use ls::components::client::client_creator::client_creator_component::{
+    RegisterCreator, ClientCreatorImpl, InternalImpl as ClientCreatorInternalImpl
 };
 
 use ls::components::client::client_play::{
@@ -74,7 +74,7 @@ fn assert_only_register_client(
 //
 
 fn setup() -> (IWorldDispatcher, IClientManagerDispatcher) {
-    let world = spawn_test_world(array![client_developer_model::TEST_CLASS_HASH,]);
+    let world = spawn_test_world(array![client_creator_model::TEST_CLASS_HASH,]);
 
     // deploy contract
     let mut client_manager_dispatcher = IClientManagerDispatcher {
@@ -83,7 +83,7 @@ fn setup() -> (IWorldDispatcher, IClientManagerDispatcher) {
     };
 
     // setup auth
-    world.grant_writer('ClientDeveloperModel', client_manager_dispatcher.contract_address);
+    world.grant_writer('ClientCreatorModel', client_manager_dispatcher.contract_address);
     world.grant_writer('ClientPlayTotalModel', client_manager_dispatcher.contract_address);
     world.grant_writer('ClientPlayPlayerModel', client_manager_dispatcher.contract_address);
     world.grant_writer('ClientRatingTotalModel', client_manager_dispatcher.contract_address);
@@ -120,11 +120,11 @@ fn test_initializer() {
 }
 
 #[test]
-fn test_register_developer() {
+fn test_register_creator() {
     let (_world, mut client_manager) = setup();
 
     utils::impersonate(OWNER());
-    client_manager.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    client_manager.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
     assert(client_manager.owner_of(0) == OWNER(), 'Should be OWNER');
     assert(client_manager.total_supply() == 1, 'Should be 1');
 }
@@ -134,20 +134,20 @@ fn test_register_client() {
     let (_world, mut client_manager) = setup();
 
     utils::impersonate(OWNER());
-    client_manager.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
-    client_manager.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    client_manager.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    client_manager.register_client(CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL);
 }
 
 #[test]
-#[should_panic(expected: ('Client: Not developer', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ('Client: Not creator', 'ENTRYPOINT_FAILED'))]
 fn test_register_after_transfer() {
     let (_world, mut client_manager) = setup();
 
     utils::impersonate(OWNER());
 
-    client_manager.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    client_manager.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
     client_manager.transfer_from(OWNER(), RECIPIENT(), 0);
-    client_manager.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    client_manager.register_client(CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL);
 }
 
 #[test]
@@ -155,8 +155,8 @@ fn test_play_rate() {
     let (_world, mut client_manager) = setup();
 
     utils::impersonate(OWNER());
-    client_manager.register_developer(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
-    client_manager.register_client(DEVELOPER_ID, GAME_ID, GAME_NAME, GAME_URL);
+    client_manager.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    client_manager.register_client(CREATOR_ID, GAME_ID, GAME_NAME, GAME_URL);
     client_manager.play(0);
     assert(client_manager.get_play_count_total(0) == 1, 'Should be 1');
     assert(client_manager.get_play_count_player(0, OWNER()) == 1, 'Should be 1');

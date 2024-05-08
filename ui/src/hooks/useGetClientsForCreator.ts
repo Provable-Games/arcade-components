@@ -3,20 +3,20 @@ import { useEntityQuery } from "@dojoengine/react";
 import { Has, HasValue, getComponentValue } from "@dojoengine/recs";
 import { useMemo } from "react";
 
-export function useGetPlayersForGame(developerId: bigint | undefined) {
+export function useGetClientsForCreator(creatorId: bigint | undefined) {
   const {
     setup: {
-      clientComponents: { ClientRegistration },
+      clientComponents: { ClientCreator },
     },
   } = useDojo();
 
   const clientEntities = useEntityQuery([
-    Has(ClientRegistration),
-    HasValue(ClientRegistration, { developer_id: developerId }),
+    Has(ClientCreator),
+    HasValue(ClientCreator, { creator_id: creatorId }),
   ]);
   const clients = useMemo(
-    () => clientEntities.map((id) => getComponentValue(ClientRegistration, id)),
-    [clientEntities, ClientRegistration]
+    () => clientEntities.map((id) => getComponentValue(ClientCreator, id)),
+    [clientEntities, ClientCreator]
   );
 
   return {

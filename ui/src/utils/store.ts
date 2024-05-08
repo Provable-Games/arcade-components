@@ -6,5 +6,5 @@ interface State {
 
 export const useElementStore = create<State>((set) => ({
   clientId: null,
-  developerId: null,
+  creatorId: null,
 }));

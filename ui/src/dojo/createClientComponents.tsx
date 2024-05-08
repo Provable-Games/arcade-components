@@ -10,11 +10,23 @@ export function createClientComponents({
 }) {
   return {
     ...contractComponents,
-    ClientDeveloper: overridableComponent(
-      contractComponents.ClientDeveloperModel
+    ClientCreator: overridableComponent(contractComponents.ClientCreatorModel),
+    ClientPlayPlayer: overridableComponent(
+      contractComponents.ClientPlayPlayerModel
+    ),
+    ClientPlayTotal: overridableComponent(
+      contractComponents.ClientPlayTotalModel
+    ),
+    ClientRatingTotal: overridableComponent(
+      contractComponents.ClientRatingTotalModel
+    ),
+    ClientRatingPlayer: overridableComponent(
+      contractComponents.ClientRatingPlayerModel
     ),
     ClientRegistration: overridableComponent(
       contractComponents.ClientRegistrationModel
     ),
+    ClientTotal: overridableComponent(contractComponents.ClientTotalModel),
+    ERC721Owner: overridableComponent(contractComponents.ERC721OwnerModel),
   };
 }

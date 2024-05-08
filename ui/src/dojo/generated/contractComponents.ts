@@ -6,13 +6,13 @@ export type ContractComponents = Awaited<ReturnType<typeof defineContractCompone
 
 export function defineContractComponents(world: World) {
   return {
-    ClientDeveloperModel: (() => {
+    ClientCreatorModel: (() => {
       return defineComponent(
         world,
-        { id: RecsType.BigInt, github_username: RecsType.BigInt, telegram_handle: RecsType.BigInt, x_handle: RecsType.BigInt },
+        { creator_id: RecsType.BigInt, github_username: RecsType.BigInt, telegram_handle: RecsType.BigInt, x_handle: RecsType.BigInt },
         {
           metadata: {
-            name: "ClientDeveloperModel",
+            name: "ClientCreatorModel",
             types: ["u64","felt252","felt252","felt252"],
             customTypes: [],
           },
@@ -74,11 +74,24 @@ export function defineContractComponents(world: World) {
     ClientRegistrationModel: (() => {
       return defineComponent(
         world,
-        { client_id: RecsType.BigInt, developer_id: RecsType.BigInt, game_id: RecsType.BigInt, name: RecsType.BigInt, url: RecsType.BigInt },
+        { client_id: RecsType.BigInt, creator_id: RecsType.BigInt, game_id: RecsType.BigInt, name: RecsType.BigInt, url: RecsType.BigInt },
         {
           metadata: {
             name: "ClientRegistrationModel",
             types: ["u64","u64","u64","felt252","felt252"],
+            customTypes: [],
+          },
+        }
+      );
+    })(),
+    ClientTotalModel: (() => {
+      return defineComponent(
+        world,
+        { contract: RecsType.BigInt, total_clients: RecsType.BigInt },
+        {
+          metadata: {
+            name: "ClientTotalModel",
+            types: ["contractaddress","u128"],
             customTypes: [],
           },
         }
