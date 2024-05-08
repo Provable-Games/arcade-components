@@ -32,10 +32,21 @@ function App() {
     }
   }, [clipboardStatus.message]);
 
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedRegisterTab, setSelectedRegisterTab] = useState(0);
+  const [selectedTableTab, setSelectedTableTab] = useState(0);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setSelectedTab(newValue);
+  const handleRegisterTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: number
+  ) => {
+    setSelectedRegisterTab(newValue);
+  };
+
+  const handleTableTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: number
+  ) => {
+    setSelectedTableTab(newValue);
   };
 
   const accountExists = account && account?.list().length > 0;
@@ -52,51 +63,58 @@ function App() {
           component="main"
           maxWidth={false}
           disableGutters
-          sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            minHeight: "100vh",
+            gap: "24px", // Adjust the gap size as needed }}
+          }}
         >
-          <Grid container spacing={2} sx={{ flex: 1, overflow: "auto" }}>
-            <Grid item xs={12}>
-              <Tabs
-                value={selectedTab}
-                onChange={handleTabChange}
-                aria-label="simple tabs example"
-                variant="fullWidth"
-                sx={{ borderBottom: 1, borderColor: "divider" }}
-              >
-                <Tab label="Creators" />
-                <Tab label="Clients" disabled={creators.length === 0} />
-              </Tabs>
-              {selectedTab === 0 && (
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={9}>
-                    <CreatorTable />
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <RegisterCreatorForm />
-                  </Grid>
-                </Grid>
-              )}
-              {selectedTab === 1 && (
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={9}>
-                    <ClientTable />
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <RegisterClientForm />
-                  </Grid>
-                </Grid>
-              )}
-            </Grid>
-          </Grid>
-          {/* Footer fixed at the bottom */}
           <Box
-            component="footer"
             sx={{
-              height: "400px",
-              width: "100%",
+              flex: "0 0 300px", // This sets the Box to a fixed width of 300px
+              display: "flex",
+              flexDirection: "column",
+              borderRight: 1, // Optional: adds a border line between the tabs and the table
+              borderColor: "divider",
+              paddingRight: "24px", // Optional: adds padding inside the Box
+              minHeight: "100vh",
             }}
           >
-            <CreatorTokens />
+            <Tabs
+              value={selectedRegisterTab}
+              onChange={handleRegisterTabChange}
+              aria-label="simple tabs example"
+              variant="fullWidth"
+              sx={{ borderBottom: 1, borderColor: "divider" }}
+            >
+              <Tab label="Creators" />
+              <Tab label="Game Clients" disabled={creators.length === 0} />
+              <Tab label="Tokens" disabled={creators.length === 0} />
+            </Tabs>
+            {selectedRegisterTab === 0 && <RegisterCreatorForm />}
+            {selectedRegisterTab === 1 && <RegisterClientForm />}
+            {selectedRegisterTab === 2 && <CreatorTokens />}
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "100vh",
+            }}
+          >
+            <Tabs
+              value={selectedTableTab}
+              onChange={handleTableTabChange}
+              aria-label="simple tabs example"
+              variant="fullWidth"
+              sx={{ borderBottom: 1, borderColor: "divider" }}
+            >
+              <Tab label="Clients" />
+              <Tab label="Creators" disabled={creators.length === 0} />
+            </Tabs>
+            {selectedTableTab === 0 && <ClientTable />}
+            {selectedTableTab === 1 && <CreatorTable />}
           </Box>
         </Container>
       )}

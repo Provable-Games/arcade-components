@@ -71,6 +71,34 @@ export function createSystemCalls(
     }
   };
 
+  const changeUrl = async (
+    account: AccountInterface,
+    clientId: bigint,
+    url: bigint
+  ) => {
+    try {
+      const { transaction_hash } = await client.clientRegistration.changeUrl({
+        account,
+        clientId,
+        url,
+      });
+
+      setComponentsFromEvents(
+        contractComponents,
+        getEvents(
+          await account.waitForTransaction(transaction_hash, {
+            retryInterval: 100,
+          })
+        )
+      );
+    } catch (e) {
+      console.log(e);
+      // ClientCreator.removeOverride(clientcreatorId);
+    } finally {
+      // ClientCreator.removeOverride(clientcreatorId);
+    }
+  };
+
   const playClient = async (account: AccountInterface, clientId: bigint) => {
     try {
       const { transaction_hash } = await client.clientPlay.play({
@@ -125,6 +153,7 @@ export function createSystemCalls(
   return {
     registerCreator,
     registerClient,
+    changeUrl,
     playClient,
     rateClient,
   };

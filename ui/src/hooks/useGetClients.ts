@@ -61,7 +61,7 @@ export function useGetClients(): {
       return {
         clientId: client.client_id,
         creatorId: client.creator_id.toString(),
-        gameId: feltToString(client.game_id.toString()),
+        gameId: client.game_id.toString(),
         name: feltToString(client.name.toString()),
         url: feltToString(client.url.toString()),
         playTotal: playTotal, // Includes the play total or 0 if not found

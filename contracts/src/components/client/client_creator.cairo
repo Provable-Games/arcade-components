@@ -8,17 +8,21 @@ use starknet::ContractAddress;
 struct ClientCreatorModel {
     #[key]
     creator_id: u64,
+    name: felt252, // TODO: replace with ByteArray in new dojo version
     github_username: felt252, // TODO: replace with ByteArray in new dojo version
     telegram_handle: felt252, // TODO: replace with ByteArray in new dojo version
     x_handle: felt252, // TODO: replace with ByteArray in new dojo version
+    token_id: u128,
+    // TODO: add some reputation metric
 }
 
 #[starknet::interface]
 trait IClientCreator<TState> {
     fn register_creator(
-        ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
+        ref self: TState, name: felt252, github_username: felt252, telegram_handle: felt252, x_handle: felt252
     );
     fn get_creator(self: @TState, creator_id: u256) -> ClientCreatorModel;
+    fn change_name(ref self: TState, creator_id: u256, name: felt252);
     fn change_github_username(ref self: TState, creator_id: u256, username: felt252);
     fn change_telegram_handle(ref self: TState, creator_id: u256, handle: felt252);
     fn change_x_handle(ref self: TState, creator_id: u256, handle: felt252);
@@ -28,9 +32,10 @@ trait IClientCreator<TState> {
 #[starknet::interface]
 trait IClientCreatorCamel<TState> {
     fn registerCreator(
-        ref self: TState, github_username: felt252, telegram_handle: felt252, x_handle: felt252
+        ref self: TState, name: felt252, githubUsername: felt252, telegramHandle: felt252, xHandle: felt252
     );
     fn getCreator(self: @TState, creator_id: u256) -> ClientCreatorModel;
+    fn changeName(ref self: TState, creator_id: u256, name: felt252);
     fn changeGithubUsername(ref self: TState, creator_id: u256, username: felt252);
     fn changeTelegramHandle(ref self: TState, creator_id: u256, handle: felt252);
     fn changeXHandle(ref self: TState, creator_id: u256, handle: felt252);
@@ -89,9 +94,11 @@ mod client_creator_component {
     #[derive(Copy, Drop, Serde, starknet::Event)]
     struct RegisterCreator {
         creator_id: u256,
+        name: felt252,
         github_username: felt252,
         telegram_handle: felt252,
-        x_handle: felt252
+        x_handle: felt252,
+        token_id: u256
     }
 
     #[embeddable_as(ClientCreatorImpl)]
@@ -109,17 +116,24 @@ mod client_creator_component {
     > of IClientCreator<ComponentState<TContractState>> {
         fn register_creator(
             ref self: ComponentState<TContractState>,
+            name: felt252,
             github_username: felt252,
             telegram_handle: felt252,
             x_handle: felt252
         ) {
             let mut erc721_enumerable = get_dep_component_mut!(ref self, ERC721Enumerable);
             let total_supply = erc721_enumerable.get_total_supply().total_supply.into();
-            self.set_creator(total_supply, github_username, telegram_handle, x_handle);
+            self.set_creator(total_supply, name, github_username, telegram_handle, x_handle, total_supply); // TODO: Make the creator id a separate supply track
             let mut erc721_mintable = get_dep_component_mut!(ref self, ERC721Mintable);
             let caller = get_caller_address();
             erc721_mintable.mint(caller, total_supply);
             erc721_enumerable.set_total_supply(total_supply + 1);
+        }
+
+        fn change_name(
+            ref self: ComponentState<TContractState>, creator_id: u256, name: felt252
+        ) {
+            self.set_name(creator_id, name)
         }
 
         fn get_creator(self: @ComponentState<TContractState>, creator_id: u256) -> ClientCreatorModel {
@@ -168,15 +182,22 @@ mod client_creator_component {
     > of IClientCreatorCamel<ComponentState<TContractState>> {
         fn registerCreator(
             ref self: ComponentState<TContractState>,
-            github_username: felt252,
-            telegram_handle: felt252,
-            x_handle: felt252
+            name: felt252,
+            githubUsername: felt252,
+            telegramHandle: felt252,
+            xHandle: felt252
         ) {
-            self.register_creator(github_username, telegram_handle, x_handle)
+            self.register_creator(name, githubUsername, telegramHandle, xHandle)
         }
 
         fn getCreator(self: @ComponentState<TContractState>, creator_id: u256) -> ClientCreatorModel {
             self.get_creator(creator_id)
+        }
+
+        fn changeName(
+            ref self: ComponentState<TContractState>, creator_id: u256, name: felt252
+        ) {
+            self.change_name(creator_id, name)
         }
 
         fn changeGithubUsername(
@@ -213,19 +234,21 @@ mod client_creator_component {
         fn set_creator(
             ref self: ComponentState<TContractState>,
             creator_id: u256,
+            name: felt252,
             github_username: felt252,
             telegram_handle: felt252,
-            x_handle: felt252
+            x_handle: felt252,
+            token_id: u256
         ) {
             set!(
                 self.get_contract().world(),
                 ClientCreatorModel {
-                    creator_id: creator_id.low.try_into().unwrap(), github_username, telegram_handle, x_handle
+                    creator_id: creator_id.low.try_into().unwrap(), name, github_username, telegram_handle, x_handle, token_id: token_id.low
                 }
             );
 
             let register_creator_event = RegisterCreator {
-                creator_id, github_username, telegram_handle, x_handle
+                creator_id, name, github_username, telegram_handle, x_handle, token_id
             };
             self.emit(register_creator_event.clone());
             emit!(
@@ -233,65 +256,63 @@ mod client_creator_component {
             );
         }
 
-        fn set_github_username(
-            ref self: ComponentState<TContractState>, creator_id: u256, username: felt252
+        fn set_name(
+            ref self: ComponentState<TContractState>, creator_id: u256, name: felt252
         ) {
+            let mut creator_meta = self.get_creator_internal(creator_id);
             let caller = get_caller_address();
             let mut erc721_owner = get_dep_component_mut!(ref self, ERC721Owner);
             assert(
-                erc721_owner.get_owner(creator_id).address == caller,
+                erc721_owner.get_owner(creator_meta.token_id.into()).address == caller,
                 Errors::NOT_CREATOR
             );
-            let creator_meta = self.get_creator_internal(creator_id);
-            set!(
-                self.get_contract().world(),
-                ClientCreatorModel {
-                    creator_id: creator_meta.creator_id,
-                    github_username: username,
-                    telegram_handle: creator_meta.telegram_handle,
-                    x_handle: creator_meta.x_handle
-                }
+            creator_meta.name = name;
+            
+            set!(self.get_contract().world(), (creator_meta,));
+        }
+
+
+        fn set_github_username(
+            ref self: ComponentState<TContractState>, creator_id: u256, username: felt252
+        ) {
+            let mut creator_meta = self.get_creator_internal(creator_id);
+            let caller = get_caller_address();
+            let mut erc721_owner = get_dep_component_mut!(ref self, ERC721Owner);
+            assert(
+                erc721_owner.get_owner(creator_meta.token_id.into()).address == caller,
+                Errors::NOT_CREATOR
             );
+            creator_meta.github_username = username;
+            
+            set!(self.get_contract().world(), (creator_meta,));
         }
 
         fn set_telegram_handle(
             ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252
         ) {
+            let mut creator_meta = self.get_creator_internal(creator_id);
             let caller = get_caller_address();
             let mut erc721_owner = get_dep_component_mut!(ref self, ERC721Owner);
             assert(
-                erc721_owner.get_owner(creator_id).address == caller,
+                erc721_owner.get_owner(creator_meta.token_id.into()).address == caller,
                 Errors::NOT_CREATOR
             );
-            let creator_meta = self.get_creator_internal(creator_id);
-            set!(
-                self.get_contract().world(),
-                ClientCreatorModel {
-                    creator_id: creator_meta.creator_id,
-                    github_username: creator_meta.github_username,
-                    telegram_handle: handle,
-                    x_handle: creator_meta.x_handle
-                }
-            );
+            creator_meta.telegram_handle = handle;
+            
+            set!(self.get_contract().world(), (creator_meta,));
         }
 
         fn set_x_handle(ref self: ComponentState<TContractState>, creator_id: u256, handle: felt252) {
+            let mut creator_meta = self.get_creator_internal(creator_id);
             let caller = get_caller_address();
             let mut erc721_owner = get_dep_component_mut!(ref self, ERC721Owner);
             assert(
-                erc721_owner.get_owner(creator_id).address == caller,
+                erc721_owner.get_owner(creator_meta.token_id.into()).address == caller,
                 Errors::NOT_CREATOR
             );
-            let creator_meta = self.get_creator_internal(creator_id);
-            set!(
-                self.get_contract().world(),
-                ClientCreatorModel {
-                    creator_id: creator_meta.creator_id,
-                    github_username: creator_meta.github_username,
-                    telegram_handle: creator_meta.telegram_handle,
-                    x_handle: handle
-                }
-            );
+            creator_meta.x_handle = handle;
+            
+            set!(self.get_contract().world(), (creator_meta,));
         }
     }
 }

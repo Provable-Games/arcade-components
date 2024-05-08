@@ -9,11 +9,11 @@ export function defineContractComponents(world: World) {
     ClientCreatorModel: (() => {
       return defineComponent(
         world,
-        { creator_id: RecsType.BigInt, github_username: RecsType.BigInt, telegram_handle: RecsType.BigInt, x_handle: RecsType.BigInt },
+        { creator_id: RecsType.BigInt, name: RecsType.BigInt, github_username: RecsType.BigInt, telegram_handle: RecsType.BigInt, x_handle: RecsType.BigInt, token_id: RecsType.BigInt },
         {
           metadata: {
             name: "ClientCreatorModel",
-            types: ["u64","felt252","felt252","felt252"],
+            types: ["u64","felt252","felt252","felt252","felt252","u128"],
             customTypes: [],
           },
         }

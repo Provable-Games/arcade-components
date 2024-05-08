@@ -6,6 +6,7 @@ import { useDojo } from "../dojo/useDojo";
 import { stringToFelt } from "../utils";
 
 interface RegisterCreatorData {
+  name: string;
   githubUsername: string;
   telegramHandle: string;
   xHandle: string;
@@ -20,6 +21,7 @@ const RegisterCreatorForm: React.FC = () => {
   } = useDojo();
 
   const [formData, setFormData] = useState<RegisterCreatorData>({
+    name: "",
     githubUsername: "",
     telegramHandle: "",
     xHandle: "",
@@ -34,6 +36,7 @@ const RegisterCreatorForm: React.FC = () => {
 
   const isFormComplete = (): boolean => {
     return (
+      Boolean(formData.name) &&
       Boolean(formData.githubUsername) &&
       Boolean(formData.telegramHandle) &&
       Boolean(formData.xHandle)
@@ -44,6 +47,7 @@ const RegisterCreatorForm: React.FC = () => {
     event.preventDefault();
     console.log("Submitted data:", formData);
     registerCreator(account.account, {
+      name: BigInt(stringToFelt(formData.name)),
       githubUsername: BigInt(stringToFelt(formData.githubUsername)),
       telegramHandle: BigInt(stringToFelt(formData.telegramHandle)),
       xHandle: BigInt(stringToFelt(formData.xHandle)),
@@ -52,9 +56,21 @@ const RegisterCreatorForm: React.FC = () => {
 
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-      <Typography variant="h5" component="h2" sx={{ textAlign: "left" }}>
+      <Typography variant="h5" component="h2" sx={{ textAlign: "center" }}>
         Register Creator
       </Typography>
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="name"
+        label="Name"
+        name="name"
+        autoComplete="name"
+        autoFocus
+        value={formData.name}
+        onChange={handleChange}
+      />
       <TextField
         margin="normal"
         required

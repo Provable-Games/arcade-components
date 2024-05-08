@@ -1,6 +1,7 @@
 import { BigNumberish, shortString } from "starknet";
 
 export type CreatorDetails = {
+  name: BigNumberish;
   githubUsername: BigNumberish;
   telegramHandle: BigNumberish;
   xHandle: BigNumberish;

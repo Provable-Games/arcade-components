@@ -4,7 +4,7 @@ use integer::BoundedInt;
 use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 use dojo::test_utils::spawn_test_world;
 use ls::tests::constants::{
-    ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE,
+    ZERO, OWNER, SPENDER, RECIPIENT, TOKEN_ID, CREATOR_NAME, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE,
     NEW_GITHUB_USERNAME, NEW_TELEGRAM_HANDLE, NEW_X_HANDLE, CREATOR_ID
 };
 use ls::tests::utils;
@@ -34,12 +34,14 @@ use debug::PrintTrait;
 fn assert_event_register_creator(
     emitter: ContractAddress,
     creator_id: u256,
+    name: felt252,
     github_username: felt252,
     telegram_handle: felt252,
     x_handle: felt252
 ) {
     let event = utils::pop_log::<RegisterCreator>(emitter).unwrap();
     assert(event.creator_id == creator_id, 'Invalid `id`');
+    assert(event.name == name, 'Invalid `name`');
     assert(event.github_username == github_username, 'Invalid `github_username`');
     assert(event.telegram_handle == telegram_handle, 'Invalid `telegram_handle`');
     assert(event.x_handle == x_handle, 'Invalid `x_handle`');
@@ -48,11 +50,12 @@ fn assert_event_register_creator(
 fn assert_only_register_creator(
     emitter: ContractAddress,
     creator_id: u256,
+    name: felt252,
     github_username: felt252,
     telegram_handle: felt252,
     x_handle: felt252
 ) {
-    assert_event_register_creator(emitter, creator_id, github_username, telegram_handle, x_handle);
+    assert_event_register_creator(emitter, creator_id, name, github_username, telegram_handle, x_handle);
     utils::assert_no_events_left(emitter);
 }
 
@@ -83,9 +86,9 @@ fn test_client_register_creator() {
 
     testing::set_caller_address(OWNER());
 
-    state.client_creator.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.client_creator.register_creator(CREATOR_NAME, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
 
-    assert_event_register_creator(ZERO(), 0, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    assert_event_register_creator(ZERO(), 0, CREATOR_NAME, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
 
     assert(state.erc721_balance.balance_of(OWNER()) == 1, 'Should be 1');
 }
@@ -100,7 +103,7 @@ fn test_client_change_creator_details() {
 
     testing::set_caller_address(OWNER());
 
-    state.client_creator.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.client_creator.register_creator(CREATOR_NAME, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
     utils::drop_all_events(ZERO());
     utils::assert_no_events_left(ZERO());
     state.client_creator.change_github_username(0, NEW_GITHUB_USERNAME);
@@ -115,7 +118,7 @@ fn test_change_after_transfer() {
 
     testing::set_caller_address(OWNER());
 
-    state.client_creator.register_creator(GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
+    state.client_creator.register_creator(CREATOR_NAME, GITHUB_USERNAME, TELEGRAM_HANDLE, X_HANDLE);
     state.erc721_balance.transfer_from(OWNER(), RECIPIENT(), 0);
     state.client_creator.change_github_username(CREATOR_ID, NEW_GITHUB_USERNAME);
 }

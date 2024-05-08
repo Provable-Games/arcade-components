@@ -53,8 +53,8 @@ export interface RegisterClientProps {
 
 export interface ChangeUrlProps {
   account: Account | AccountInterface;
-  clientId: number;
-  url: number;
+  clientId: bigint;
+  url: bigint;
 }
 
 export async function setupWorld(provider: DojoProvider) {
@@ -69,6 +69,7 @@ export async function setupWorld(provider: DojoProvider) {
     }: RegisterCreatorProps) => {
       try {
         return await execute(account, contract_name, "register_creator", [
+          creatorDetails.name,
           creatorDetails.githubUsername,
           creatorDetails.telegramHandle,
           creatorDetails.xHandle,
@@ -161,7 +162,7 @@ export async function setupWorld(provider: DojoProvider) {
           rating,
         ]);
       } catch (error) {
-        console.error("Error executing play:", error);
+        console.error("Error executing rate:", error);
         throw error;
       }
     };
@@ -186,7 +187,7 @@ export async function setupWorld(provider: DojoProvider) {
           clientDetails.url,
         ]);
       } catch (error) {
-        console.error("Error executing play:", error);
+        console.error("Error executing client registration:", error);
         throw error;
       }
     };
@@ -194,11 +195,12 @@ export async function setupWorld(provider: DojoProvider) {
     const changeUrl = async ({ account, clientId, url }: ChangeUrlProps) => {
       try {
         return await execute(account, contract_name, "change_url", [
-          clientId,
+          uint256.bnToUint256(clientId).low,
+          uint256.bnToUint256(clientId).high,
           url,
         ]);
       } catch (error) {
-        console.error("Error executing play:", error);
+        console.error("Error executing change url:", error);
         throw error;
       }
     };

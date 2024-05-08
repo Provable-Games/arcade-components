@@ -2,12 +2,12 @@ mod mocks {
     // mod initializable_mock;
     // mod src5_mock;
 
-    // mod client {
-    //     mod client_creator_mock;
-    //     mod client_play_mock;
-    //     mod client_rating_mock;
-    //     mod client_registration_mock;
-    // }
+    mod client {
+        // mod client_creator_mock;
+        // mod client_play_mock;
+        // mod client_rating_mock;
+        // mod client_registration_mock;
+    }
 
     // mod erc20 {
     //     mod erc20_allowance_mock;
