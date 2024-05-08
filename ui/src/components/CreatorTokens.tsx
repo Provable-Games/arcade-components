@@ -29,13 +29,10 @@ const CreatorTokens: React.FC = () => {
     // Implement the transfer logic here
   };
 
-  const handleBurn = (nftId: bigint) => {
-    console.log(`Burn NFT with ID ${nftId}`);
-    // Implement the burn logic here
-  };
-
   return (
-    <Box sx={{ flexGrow: 1, overflow: "hidden", padding: 2 }}>
+    <Box
+      sx={{ flexGrow: 1, overflow: "scroll", padding: 2, maxHeight: "800px" }}
+    >
       <Typography
         variant="h5"
         component="h2"
@@ -57,20 +54,20 @@ const CreatorTokens: React.FC = () => {
                     component="img"
                     height="140"
                     image={"creator.webp"} // Update this URL based on actual image sources
-                    alt={creator.github_username}
+                    alt={creator.githubUsername}
                   />
                   <CardContent>
                     <Typography variant="body1" color="text.primary">
-                      Creator: {creator.creator_id.toString()}
+                      Creator: {creator.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Github: {creator.github_username}
+                      Github: {creator.githubUsername}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Telegram: {creator.telegram_handle}
+                      Telegram: {creator.telegramHandle}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      X: {creator.x_handle}
+                      X: {creator.xHandle}
                     </Typography>
                   </CardContent>
                   <CardActions>
@@ -85,16 +82,9 @@ const CreatorTokens: React.FC = () => {
                     <Button
                       variant="contained"
                       color="primary"
-                      onClick={() => handleTransfer(BigInt(creator.creator_id))}
+                      onClick={() => handleTransfer(BigInt(creator.creatorId))}
                     >
                       Send
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleBurn(BigInt(creator.creator_id))}
-                    >
-                      Burn
                     </Button>
                   </CardActions>
                 </Card>

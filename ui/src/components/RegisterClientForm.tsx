@@ -113,7 +113,7 @@ const RegisterClientForm: React.FC = () => {
 
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-      <Typography variant="h5" component="h2" sx={{ textAlign: "left" }}>
+      <Typography variant="h5" component="h2" sx={{ textAlign: "center" }}>
         Register Client
       </Typography>
       <FormControl fullWidth margin="normal">
@@ -127,8 +127,8 @@ const RegisterClientForm: React.FC = () => {
           onChange={handleSelectChange}
         >
           {creators.map((creator) => (
-            <MenuItem key={creator.creator_id} value={creator.creator_id}>
-              {creator.creator_id.toString()}
+            <MenuItem key={creator.creatorId} value={creator.creatorId}>
+              {creator.creatorId.toString()}
             </MenuItem>
           ))}
         </Select>

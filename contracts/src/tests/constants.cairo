@@ -15,6 +15,7 @@ const TOKEN_ID_2: u128 = 2;
 const TOKEN_AMOUNT_2: u256 = 69;
 const PUBKEY: felt252 = 'PUBKEY';
 const OTHER_ID: felt252 = 'OTHER_ID';
+const CREATOR_NAME: felt252 = 'CREATOR_NAME';
 const GITHUB_USERNAME: felt252 = 'GITHUB_USERNAME';
 const TELEGRAM_HANDLE: felt252 = 'TELEGRAM_HANDLE';
 const X_HANDLE: felt252 = 'X_HANDLE';

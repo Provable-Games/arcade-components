@@ -17,10 +17,11 @@ export function useGetCreatorsForOwner(tokenIds: bigint[]) {
       const creator = getComponentValue(ClientCreator, id);
       if (creator && tokenIds.includes(creator.creator_id)) {
         const creatorDetails = {
-          creator_id: creator.creator_id,
-          github_username: feltToString(creator.github_username.toString()),
-          telegram_handle: feltToString(creator.telegram_handle.toString()),
-          x_handle: feltToString(creator.x_handle.toString()),
+          creatorId: creator.creator_id,
+          name: feltToString(creator.name.toString()),
+          githubUsername: feltToString(creator.github_username.toString()),
+          telegramHandle: feltToString(creator.telegram_handle.toString()),
+          xHandle: feltToString(creator.x_handle.toString()),
         };
         acc.push(creatorDetails);
       }
