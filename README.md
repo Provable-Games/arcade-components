@@ -20,11 +20,12 @@ We believe this a big step towards FOCG with fully headless clients. A client ma
 ## Demo Manager UI
 
 There is a prototype front end for a client manager provided in this repo to showcase the features of the components.
-
-<img src="images/creator-registration.png" width="300" height="400" alt="Creator Registration">
-<img src="images/creator-tokens.png" width="300" height="400" alt="Creator Tokens">
-<img src="images/client-registration.png" width="300" height="400" alt="Client Registration">
+<p align="left">
+<img src="images/creator-registration.png" width="300" height="450" alt="Creator Registration">
+<img src="images/creator-tokens.png" width="300" height="450" alt="Creator Tokens">
+<img src="images/client-registration.png" width="300" height="450" alt="Client Registration">
 <img src="images/client-table.png" width="800" height="400" alt="Client Table">
+</p>
 
 ### Setup
 
