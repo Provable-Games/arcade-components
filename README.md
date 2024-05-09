@@ -24,7 +24,7 @@ There is a prototype front end for a client manager provided in this repo to sho
 <img src="images/creator-registration.png" width="300" height="400" alt="Creator Registration">
 <img src="images/creator-tokens.png" width="300" height="400" alt="Creator Tokens">
 <img src="images/client-registration.png" width="300" height="400" alt="Client Registration">
-<img src="images/client-table.png" width="300" height="400" alt="Client Table">
+<img src="images/client-table.png" width="800" height="400" alt="Client Table">
 
 ### Setup
 
