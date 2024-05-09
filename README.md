@@ -36,6 +36,7 @@ cd contracts
 sozo build
 katana --disable-fee
 sozo migrate apply
+./scripts/auth.sh // authorisation for models (update client manager address)
 tori --world <WORLD_ADDRESS> --allowed-origins "*"
 ```
 
