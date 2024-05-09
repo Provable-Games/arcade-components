@@ -128,7 +128,7 @@ const RegisterClientForm: React.FC = () => {
         >
           {creators.map((creator) => (
             <MenuItem key={creator.creatorId} value={creator.creatorId}>
-              {creator.creatorId.toString()}
+              {creator.name}
             </MenuItem>
           ))}
         </Select>

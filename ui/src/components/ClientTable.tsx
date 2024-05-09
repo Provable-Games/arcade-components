@@ -19,7 +19,6 @@ import {
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useGetClients } from "../hooks/useGetClients";
 import { useGetOwnersForAddress } from "../hooks/useGetOwnersForAddress";
-import { useGetCreatorsForOwner } from "../hooks/useGetCreatorsForOwner";
 import { useDojo } from "../dojo/useDojo";
 import { useGetCreators } from "../hooks/useGetCreators";
 import { isValidUrl } from "../utils/validate";
@@ -36,7 +35,6 @@ const ClientTable: React.FC = () => {
   const { ownerTokens } = useGetOwnersForAddress(
     BigInt(account?.account.address)
   );
-  const { creators: ownerCreators } = useGetCreatorsForOwner(ownerTokens);
 
   const [isEditUrls, setIsEditUrls] = useState<{ [key: string]: string }>({});
   const [editUrls, setEditUrls] = useState<{ [key: string]: string }>({});
@@ -97,6 +95,12 @@ const ClientTable: React.FC = () => {
     filterName: "",
     filterUrl: "",
   });
+
+  // Create a mapping from creatorId to creator's name
+  const creatorMap = creators.reduce((acc, creator) => {
+    acc[creator.creatorId] = creator.name;
+    return acc;
+  }, {});
 
   const filteredClients = clients.filter(
     (client) =>
@@ -179,7 +183,7 @@ const ClientTable: React.FC = () => {
         <Table stickyHeader aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell>Creator ID</TableCell>
+              <TableCell>Creator</TableCell>
               <TableCell>Game ID</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>URL</TableCell>
@@ -191,7 +195,7 @@ const ClientTable: React.FC = () => {
           <TableBody>
             {filteredClients.map((client, index) => (
               <TableRow key={index}>
-                <TableCell>{client.creatorId}</TableCell>
+                <TableCell>{creatorMap[client.creatorId]}</TableCell>
                 <TableCell>{games[client.gameId]}</TableCell>
                 <TableCell>{client.name}</TableCell>
                 <TableCell>
