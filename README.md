@@ -2,14 +2,18 @@
 
 ## Overview
 
-This repo contains dojo components that enable the registering of clients and tracking of key metrics and creator portfolios. We are actively developing the ERC721 components which will be contributed to [Origami](https://github.com/dojoengine/origami) (an open-source dojo library).
+This repo contains dojo-compatible cairo components that can be used to build a permissionlessly expandable game world. The top-level component is the Creator Registration Component which everything else depends on. Once a creator has been registered in the world, other things can be added such as Item, Characters, Settings, Games, and custom Game Clients.
+
+We are actively developing a DOJO-compatible ERC721 component which will be contributed to [Origami](https://github.com/dojoengine/origami) (an open-source dojo library). The significance of a DOJO-compatible ERC721 component is that it enables our Creator Registration Component to bring in the OZ ERC721 Component that is DOJO compatible.
 
 The client components are isolated for separate functions:
-
-- Creator Registration
-- Client Registration
-- Play Tracking
-- Rating Tracking
+- Creator Registration (available)
+- Client Registration (available)
+  - Provides client specific statistics such as games played and rating system 
+- Item Registration (coming soon)
+- Character Registration (coming soon)
+- Setings Registration (coming soon)
+- Game Registration (coming soon)
 
 ## Functionality
 
