@@ -47,28 +47,37 @@ export function useGetClients(): {
     });
 
     // Now map over clientEntities and append the play totals if available or default to 0
-    return clientEntities.map((id) => {
-      const client = getComponentValue(ClientRegistration, id);
-      if (!client) return null;
+    const clients = clientEntities
+      .map((id) => {
+        const client = getComponentValue(ClientRegistration, id);
+        if (!client) return null;
 
-      // Look up the play total or default to 0
-      const playTotal = playTotalsMap.get(client.client_id.toString()) || 0;
-      const rating = ratingTotalsMap.get(client.client_id.toString()) || {
-        ratingTotal: 0,
-        voteCount: 0,
-      };
+        // Look up the play total or default to 0
+        const playTotal = playTotalsMap.get(client.client_id.toString()) || 0;
+        const rating = ratingTotalsMap.get(client.client_id.toString()) || {
+          ratingTotal: 0,
+          voteCount: 0,
+        };
 
-      return {
-        clientId: client.client_id,
-        creatorId: client.creator_id.toString(),
-        gameId: client.game_id.toString(),
-        name: feltToString(client.name.toString()),
-        url: feltToString(client.url.toString()),
-        playTotal: playTotal, // Includes the play total or 0 if not found
-        ratingTotal: rating.ratingTotal, // Includes the rating or 0 if not found
-        voteCount: rating.voteCount, // Includes the rating or 0 if not found
-      };
-    });
+        return {
+          clientId: client.client_id,
+          creatorId: client.creator_id.toString(),
+          gameId: client.game_id.toString(),
+          name: feltToString(client.name.toString()),
+          url: feltToString(client.url.toString()),
+          playTotal: playTotal,
+          ratingTotal: rating.ratingTotal,
+          voteCount: rating.voteCount,
+        };
+      })
+      .filter(
+        (client): client is NonNullable<typeof client> => client !== null
+      );
+
+    // Sort clients by ratingTotal in descending order
+    clients.sort((a, b) => b.ratingTotal - a.ratingTotal);
+
+    return clients;
   }, [clientEntities, playEntities, ClientRegistration, ClientPlayTotal]);
 
   return {

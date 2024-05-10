@@ -153,7 +153,7 @@ const ClientTable: React.FC = () => {
           >
             {creators.map((client) => (
               <MenuItem key={client.creatorId} value={client.creatorId}>
-                {client.creatorId.toString()}
+                {creatorMap[client.creatorId]}
               </MenuItem>
             ))}
           </Select>
@@ -184,7 +184,7 @@ const ClientTable: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>Creator</TableCell>
-              <TableCell>Game ID</TableCell>
+              <TableCell>Game</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>URL</TableCell>
               <TableCell>Played Count</TableCell>

@@ -6,18 +6,26 @@ import { useMemo } from "react";
 export function useGetClientsForCreator(creatorId: bigint | undefined) {
   const {
     setup: {
-      clientComponents: { ClientCreator },
+      clientComponents: { ClientRegistration },
     },
   } = useDojo();
 
   const clientEntities = useEntityQuery([
-    Has(ClientCreator),
-    HasValue(ClientCreator, { creator_id: creatorId }),
+    Has(ClientRegistration),
+    HasValue(ClientRegistration, { creator_id: creatorId }),
   ]);
   const clients = useMemo(
-    () => clientEntities.map((id) => getComponentValue(ClientCreator, id)),
-    [clientEntities, ClientCreator]
+    () =>
+      clientEntities
+        .map((id) => getComponentValue(ClientRegistration, id))
+        .filter(
+          (client): client is NonNullable<typeof client> => client !== null
+        ),
+    [clientEntities, ClientRegistration]
   );
+
+  // // Sort clients by ratingTotal in descending order
+  // clients.sort((a, b) => b.ratingTotal - a.ratingTotal);
 
   return {
     clients,
