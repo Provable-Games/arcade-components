@@ -1,0 +1,17 @@
+kind = "DojoModel"
+class_hash = "0x115578dfe1a7d2bd0782014550285f8c3cc577cb1cdcba0564a8ec5124d7617"
+original_class_hash = "0x115578dfe1a7d2bd0782014550285f8c3cc577cb1cdcba0564a8ec5124d7617"
+abi = "manifests/dev/base/abis/models/tournament-AdventurerModel-2be0b0a3.json"
+tag = "tournament-AdventurerModel"
+qualified_path = "tournament::ls15_components::loot_survivor::adventurer_model"
+manifest_name = "tournament-AdventurerModel-2be0b0a3"
+
+[[members]]
+name = "adventurer_id"
+type = "felt252"
+key = true
+
+[[members]]
+name = "adventurer"
+type = "Adventurer"
+key = false

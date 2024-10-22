@@ -1,0 +1,27 @@
+kind = "DojoModel"
+class_hash = "0x74625e14557b9e20b9553f996902764500fab012cb863e51404e17cde1e82d6"
+original_class_hash = "0x74625e14557b9e20b9553f996902764500fab012cb863e51404e17cde1e82d6"
+abi = "manifests/dev/base/abis/models/tournament-Contracts-2d9303ac.json"
+tag = "tournament-Contracts"
+qualified_path = "tournament::ls15_components::loot_survivor::contracts"
+manifest_name = "tournament-Contracts-2d9303ac"
+
+[[members]]
+name = "contract"
+type = "ContractAddress"
+key = true
+
+[[members]]
+name = "eth"
+type = "ContractAddress"
+key = false
+
+[[members]]
+name = "lords"
+type = "ContractAddress"
+key = false
+
+[[members]]
+name = "oracle"
+type = "ContractAddress"
+key = false

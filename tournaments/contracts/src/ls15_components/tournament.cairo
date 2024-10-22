@@ -83,7 +83,7 @@ struct TournamentEntriesModel {
 struct TournamentScoresModel {
     #[key]
     tournament_id: u64,
-    scores: Array<u16>,
+    top_score_ids: Array<u128>,
 }
 
 #[dojo::model]
@@ -124,7 +124,7 @@ struct TournamentContracts {
 trait ITournament<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn top_scores(self: @TState, tournament_id: u64) -> Array<u16>;
+    fn top_scores(self: @TState, tournament_id: u64) -> Array<u128>;
     fn is_tournament_active(self: @TState, tournament_id: u64) -> bool;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     fn create_tournament(
@@ -315,8 +315,8 @@ mod tournament_component {
             self.get_tournament(tournament_id)
         }
 
-        fn top_scores(self: @ComponentState<TContractState>, tournament_id: u64) -> Array<u16> {
-            self.get_tournament_scores(tournament_id).scores
+        fn top_scores(self: @ComponentState<TContractState>, tournament_id: u64) -> Array<u128> {
+            self.get_tournament_scores(tournament_id).top_score_ids
         }
 
         fn is_tournament_active(self: @ComponentState<TContractState>, tournament_id: u64) -> bool {
@@ -535,6 +535,7 @@ mod tournament_component {
             };
             let mut num_games = game_ids.len();
             let mut game_index = 0;
+            let mut new_score_ids = ArrayTrait::<u128>::new();
             loop {
                 if game_index == num_games {
                     break;
@@ -551,12 +552,16 @@ mod tournament_component {
                 // self._assert_loot_requirements(tournament_id, adventurer, bag);
 
                 if self._is_top_score(tournament_id, adventurer.xp) {
-                    self._update_tournament_scores(tournament_id, game_id, adventurer.xp, game_index);
+                    self._update_tournament_scores(tournament_id, game_id, adventurer.xp, ref new_score_ids, game_index);
                 }
 
                 self.set_submitted_score(tournament_id, game_id, adventurer.xp);
                 game_index += 1;
-            }
+            };
+            set!(
+                self.get_contract().world(),
+                (TournamentScoresModel { tournament_id, top_score_ids: new_score_ids })
+            );
         }
 
         // TODO: to protect step errors can be claimed for set of game ids
@@ -568,12 +573,12 @@ mod tournament_component {
             );
             self._assert_tournament_not_claimed(tournament_id);
 
-            let mut tournament_scores = self.get_tournament_scores(tournament_id).scores;
+            let mut top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
             let tournament = self.get_tournament(tournament_id);
 
-            self._distribute_prizes(tournament.prizes, ref tournament_scores);
+            self._distribute_prizes(tournament.prizes, ref top_score_ids);
 
-            self._claimed(tournament_id, tournament_scores);
+            self._claimed(tournament_id, top_score_ids);
         }
     }
 
@@ -638,6 +643,15 @@ mod tournament_component {
             get!(self.get_contract().world(), (tournament_id), (TournamentScoresModel))
         }
 
+        fn get_score_from_id(
+            self: @ComponentState<TContractState>, game_id: u128
+        ) -> u16 {
+            let ls_dispatcher = ILootSurvivorDispatcher {
+                contract_address: self.get_contracts().loot_survivor
+            };
+            ls_dispatcher.get_adventurer(game_id.try_into().unwrap()).xp
+        }
+
         fn _is_tournament_started(
             self: @ComponentState<TContractState>, tournament_id: u64
         ) -> bool {
@@ -662,14 +676,15 @@ mod tournament_component {
         fn _is_top_score(
             self: @ComponentState<TContractState>, tournament_id: u64, score: u16
         ) -> bool {
-            let top_scores = self.get_tournament_scores(tournament_id).scores;
-            let num_scores = top_scores.len();
+            let top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
+            let num_scores = top_score_ids.len();
             if num_scores == 0 {
                 true
             } else {
-                let last_place = *top_scores.at(num_scores - 1);
+                let last_place_id = *top_score_ids.at(num_scores - 1);
+                let last_place_score = self.get_score_from_id(last_place_id);
                 // if same score then score is not added (first to get score has privelage)
-                score > last_place
+                score > last_place_score
             }
         }
 
@@ -939,49 +954,35 @@ mod tournament_component {
         }
 
         fn _update_tournament_scores(
-            ref self: ComponentState<TContractState>, tournament_id: u64, game_id: u256, score: u16, game_index: u32
+            ref self: ComponentState<TContractState>, tournament_id: u64, game_id: u256, score: u16, ref new_score_ids: Array<u128>, game_index: u32
         ) {
-            let leaderboard_size = self.get_tournament(tournament_id).leaderboard_size;
+            // let leaderboard_size = self.get_tournament(tournament_id).leaderboard_size;
             // get current scores which will be mutated as part of this function
-            let mut top_scores = self.get_tournament_scores(tournament_id).scores;
-            let mut new_scores = ArrayTrait::<u16>::new();
+            let mut top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
+            let num_scores = top_score_ids.len();
 
-            let num_scores = top_scores.len();
             if num_scores == 0 {
-                new_scores.append(score);
+                new_score_ids.append(game_id.low);
             } else {
-                let mut score_index = 0;
-                let mut score_added = false;
-                loop {
-                    if score_index == num_scores || new_scores.len() == leaderboard_size.into() {
-                        break;
-                    }
-                    // if score is better than add it to the front
-                    if score > *top_scores.at(score_index) && !score_added {
-                        new_scores.append(score);
-                        // shift score if not bigger than leaderboard size
-                        if new_scores.len() < leaderboard_size.into() {
-                            new_scores.append(*top_scores.at(score_index));
-                        }
-                        score_added = true;
+                if (game_index < num_scores) {
+                    let top_score_id = *top_score_ids.at(game_index);
+                    let top_score = self.get_score_from_id(top_score_id);
+                    if (score > top_score) {
+                        new_score_ids.append(game_id.low);
                     } else {
-                        new_scores.append(*top_scores.at(score_index));
+                        new_score_ids.append(top_score_id);
                     }
-                    score_index += 1;
-                };
+                } else {
+                    new_score_ids.append(game_id.low);
+                }
             }
-
-            set!(
-                self.get_contract().world(),
-                (TournamentScoresModel { tournament_id, scores: new_scores })
-            );
             // let new_high_score_event = NewHighScore { tournament_id, game_id, score, rank };
         // self.emit(new_high_score_event.clone());
         // emit!(self.get_contract().world(), (Event::NewHighScore(new_high_score_event)));
         }
 
         fn _claimed(
-            ref self: ComponentState<TContractState>, tournament_id: u64, scores: Array<u16>
+            ref self: ComponentState<TContractState>, tournament_id: u64, scores: Array<u128>
         ) {
             let mut tournament = self.get_tournament(tournament_id);
             tournament.claimed = true;
@@ -1073,7 +1074,7 @@ mod tournament_component {
         fn _distribute_prizes(
             ref self: ComponentState<TContractState>,
             prizes: Array<PrizeType>,
-            ref scores: Array<u16>
+            ref top_score_ids: Array<u128>
         ) {
             let contracts = self.get_contracts();
             let num_prizes = prizes.len();
@@ -1096,7 +1097,8 @@ mod tournament_component {
                             }
                             let prize_distribution = prize.token_distribution;
                             let distribution = *prize_distribution.at(distribution_index);
-                            let score = *scores.at(distribution_index);
+                            let score_id = *top_score_ids.at(distribution_index);
+                            let score = self.get_score_from_id(score_id);
                             let amount = self
                                 ._calculate_payout(distribution.into(), *prize.token_amount);
                             if (amount > 0) {
@@ -1110,7 +1112,8 @@ mod tournament_component {
                     PrizeType::erc721(prize) => {
                         let token_dispatcher = IERC721Dispatcher { contract_address: *prize.token };
                         let distribution_position = *prize.position;
-                        let score = *scores.at(distribution_position.into() - 1);
+                        let score_id = *top_score_ids.at(distribution_position.into() - 1);
+                        let score = self.get_score_from_id(score_id);
                         let address = self._get_owner(contracts.loot_survivor, score.into());
                         token_dispatcher
                             .transfer_from(
@@ -1131,7 +1134,8 @@ mod tournament_component {
                             }
                             let prize_distribution = prize.token_distribution;
                             let distribution = *prize_distribution.at(distribution_index);
-                            let score = *scores.at(distribution_index);
+                            let score_id = *top_score_ids.at(distribution_index);
+                            let score = self.get_score_from_id(score_id);
                             let amount = self
                                 ._calculate_payout(distribution.into(), *prize.token_amount);
                             if (amount > 0) {

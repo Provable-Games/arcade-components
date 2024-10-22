@@ -1,0 +1,17 @@
+kind = "DojoModel"
+class_hash = "0x70c7757cde63055e439cd16c6bc48edcb0d5f214c3637a61015ad6e5d56f972"
+original_class_hash = "0x70c7757cde63055e439cd16c6bc48edcb0d5f214c3637a61015ad6e5d56f972"
+abi = "manifests/dev/base/abis/models/tournament-GameCountModel-1ec0ade9.json"
+tag = "tournament-GameCountModel"
+qualified_path = "tournament::ls15_components::loot_survivor::game_count_model"
+manifest_name = "tournament-GameCountModel-1ec0ade9"
+
+[[members]]
+name = "contract_address"
+type = "ContractAddress"
+key = true
+
+[[members]]
+name = "game_count"
+type = "u128"
+key = false

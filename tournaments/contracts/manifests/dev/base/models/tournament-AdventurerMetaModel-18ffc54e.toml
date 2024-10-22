@@ -1,0 +1,17 @@
+kind = "DojoModel"
+class_hash = "0x545717edfd48f84ecf42c1b750a1bdee63b408ea27a249ac5d3b2af026a1414"
+original_class_hash = "0x545717edfd48f84ecf42c1b750a1bdee63b408ea27a249ac5d3b2af026a1414"
+abi = "manifests/dev/base/abis/models/tournament-AdventurerMetaModel-18ffc54e.json"
+tag = "tournament-AdventurerMetaModel"
+qualified_path = "tournament::ls15_components::loot_survivor::adventurer_meta_model"
+manifest_name = "tournament-AdventurerMetaModel-18ffc54e"
+
+[[members]]
+name = "adventurer_id"
+type = "felt252"
+key = true
+
+[[members]]
+name = "adventurer_meta"
+type = "AdventurerMetadata"
+key = false

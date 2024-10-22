@@ -1,0 +1,37 @@
+kind = "DojoModel"
+class_hash = "0x1ad626124bedf93d269dd2b728c66ec8404c1a97735d78fb335a24310585b0c"
+original_class_hash = "0x1ad626124bedf93d269dd2b728c66ec8404c1a97735d78fb335a24310585b0c"
+abi = "manifests/dev/base/abis/models/tournament-TournamentEntryModel-278948ec.json"
+tag = "tournament-TournamentEntryModel"
+qualified_path = "tournament::ls15_components::tournament::tournament_entry_model"
+manifest_name = "tournament-TournamentEntryModel-278948ec"
+
+[[members]]
+name = "tournament_id"
+type = "u64"
+key = true
+
+[[members]]
+name = "game_id"
+type = "u128"
+key = true
+
+[[members]]
+name = "address"
+type = "ContractAddress"
+key = false
+
+[[members]]
+name = "entered"
+type = "bool"
+key = false
+
+[[members]]
+name = "started"
+type = "bool"
+key = false
+
+[[members]]
+name = "submitted_score"
+type = "bool"
+key = false

@@ -1,0 +1,11 @@
+kind = "DojoContract"
+class_hash = "0x55444d8861fbe3c4bd43e9eb1a670533314ce08e205945e6cfb3c44a8d15daf"
+original_class_hash = "0x55444d8861fbe3c4bd43e9eb1a670533314ce08e205945e6cfb3c44a8d15daf"
+base_class_hash = "0x0"
+abi = "manifests/dev/base/abis/contracts/tournament-erc20_mock-756fcb77.json"
+reads = []
+writes = []
+init_calldata = []
+tag = "tournament-erc20_mock"
+systems = ["mint"]
+manifest_name = "tournament-erc20_mock-756fcb77"

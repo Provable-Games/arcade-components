@@ -10,8 +10,8 @@ impl TournamentScoresModelIntrospect<> of dojo::model::introspect::Introspect<
         dojo::model::Layout::Struct(
             array![
                 dojo::model::FieldLayout {
-                    selector: 828005506330814845865729738224128444343545496861359600300521676706743344758,
-                    layout: dojo::model::introspect::Introspect::<Array<u16>>::layout()
+                    selector: 657485287730502460094033123982202086350056806678047449621367289642428793093,
+                    layout: dojo::model::introspect::Introspect::<Array<u128>>::layout()
                 }
             ]
                 .span()
@@ -31,10 +31,10 @@ impl TournamentScoresModelIntrospect<> of dojo::model::introspect::Introspect<
                         ty: dojo::model::introspect::Introspect::<u64>::ty()
                     },
                     dojo::model::introspect::Member {
-                        name: 'scores',
+                        name: 'top_score_ids',
                         attrs: array![].span(),
                         ty: dojo::model::introspect::Ty::Array(
-                            array![dojo::model::introspect::Introspect::<u16>::ty()].span()
+                            array![dojo::model::introspect::Introspect::<u128>::ty()].span()
                         )
                     }
                 ]
@@ -47,7 +47,7 @@ impl TournamentScoresModelIntrospect<> of dojo::model::introspect::Introspect<
 #[derive(Drop, Serde)]
 pub struct TournamentScoresModelEntity {
     __id: felt252, // private field
-    pub scores: Array<u16>,
+    pub top_score_ids: Array<u128>,
 }
 
 #[generate_trait]
@@ -67,25 +67,25 @@ pub impl TournamentScoresModelEntityStoreImpl of TournamentScoresModelEntityStor
     }
 
 
-    fn get_scores(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> Array<u16> {
+    fn get_top_score_ids(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> Array<u128> {
         let mut values = dojo::model::ModelEntity::<
             TournamentScoresModelEntity
         >::get_member(
             world,
             entity_id,
-            828005506330814845865729738224128444343545496861359600300521676706743344758
+            657485287730502460094033123982202086350056806678047449621367289642428793093
         );
-        let field_value = core::serde::Serde::<Array<u16>>::deserialize(ref values);
+        let field_value = core::serde::Serde::<Array<u128>>::deserialize(ref values);
 
-        if core::option::OptionTrait::<Array<u16>>::is_none(@field_value) {
-            panic!("Field `TournamentScoresModel::scores`: deserialization failed.");
+        if core::option::OptionTrait::<Array<u128>>::is_none(@field_value) {
+            panic!("Field `TournamentScoresModel::top_score_ids`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<Array<u16>>::unwrap(field_value)
+        core::option::OptionTrait::<Array<u128>>::unwrap(field_value)
     }
 
-    fn set_scores(
-        self: @TournamentScoresModelEntity, world: dojo::world::IWorldDispatcher, value: Array<u16>
+    fn set_top_score_ids(
+        self: @TournamentScoresModelEntity, world: dojo::world::IWorldDispatcher, value: Array<u128>
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);
@@ -93,7 +93,7 @@ pub impl TournamentScoresModelEntityStoreImpl of TournamentScoresModelEntityStor
         self
             .set_member(
                 world,
-                828005506330814845865729738224128444343545496861359600300521676706743344758,
+                657485287730502460094033123982202086350056806678047449621367289642428793093,
                 serialized.span()
             );
     }
@@ -141,7 +141,7 @@ pub impl TournamentScoresModelStoreImpl of TournamentScoresModelStore {
     }
 
 
-    fn get_scores(world: dojo::world::IWorldDispatcher, tournament_id: u64) -> Array<u16> {
+    fn get_top_score_ids(world: dojo::world::IWorldDispatcher, tournament_id: u64) -> Array<u128> {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
 
@@ -150,20 +150,20 @@ pub impl TournamentScoresModelStoreImpl of TournamentScoresModelStore {
         >::get_member(
             world,
             serialized.span(),
-            828005506330814845865729738224128444343545496861359600300521676706743344758
+            657485287730502460094033123982202086350056806678047449621367289642428793093
         );
 
-        let field_value = core::serde::Serde::<Array<u16>>::deserialize(ref values);
+        let field_value = core::serde::Serde::<Array<u128>>::deserialize(ref values);
 
-        if core::option::OptionTrait::<Array<u16>>::is_none(@field_value) {
-            panic!("Field `TournamentScoresModel::scores`: deserialization failed.");
+        if core::option::OptionTrait::<Array<u128>>::is_none(@field_value) {
+            panic!("Field `TournamentScoresModel::top_score_ids`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<Array<u16>>::unwrap(field_value)
+        core::option::OptionTrait::<Array<u128>>::unwrap(field_value)
     }
 
-    fn set_scores(
-        self: @TournamentScoresModel, world: dojo::world::IWorldDispatcher, value: Array<u16>
+    fn set_top_score_ids(
+        self: @TournamentScoresModel, world: dojo::world::IWorldDispatcher, value: Array<u128>
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);
@@ -171,7 +171,7 @@ pub impl TournamentScoresModelStoreImpl of TournamentScoresModelStore {
         self
             .set_member(
                 world,
-                828005506330814845865729738224128444343545496861359600300521676706743344758,
+                657485287730502460094033123982202086350056806678047449621367289642428793093,
                 serialized.span()
             );
     }
@@ -186,7 +186,7 @@ pub impl TournamentScoresModelModelEntityImpl of dojo::model::ModelEntity<
 
     fn values(self: @TournamentScoresModelEntity) -> Span<felt252> {
         let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(self.scores, ref serialized);
+        core::serde::Serde::serialize(self.top_score_ids, ref serialized);
 
         core::array::ArrayTrait::span(@serialized)
     }
@@ -428,7 +428,7 @@ pub impl TournamentScoresModelModelImpl of dojo::model::Model<TournamentScoresMo
     #[inline(always)]
     fn values(self: @TournamentScoresModel) -> Span<felt252> {
         let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(self.scores, ref serialized);
+        core::serde::Serde::serialize(self.top_score_ids, ref serialized);
 
         core::array::ArrayTrait::span(@serialized)
     }

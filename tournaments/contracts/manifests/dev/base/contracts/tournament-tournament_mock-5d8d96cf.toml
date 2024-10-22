@@ -1,0 +1,11 @@
+kind = "DojoContract"
+class_hash = "0x5a386cbe340d192b32180b4299d2c1a08c314aebe1649b3a30e8788c077dfea"
+original_class_hash = "0x5a386cbe340d192b32180b4299d2c1a08c314aebe1649b3a30e8788c077dfea"
+base_class_hash = "0x0"
+abi = "manifests/dev/base/abis/contracts/tournament-tournament_mock-5d8d96cf.json"
+reads = []
+writes = []
+init_calldata = []
+tag = "tournament-tournament_mock"
+systems = ["initializer"]
+manifest_name = "tournament-tournament_mock-5d8d96cf"

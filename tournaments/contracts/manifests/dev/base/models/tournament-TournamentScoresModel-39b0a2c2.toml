@@ -1,0 +1,17 @@
+kind = "DojoModel"
+class_hash = "0x48e02d7428091a4eed1c32b1d65c5cd13c6c4672a35d30c8bd1abedb29c1709"
+original_class_hash = "0x48e02d7428091a4eed1c32b1d65c5cd13c6c4672a35d30c8bd1abedb29c1709"
+abi = "manifests/dev/base/abis/models/tournament-TournamentScoresModel-39b0a2c2.json"
+tag = "tournament-TournamentScoresModel"
+qualified_path = "tournament::ls15_components::tournament::tournament_scores_model"
+manifest_name = "tournament-TournamentScoresModel-39b0a2c2"
+
+[[members]]
+name = "tournament_id"
+type = "u64"
+key = true
+
+[[members]]
+name = "top_score_ids"
+type = "Array<u128>"
+key = false
