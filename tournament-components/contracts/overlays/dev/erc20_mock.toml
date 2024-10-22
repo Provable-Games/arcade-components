@@ -1,0 +1,3 @@
+tag = "tournament-erc20_mock"
+writes = []
+init_calldata = []

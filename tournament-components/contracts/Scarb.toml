@@ -1,0 +1,15 @@
+[package]
+cairo-version = "2.7.0"
+name = "tournament"
+version = "0.0.0"
+
+[cairo]
+sierra-replace-ids = true
+
+[dependencies]
+# openzeppelin_token = "0.15.0"
+openzeppelin_token = { git = "https://github.com/starknetdev/cairo-contracts", branch = "ls" }
+origami_token = { git = "https://github.com/dojoengine/origami" }
+adventurer = { git = "https://github.com/Provable-Games/loot-survivor" }
+
+[[target.dojo]]
