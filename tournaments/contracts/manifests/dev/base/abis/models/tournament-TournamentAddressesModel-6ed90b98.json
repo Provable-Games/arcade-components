@@ -363,34 +363,26 @@
   },
   {
     "type": "impl",
-    "name": "tournament_entries_address_modelImpl",
-    "interface_name": "tournament::ls15_components::tournament::Itournament_entries_address_model"
+    "name": "tournament_addresses_modelImpl",
+    "interface_name": "tournament::ls15_components::tournament::Itournament_addresses_model"
   },
   {
     "type": "struct",
-    "name": "tournament::ls15_components::tournament::TournamentEntriesAddressModel",
+    "name": "tournament::ls15_components::tournament::TournamentAddressesModel",
     "members": [
       {
         "name": "tournament_id",
         "type": "core::integer::u64"
       },
       {
-        "name": "address",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "entry_count",
-        "type": "core::integer::u8"
-      },
-      {
-        "name": "game_ids",
-        "type": "core::array::Array::<core::integer::u128>"
+        "name": "addresses",
+        "type": "core::array::Array::<core::starknet::contract_address::ContractAddress>"
       }
     ]
   },
   {
     "type": "interface",
-    "name": "tournament::ls15_components::tournament::Itournament_entries_address_model",
+    "name": "tournament::ls15_components::tournament::Itournament_addresses_model",
     "items": [
       {
         "type": "function",
@@ -398,7 +390,7 @@
         "inputs": [
           {
             "name": "model",
-            "type": "tournament::ls15_components::tournament::TournamentEntriesAddressModel"
+            "type": "tournament::ls15_components::tournament::TournamentAddressesModel"
           }
         ],
         "outputs": [],
@@ -408,7 +400,7 @@
   },
   {
     "type": "event",
-    "name": "tournament::ls15_components::tournament::tournament_entries_address_model::Event",
+    "name": "tournament::ls15_components::tournament::tournament_addresses_model::Event",
     "kind": "enum",
     "variants": []
   }

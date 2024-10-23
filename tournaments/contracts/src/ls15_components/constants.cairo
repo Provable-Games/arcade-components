@@ -1,5 +1,5 @@
 use tournament::ls15_components::interfaces::{
-    OpenRegistrationConfig, ExclusiveRegistrationConfig, ERC20Prize, ERC721Prize, ERC1155Prize
+    ERC20Prize, ERC721Prize, ERC1155Prize
 };
 
 fn LOOT_SURVIVOR() -> starknet::ContractAddress {
@@ -60,15 +60,21 @@ enum TokenType {
 
 const TWO_POW_128: u128 = 100000000000000000000000000000000;
 
-#[derive(Drop, Serde)]
-enum RegistrationType {
-    open: OpenRegistrationConfig,
-    exclusive: ExclusiveRegistrationConfig,
-}
+// #[derive(Drop, Serde)]
+// enum RegistrationType {
+//     open: OpenRegistrationConfig,
+//     exclusive: ExclusiveRegistrationConfig,
+// }
 
 #[derive(Drop, Serde, Introspect)]
 enum PrizeType {
     erc20: ERC20Prize,
     erc721: ERC721Prize,
     erc1155: ERC1155Prize,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+enum EntryStatus {
+    Started,
+    Submitted,
 }

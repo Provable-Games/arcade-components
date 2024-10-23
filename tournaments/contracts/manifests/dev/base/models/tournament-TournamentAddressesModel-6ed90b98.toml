@@ -1,0 +1,17 @@
+kind = "DojoModel"
+class_hash = "0x8def3497a9ccfe505dfa4ed553defd3ca00a52b0a876b884554b31734ef37a"
+original_class_hash = "0x8def3497a9ccfe505dfa4ed553defd3ca00a52b0a876b884554b31734ef37a"
+abi = "manifests/dev/base/abis/models/tournament-TournamentAddressesModel-6ed90b98.json"
+tag = "tournament-TournamentAddressesModel"
+qualified_path = "tournament::ls15_components::tournament::tournament_addresses_model"
+manifest_name = "tournament-TournamentAddressesModel-6ed90b98"
+
+[[members]]
+name = "tournament_id"
+type = "u64"
+key = true
+
+[[members]]
+name = "addresses"
+type = "Array<ContractAddress>"
+key = false

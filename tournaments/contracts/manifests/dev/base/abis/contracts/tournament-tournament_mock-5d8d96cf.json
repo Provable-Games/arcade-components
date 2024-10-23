@@ -276,12 +276,34 @@
     ]
   },
   {
+    "type": "struct",
+    "name": "tournament::ls15_components::interfaces::Premium",
+    "members": [
+      {
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token_amount",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "token_distribution",
+        "type": "core::array::Array::<core::integer::u8>"
+      },
+      {
+        "name": "creator_fee",
+        "type": "core::integer::u8"
+      }
+    ]
+  },
+  {
     "type": "enum",
-    "name": "core::option::Option::<core::starknet::contract_address::ContractAddress>",
+    "name": "core::option::Option::<tournament::ls15_components::interfaces::Premium>",
     "variants": [
       {
         "name": "Some",
-        "type": "core::starknet::contract_address::ContractAddress"
+        "type": "tournament::ls15_components::interfaces::Premium"
       },
       {
         "name": "None",
@@ -494,12 +516,8 @@
         "type": "core::integer::u8"
       },
       {
-        "name": "entry_premium_token",
-        "type": "core::option::Option::<core::starknet::contract_address::ContractAddress>"
-      },
-      {
-        "name": "entry_premium_amount",
-        "type": "core::integer::u128"
+        "name": "entry_premium",
+        "type": "core::option::Option::<tournament::ls15_components::interfaces::Premium>"
       },
       {
         "name": "prizes",
@@ -512,20 +530,6 @@
       {
         "name": "claimed",
         "type": "core::bool"
-      }
-    ]
-  },
-  {
-    "type": "struct",
-    "name": "core::integer::u256",
-    "members": [
-      {
-        "name": "low",
-        "type": "core::integer::u128"
-      },
-      {
-        "name": "high",
-        "type": "core::integer::u128"
       }
     ]
   },
@@ -544,6 +548,20 @@
       {
         "name": "token_type",
         "type": "tournament::ls15_components::constants::TokenType"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
       }
     ]
   },
@@ -655,12 +673,8 @@
             "type": "core::integer::u8"
           },
           {
-            "name": "entry_premium_token",
-            "type": "core::option::Option::<core::starknet::contract_address::ContractAddress>"
-          },
-          {
-            "name": "entry_premium_amount",
-            "type": "core::integer::u256"
+            "name": "entry_premium",
+            "type": "core::option::Option::<tournament::ls15_components::interfaces::Premium>"
           },
           {
             "name": "prizes",
@@ -697,26 +711,6 @@
           {
             "name": "tournament_id",
             "type": "core::integer::u64"
-          },
-          {
-            "name": "client_reward_address",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
-            "name": "weapon",
-            "type": "core::integer::u8"
-          },
-          {
-            "name": "name",
-            "type": "core::felt252"
-          },
-          {
-            "name": "delay_reveal",
-            "type": "core::bool"
-          },
-          {
-            "name": "custom_renderer",
-            "type": "core::starknet::contract_address::ContractAddress"
           },
           {
             "name": "gated_token_id",

@@ -368,14 +368,14 @@
   },
   {
     "type": "enum",
-    "name": "core::bool",
+    "name": "tournament::ls15_components::constants::EntryStatus",
     "variants": [
       {
-        "name": "False",
+        "name": "Started",
         "type": "()"
       },
       {
-        "name": "True",
+        "name": "Submitted",
         "type": "()"
       }
     ]
@@ -397,16 +397,8 @@
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
-        "name": "entered",
-        "type": "core::bool"
-      },
-      {
-        "name": "started",
-        "type": "core::bool"
-      },
-      {
-        "name": "submitted_score",
-        "type": "core::bool"
+        "name": "status",
+        "type": "tournament::ls15_components::constants::EntryStatus"
       }
     ]
   },

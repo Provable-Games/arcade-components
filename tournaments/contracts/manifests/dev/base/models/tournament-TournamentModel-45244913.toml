@@ -1,6 +1,6 @@
 kind = "DojoModel"
-class_hash = "0x25738c8add7da7f4701e57db113a2dbf57c6205fbe6fa044ce1a739be9a6a15"
-original_class_hash = "0x25738c8add7da7f4701e57db113a2dbf57c6205fbe6fa044ce1a739be9a6a15"
+class_hash = "0xd7dfe292af5867169fcf64a107b0870cf04792ea6e9d5f5927c27789996a37"
+original_class_hash = "0xd7dfe292af5867169fcf64a107b0870cf04792ea6e9d5f5927c27789996a37"
 abi = "manifests/dev/base/abis/models/tournament-TournamentModel-45244913.json"
 tag = "tournament-TournamentModel"
 qualified_path = "tournament::ls15_components::tournament::tournament_model"
@@ -47,13 +47,8 @@ type = "u8"
 key = false
 
 [[members]]
-name = "entry_premium_token"
-type = "Option<ContractAddress>"
-key = false
-
-[[members]]
-name = "entry_premium_amount"
-type = "u128"
+name = "entry_premium"
+type = "Option<Premium>"
 key = false
 
 [[members]]

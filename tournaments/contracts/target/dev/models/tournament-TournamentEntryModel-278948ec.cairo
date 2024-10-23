@@ -3,7 +3,14 @@ impl TournamentEntryModelIntrospect<> of dojo::model::introspect::Introspect<
 > {
     #[inline(always)]
     fn size() -> Option<usize> {
-        Option::Some(4)
+        let sizes: Array<Option<usize>> = array![
+            dojo::model::introspect::Introspect::<EntryStatus>::size(), Option::Some(1)
+        ];
+
+        if dojo::utils::any_none(@sizes) {
+            return Option::None;
+        }
+        Option::Some(dojo::utils::sum(sizes))
     }
 
     fn layout() -> dojo::model::Layout {
@@ -14,16 +21,8 @@ impl TournamentEntryModelIntrospect<> of dojo::model::introspect::Introspect<
                     layout: dojo::model::introspect::Introspect::<ContractAddress>::layout()
                 },
                 dojo::model::FieldLayout {
-                    selector: 882083491679563735264551539375234596690986461837360450045455843572485424637,
-                    layout: dojo::model::introspect::Introspect::<bool>::layout()
-                },
-                dojo::model::FieldLayout {
-                    selector: 824573152059075885330203672871565437328152310567343827344126684668780733675,
-                    layout: dojo::model::introspect::Introspect::<bool>::layout()
-                },
-                dojo::model::FieldLayout {
-                    selector: 1176465570499311615653836774867250828578828866704433274061376673685686272486,
-                    layout: dojo::model::introspect::Introspect::<bool>::layout()
+                    selector: 569306960271936532142884159669739966400652117841771075996122541800876072129,
+                    layout: dojo::model::introspect::Introspect::<EntryStatus>::layout()
                 }
             ]
                 .span()
@@ -53,19 +52,9 @@ impl TournamentEntryModelIntrospect<> of dojo::model::introspect::Introspect<
                         ty: dojo::model::introspect::Introspect::<ContractAddress>::ty()
                     },
                     dojo::model::introspect::Member {
-                        name: 'entered',
+                        name: 'status',
                         attrs: array![].span(),
-                        ty: dojo::model::introspect::Introspect::<bool>::ty()
-                    },
-                    dojo::model::introspect::Member {
-                        name: 'started',
-                        attrs: array![].span(),
-                        ty: dojo::model::introspect::Introspect::<bool>::ty()
-                    },
-                    dojo::model::introspect::Member {
-                        name: 'submitted_score',
-                        attrs: array![].span(),
-                        ty: dojo::model::introspect::Introspect::<bool>::ty()
+                        ty: dojo::model::introspect::Introspect::<EntryStatus>::ty()
                     }
                 ]
                     .span()
@@ -78,9 +67,7 @@ impl TournamentEntryModelIntrospect<> of dojo::model::introspect::Introspect<
 pub struct TournamentEntryModelEntity {
     __id: felt252, // private field
     pub address: ContractAddress,
-    pub entered: bool,
-    pub started: bool,
-    pub submitted_score: bool,
+    pub status: EntryStatus,
 }
 
 #[generate_trait]
@@ -131,25 +118,25 @@ pub impl TournamentEntryModelEntityStoreImpl of TournamentEntryModelEntityStore 
             );
     }
 
-    fn get_entered(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> bool {
+    fn get_status(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> EntryStatus {
         let mut values = dojo::model::ModelEntity::<
             TournamentEntryModelEntity
         >::get_member(
             world,
             entity_id,
-            882083491679563735264551539375234596690986461837360450045455843572485424637
+            569306960271936532142884159669739966400652117841771075996122541800876072129
         );
-        let field_value = core::serde::Serde::<bool>::deserialize(ref values);
+        let field_value = core::serde::Serde::<EntryStatus>::deserialize(ref values);
 
-        if core::option::OptionTrait::<bool>::is_none(@field_value) {
-            panic!("Field `TournamentEntryModel::entered`: deserialization failed.");
+        if core::option::OptionTrait::<EntryStatus>::is_none(@field_value) {
+            panic!("Field `TournamentEntryModel::status`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<bool>::unwrap(field_value)
+        core::option::OptionTrait::<EntryStatus>::unwrap(field_value)
     }
 
-    fn set_entered(
-        self: @TournamentEntryModelEntity, world: dojo::world::IWorldDispatcher, value: bool
+    fn set_status(
+        self: @TournamentEntryModelEntity, world: dojo::world::IWorldDispatcher, value: EntryStatus
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);
@@ -157,69 +144,7 @@ pub impl TournamentEntryModelEntityStoreImpl of TournamentEntryModelEntityStore 
         self
             .set_member(
                 world,
-                882083491679563735264551539375234596690986461837360450045455843572485424637,
-                serialized.span()
-            );
-    }
-
-    fn get_started(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> bool {
-        let mut values = dojo::model::ModelEntity::<
-            TournamentEntryModelEntity
-        >::get_member(
-            world,
-            entity_id,
-            824573152059075885330203672871565437328152310567343827344126684668780733675
-        );
-        let field_value = core::serde::Serde::<bool>::deserialize(ref values);
-
-        if core::option::OptionTrait::<bool>::is_none(@field_value) {
-            panic!("Field `TournamentEntryModel::started`: deserialization failed.");
-        }
-
-        core::option::OptionTrait::<bool>::unwrap(field_value)
-    }
-
-    fn set_started(
-        self: @TournamentEntryModelEntity, world: dojo::world::IWorldDispatcher, value: bool
-    ) {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@value, ref serialized);
-
-        self
-            .set_member(
-                world,
-                824573152059075885330203672871565437328152310567343827344126684668780733675,
-                serialized.span()
-            );
-    }
-
-    fn get_submitted_score(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> bool {
-        let mut values = dojo::model::ModelEntity::<
-            TournamentEntryModelEntity
-        >::get_member(
-            world,
-            entity_id,
-            1176465570499311615653836774867250828578828866704433274061376673685686272486
-        );
-        let field_value = core::serde::Serde::<bool>::deserialize(ref values);
-
-        if core::option::OptionTrait::<bool>::is_none(@field_value) {
-            panic!("Field `TournamentEntryModel::submitted_score`: deserialization failed.");
-        }
-
-        core::option::OptionTrait::<bool>::unwrap(field_value)
-    }
-
-    fn set_submitted_score(
-        self: @TournamentEntryModelEntity, world: dojo::world::IWorldDispatcher, value: bool
-    ) {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@value, ref serialized);
-
-        self
-            .set_member(
-                world,
-                1176465570499311615653836774867250828578828866704433274061376673685686272486,
+                569306960271936532142884159669739966400652117841771075996122541800876072129,
                 serialized.span()
             );
     }
@@ -309,9 +234,9 @@ pub impl TournamentEntryModelStoreImpl of TournamentEntryModelStore {
             );
     }
 
-    fn get_entered(
+    fn get_status(
         world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u128
-    ) -> bool {
+    ) -> EntryStatus {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
         core::serde::Serde::serialize(@game_id, ref serialized);
@@ -321,92 +246,20 @@ pub impl TournamentEntryModelStoreImpl of TournamentEntryModelStore {
         >::get_member(
             world,
             serialized.span(),
-            882083491679563735264551539375234596690986461837360450045455843572485424637
+            569306960271936532142884159669739966400652117841771075996122541800876072129
         );
 
-        let field_value = core::serde::Serde::<bool>::deserialize(ref values);
+        let field_value = core::serde::Serde::<EntryStatus>::deserialize(ref values);
 
-        if core::option::OptionTrait::<bool>::is_none(@field_value) {
-            panic!("Field `TournamentEntryModel::entered`: deserialization failed.");
+        if core::option::OptionTrait::<EntryStatus>::is_none(@field_value) {
+            panic!("Field `TournamentEntryModel::status`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<bool>::unwrap(field_value)
+        core::option::OptionTrait::<EntryStatus>::unwrap(field_value)
     }
 
-    fn set_entered(self: @TournamentEntryModel, world: dojo::world::IWorldDispatcher, value: bool) {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@value, ref serialized);
-
-        self
-            .set_member(
-                world,
-                882083491679563735264551539375234596690986461837360450045455843572485424637,
-                serialized.span()
-            );
-    }
-
-    fn get_started(
-        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u128
-    ) -> bool {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@tournament_id, ref serialized);
-        core::serde::Serde::serialize(@game_id, ref serialized);
-
-        let mut values = dojo::model::Model::<
-            TournamentEntryModel
-        >::get_member(
-            world,
-            serialized.span(),
-            824573152059075885330203672871565437328152310567343827344126684668780733675
-        );
-
-        let field_value = core::serde::Serde::<bool>::deserialize(ref values);
-
-        if core::option::OptionTrait::<bool>::is_none(@field_value) {
-            panic!("Field `TournamentEntryModel::started`: deserialization failed.");
-        }
-
-        core::option::OptionTrait::<bool>::unwrap(field_value)
-    }
-
-    fn set_started(self: @TournamentEntryModel, world: dojo::world::IWorldDispatcher, value: bool) {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@value, ref serialized);
-
-        self
-            .set_member(
-                world,
-                824573152059075885330203672871565437328152310567343827344126684668780733675,
-                serialized.span()
-            );
-    }
-
-    fn get_submitted_score(
-        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u128
-    ) -> bool {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@tournament_id, ref serialized);
-        core::serde::Serde::serialize(@game_id, ref serialized);
-
-        let mut values = dojo::model::Model::<
-            TournamentEntryModel
-        >::get_member(
-            world,
-            serialized.span(),
-            1176465570499311615653836774867250828578828866704433274061376673685686272486
-        );
-
-        let field_value = core::serde::Serde::<bool>::deserialize(ref values);
-
-        if core::option::OptionTrait::<bool>::is_none(@field_value) {
-            panic!("Field `TournamentEntryModel::submitted_score`: deserialization failed.");
-        }
-
-        core::option::OptionTrait::<bool>::unwrap(field_value)
-    }
-
-    fn set_submitted_score(
-        self: @TournamentEntryModel, world: dojo::world::IWorldDispatcher, value: bool
+    fn set_status(
+        self: @TournamentEntryModel, world: dojo::world::IWorldDispatcher, value: EntryStatus
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);
@@ -414,7 +267,7 @@ pub impl TournamentEntryModelStoreImpl of TournamentEntryModelStore {
         self
             .set_member(
                 world,
-                1176465570499311615653836774867250828578828866704433274061376673685686272486,
+                569306960271936532142884159669739966400652117841771075996122541800876072129,
                 serialized.span()
             );
     }
@@ -430,9 +283,7 @@ pub impl TournamentEntryModelModelEntityImpl of dojo::model::ModelEntity<
     fn values(self: @TournamentEntryModelEntity) -> Span<felt252> {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(self.address, ref serialized);
-        core::serde::Serde::serialize(self.entered, ref serialized);
-        core::serde::Serde::serialize(self.started, ref serialized);
-        core::serde::Serde::serialize(self.submitted_score, ref serialized);
+        core::serde::Serde::serialize(self.status, ref serialized);
 
         core::array::ArrayTrait::span(@serialized)
     }
@@ -674,9 +525,7 @@ pub impl TournamentEntryModelModelImpl of dojo::model::Model<TournamentEntryMode
     fn values(self: @TournamentEntryModel) -> Span<felt252> {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(self.address, ref serialized);
-        core::serde::Serde::serialize(self.entered, ref serialized);
-        core::serde::Serde::serialize(self.started, ref serialized);
-        core::serde::Serde::serialize(self.submitted_score, ref serialized);
+        core::serde::Serde::serialize(self.status, ref serialized);
 
         core::array::ArrayTrait::span(@serialized)
     }

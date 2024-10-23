@@ -1,7 +1,7 @@
 use starknet::{ContractAddress, ClassHash};
 use dojo::world::IWorldDispatcher;
 use tournament::ls15_components::tournament::{TournamentModel};
-use tournament::ls15_components::interfaces::{LootRequirement, Token, StatRequirement, GatedToken};
+use tournament::ls15_components::interfaces::{LootRequirement, Token, StatRequirement, GatedToken, Premium};
 use tournament::ls15_components::constants::{TokenType, PrizeType};
 
 #[starknet::interface]
@@ -19,8 +19,7 @@ trait ITournamentMock<TState> {
         end_time: u64,
         submission_period: u64,
         leaderboard_size: u8,
-        entry_premium_token: Option<ContractAddress>,
-        entry_premium_amount: u256,
+        entry_premium: Option<Premium>,
         prizes: Array<PrizeType>,
         stat_requirements: Array<StatRequirement>
     ) -> u64;
@@ -28,11 +27,6 @@ trait ITournamentMock<TState> {
     fn enter_tournament(
         ref self: TState,
         tournament_id: u64,
-        client_reward_address: ContractAddress,
-        weapon: u8,
-        name: felt252,
-        delay_reveal: bool,
-        custom_renderer: ContractAddress,
         gated_token_id: u256
     );
     fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);

@@ -10,6 +10,10 @@ impl TournamentEntriesAddressModelIntrospect<> of dojo::model::introspect::Intro
         dojo::model::Layout::Struct(
             array![
                 dojo::model::FieldLayout {
+                    selector: 91831325443373165617951455578282973500253190082647686375302359183447320413,
+                    layout: dojo::model::introspect::Introspect::<u8>::layout()
+                },
+                dojo::model::FieldLayout {
                     selector: 265866676642830162498721691547279957379484306165912539482818020839472807558,
                     layout: dojo::model::introspect::Introspect::<Array<u128>>::layout()
                 }
@@ -36,6 +40,11 @@ impl TournamentEntriesAddressModelIntrospect<> of dojo::model::introspect::Intro
                         ty: dojo::model::introspect::Introspect::<ContractAddress>::ty()
                     },
                     dojo::model::introspect::Member {
+                        name: 'entry_count',
+                        attrs: array![].span(),
+                        ty: dojo::model::introspect::Introspect::<u8>::ty()
+                    },
+                    dojo::model::introspect::Member {
                         name: 'game_ids',
                         attrs: array![].span(),
                         ty: dojo::model::introspect::Ty::Array(
@@ -52,6 +61,7 @@ impl TournamentEntriesAddressModelIntrospect<> of dojo::model::introspect::Intro
 #[derive(Drop, Serde)]
 pub struct TournamentEntriesAddressModelEntity {
     __id: felt252, // private field
+    pub entry_count: u8,
     pub game_ids: Array<u128>,
 }
 
@@ -71,6 +81,37 @@ pub impl TournamentEntriesAddressModelEntityStoreImpl of TournamentEntriesAddres
         dojo::model::ModelEntity::<TournamentEntriesAddressModelEntity>::delete_entity(self, world);
     }
 
+
+    fn get_entry_count(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> u8 {
+        let mut values = dojo::model::ModelEntity::<
+            TournamentEntriesAddressModelEntity
+        >::get_member(
+            world,
+            entity_id,
+            91831325443373165617951455578282973500253190082647686375302359183447320413
+        );
+        let field_value = core::serde::Serde::<u8>::deserialize(ref values);
+
+        if core::option::OptionTrait::<u8>::is_none(@field_value) {
+            panic!("Field `TournamentEntriesAddressModel::entry_count`: deserialization failed.");
+        }
+
+        core::option::OptionTrait::<u8>::unwrap(field_value)
+    }
+
+    fn set_entry_count(
+        self: @TournamentEntriesAddressModelEntity, world: dojo::world::IWorldDispatcher, value: u8
+    ) {
+        let mut serialized = core::array::ArrayTrait::new();
+        core::serde::Serde::serialize(@value, ref serialized);
+
+        self
+            .set_member(
+                world,
+                91831325443373165617951455578282973500253190082647686375302359183447320413,
+                serialized.span()
+            );
+    }
 
     fn get_game_ids(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> Array<u128> {
         let mut values = dojo::model::ModelEntity::<
@@ -156,6 +197,44 @@ pub impl TournamentEntriesAddressModelStoreImpl of TournamentEntriesAddressModel
     }
 
 
+    fn get_entry_count(
+        world: dojo::world::IWorldDispatcher, tournament_id: u64, address: ContractAddress
+    ) -> u8 {
+        let mut serialized = core::array::ArrayTrait::new();
+        core::serde::Serde::serialize(@tournament_id, ref serialized);
+        core::serde::Serde::serialize(@address, ref serialized);
+
+        let mut values = dojo::model::Model::<
+            TournamentEntriesAddressModel
+        >::get_member(
+            world,
+            serialized.span(),
+            91831325443373165617951455578282973500253190082647686375302359183447320413
+        );
+
+        let field_value = core::serde::Serde::<u8>::deserialize(ref values);
+
+        if core::option::OptionTrait::<u8>::is_none(@field_value) {
+            panic!("Field `TournamentEntriesAddressModel::entry_count`: deserialization failed.");
+        }
+
+        core::option::OptionTrait::<u8>::unwrap(field_value)
+    }
+
+    fn set_entry_count(
+        self: @TournamentEntriesAddressModel, world: dojo::world::IWorldDispatcher, value: u8
+    ) {
+        let mut serialized = core::array::ArrayTrait::new();
+        core::serde::Serde::serialize(@value, ref serialized);
+
+        self
+            .set_member(
+                world,
+                91831325443373165617951455578282973500253190082647686375302359183447320413,
+                serialized.span()
+            );
+    }
+
     fn get_game_ids(
         world: dojo::world::IWorldDispatcher, tournament_id: u64, address: ContractAddress
     ) -> Array<u128> {
@@ -206,6 +285,7 @@ pub impl TournamentEntriesAddressModelModelEntityImpl of dojo::model::ModelEntit
 
     fn values(self: @TournamentEntriesAddressModelEntity) -> Span<felt252> {
         let mut serialized = core::array::ArrayTrait::new();
+        core::serde::Serde::serialize(self.entry_count, ref serialized);
         core::serde::Serde::serialize(self.game_ids, ref serialized);
 
         core::array::ArrayTrait::span(@serialized)
@@ -465,6 +545,7 @@ pub impl TournamentEntriesAddressModelModelImpl of dojo::model::Model<
     #[inline(always)]
     fn values(self: @TournamentEntriesAddressModel) -> Span<felt252> {
         let mut serialized = core::array::ArrayTrait::new();
+        core::serde::Serde::serialize(self.entry_count, ref serialized);
         core::serde::Serde::serialize(self.game_ids, ref serialized);
 
         core::array::ArrayTrait::span(@serialized)

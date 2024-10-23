@@ -1,6 +1,6 @@
 kind = "DojoModel"
-class_hash = "0x1ad626124bedf93d269dd2b728c66ec8404c1a97735d78fb335a24310585b0c"
-original_class_hash = "0x1ad626124bedf93d269dd2b728c66ec8404c1a97735d78fb335a24310585b0c"
+class_hash = "0x82049976c51a8a54a2d5a1e9b4bf20034bcaf3f96a9fd8155596b6c8693024"
+original_class_hash = "0x82049976c51a8a54a2d5a1e9b4bf20034bcaf3f96a9fd8155596b6c8693024"
 abi = "manifests/dev/base/abis/models/tournament-TournamentEntryModel-278948ec.json"
 tag = "tournament-TournamentEntryModel"
 qualified_path = "tournament::ls15_components::tournament::tournament_entry_model"
@@ -22,16 +22,6 @@ type = "ContractAddress"
 key = false
 
 [[members]]
-name = "entered"
-type = "bool"
-key = false
-
-[[members]]
-name = "started"
-type = "bool"
-key = false
-
-[[members]]
-name = "submitted_score"
-type = "bool"
+name = "status"
+type = "EntryStatus"
 key = false

@@ -36,12 +36,8 @@ impl TournamentModelIntrospect<> of dojo::model::introspect::Introspect<Tourname
                     layout: dojo::model::introspect::Introspect::<u8>::layout()
                 },
                 dojo::model::FieldLayout {
-                    selector: 141182857266598343731913385181938353047068823999760450503467915348315881520,
-                    layout: dojo::model::introspect::Introspect::<Option<ContractAddress>>::layout()
-                },
-                dojo::model::FieldLayout {
-                    selector: 1299827507470723997411929187292623538046530657255099969485380823975940135987,
-                    layout: dojo::model::introspect::Introspect::<u128>::layout()
+                    selector: 1606641378650735575666292679386442873460920322053823572675781706252829008495,
+                    layout: dojo::model::introspect::Introspect::<Option<Premium>>::layout()
                 },
                 dojo::model::FieldLayout {
                     selector: 1610767268251580031902444025044066844391489207832088337103632250465414143792,
@@ -108,14 +104,9 @@ impl TournamentModelIntrospect<> of dojo::model::introspect::Introspect<Tourname
                         ty: dojo::model::introspect::Introspect::<u8>::ty()
                     },
                     dojo::model::introspect::Member {
-                        name: 'entry_premium_token',
+                        name: 'entry_premium',
                         attrs: array![].span(),
-                        ty: dojo::model::introspect::Introspect::<Option<ContractAddress>>::ty()
-                    },
-                    dojo::model::introspect::Member {
-                        name: 'entry_premium_amount',
-                        attrs: array![].span(),
-                        ty: dojo::model::introspect::Introspect::<u128>::ty()
+                        ty: dojo::model::introspect::Introspect::<Option<Premium>>::ty()
                     },
                     dojo::model::introspect::Member {
                         name: 'prizes',
@@ -154,8 +145,7 @@ pub struct TournamentModelEntity {
     pub end_time: u64,
     pub submission_period: u64,
     pub leaderboard_size: u8,
-    pub entry_premium_token: Option<ContractAddress>,
-    pub entry_premium_amount: u128,
+    pub entry_premium: Option<Premium>,
     pub prizes: Array<PrizeType>,
     pub stat_requirements: Array<StatRequirement>,
     pub claimed: bool,
@@ -397,29 +387,27 @@ pub impl TournamentModelEntityStoreImpl of TournamentModelEntityStore {
             );
     }
 
-    fn get_entry_premium_token(
+    fn get_entry_premium(
         world: dojo::world::IWorldDispatcher, entity_id: felt252
-    ) -> Option<ContractAddress> {
+    ) -> Option<Premium> {
         let mut values = dojo::model::ModelEntity::<
             TournamentModelEntity
         >::get_member(
             world,
             entity_id,
-            141182857266598343731913385181938353047068823999760450503467915348315881520
+            1606641378650735575666292679386442873460920322053823572675781706252829008495
         );
-        let field_value = core::serde::Serde::<Option<ContractAddress>>::deserialize(ref values);
+        let field_value = core::serde::Serde::<Option<Premium>>::deserialize(ref values);
 
-        if core::option::OptionTrait::<Option<ContractAddress>>::is_none(@field_value) {
-            panic!("Field `TournamentModel::entry_premium_token`: deserialization failed.");
+        if core::option::OptionTrait::<Option<Premium>>::is_none(@field_value) {
+            panic!("Field `TournamentModel::entry_premium`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<Option<ContractAddress>>::unwrap(field_value)
+        core::option::OptionTrait::<Option<Premium>>::unwrap(field_value)
     }
 
-    fn set_entry_premium_token(
-        self: @TournamentModelEntity,
-        world: dojo::world::IWorldDispatcher,
-        value: Option<ContractAddress>
+    fn set_entry_premium(
+        self: @TournamentModelEntity, world: dojo::world::IWorldDispatcher, value: Option<Premium>
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);
@@ -427,38 +415,7 @@ pub impl TournamentModelEntityStoreImpl of TournamentModelEntityStore {
         self
             .set_member(
                 world,
-                141182857266598343731913385181938353047068823999760450503467915348315881520,
-                serialized.span()
-            );
-    }
-
-    fn get_entry_premium_amount(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> u128 {
-        let mut values = dojo::model::ModelEntity::<
-            TournamentModelEntity
-        >::get_member(
-            world,
-            entity_id,
-            1299827507470723997411929187292623538046530657255099969485380823975940135987
-        );
-        let field_value = core::serde::Serde::<u128>::deserialize(ref values);
-
-        if core::option::OptionTrait::<u128>::is_none(@field_value) {
-            panic!("Field `TournamentModel::entry_premium_amount`: deserialization failed.");
-        }
-
-        core::option::OptionTrait::<u128>::unwrap(field_value)
-    }
-
-    fn set_entry_premium_amount(
-        self: @TournamentModelEntity, world: dojo::world::IWorldDispatcher, value: u128
-    ) {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@value, ref serialized);
-
-        self
-            .set_member(
-                world,
-                1299827507470723997411929187292623538046530657255099969485380823975940135987,
+                1606641378650735575666292679386442873460920322053823572675781706252829008495,
                 serialized.span()
             );
     }
@@ -844,9 +801,9 @@ pub impl TournamentModelStoreImpl of TournamentModelStore {
             );
     }
 
-    fn get_entry_premium_token(
+    fn get_entry_premium(
         world: dojo::world::IWorldDispatcher, tournament_id: u64
-    ) -> Option<ContractAddress> {
+    ) -> Option<Premium> {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
 
@@ -855,20 +812,20 @@ pub impl TournamentModelStoreImpl of TournamentModelStore {
         >::get_member(
             world,
             serialized.span(),
-            141182857266598343731913385181938353047068823999760450503467915348315881520
+            1606641378650735575666292679386442873460920322053823572675781706252829008495
         );
 
-        let field_value = core::serde::Serde::<Option<ContractAddress>>::deserialize(ref values);
+        let field_value = core::serde::Serde::<Option<Premium>>::deserialize(ref values);
 
-        if core::option::OptionTrait::<Option<ContractAddress>>::is_none(@field_value) {
-            panic!("Field `TournamentModel::entry_premium_token`: deserialization failed.");
+        if core::option::OptionTrait::<Option<Premium>>::is_none(@field_value) {
+            panic!("Field `TournamentModel::entry_premium`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<Option<ContractAddress>>::unwrap(field_value)
+        core::option::OptionTrait::<Option<Premium>>::unwrap(field_value)
     }
 
-    fn set_entry_premium_token(
-        self: @TournamentModel, world: dojo::world::IWorldDispatcher, value: Option<ContractAddress>
+    fn set_entry_premium(
+        self: @TournamentModel, world: dojo::world::IWorldDispatcher, value: Option<Premium>
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);
@@ -876,42 +833,7 @@ pub impl TournamentModelStoreImpl of TournamentModelStore {
         self
             .set_member(
                 world,
-                141182857266598343731913385181938353047068823999760450503467915348315881520,
-                serialized.span()
-            );
-    }
-
-    fn get_entry_premium_amount(world: dojo::world::IWorldDispatcher, tournament_id: u64) -> u128 {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@tournament_id, ref serialized);
-
-        let mut values = dojo::model::Model::<
-            TournamentModel
-        >::get_member(
-            world,
-            serialized.span(),
-            1299827507470723997411929187292623538046530657255099969485380823975940135987
-        );
-
-        let field_value = core::serde::Serde::<u128>::deserialize(ref values);
-
-        if core::option::OptionTrait::<u128>::is_none(@field_value) {
-            panic!("Field `TournamentModel::entry_premium_amount`: deserialization failed.");
-        }
-
-        core::option::OptionTrait::<u128>::unwrap(field_value)
-    }
-
-    fn set_entry_premium_amount(
-        self: @TournamentModel, world: dojo::world::IWorldDispatcher, value: u128
-    ) {
-        let mut serialized = core::array::ArrayTrait::new();
-        core::serde::Serde::serialize(@value, ref serialized);
-
-        self
-            .set_member(
-                world,
-                1299827507470723997411929187292623538046530657255099969485380823975940135987,
+                1606641378650735575666292679386442873460920322053823572675781706252829008495,
                 serialized.span()
             );
     }
@@ -1036,8 +958,7 @@ pub impl TournamentModelModelEntityImpl of dojo::model::ModelEntity<TournamentMo
         core::serde::Serde::serialize(self.end_time, ref serialized);
         core::serde::Serde::serialize(self.submission_period, ref serialized);
         core::serde::Serde::serialize(self.leaderboard_size, ref serialized);
-        core::serde::Serde::serialize(self.entry_premium_token, ref serialized);
-        core::serde::Serde::serialize(self.entry_premium_amount, ref serialized);
+        core::serde::Serde::serialize(self.entry_premium, ref serialized);
         core::serde::Serde::serialize(self.prizes, ref serialized);
         core::serde::Serde::serialize(self.stat_requirements, ref serialized);
         core::serde::Serde::serialize(self.claimed, ref serialized);
@@ -1285,8 +1206,7 @@ pub impl TournamentModelModelImpl of dojo::model::Model<TournamentModel> {
         core::serde::Serde::serialize(self.end_time, ref serialized);
         core::serde::Serde::serialize(self.submission_period, ref serialized);
         core::serde::Serde::serialize(self.leaderboard_size, ref serialized);
-        core::serde::Serde::serialize(self.entry_premium_token, ref serialized);
-        core::serde::Serde::serialize(self.entry_premium_amount, ref serialized);
+        core::serde::Serde::serialize(self.entry_premium, ref serialized);
         core::serde::Serde::serialize(self.prizes, ref serialized);
         core::serde::Serde::serialize(self.stat_requirements, ref serialized);
         core::serde::Serde::serialize(self.claimed, ref serialized);

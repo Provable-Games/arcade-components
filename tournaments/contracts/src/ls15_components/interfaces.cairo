@@ -1,13 +1,7 @@
 use starknet::ContractAddress;
-use adventurer::{adventurer::Adventurer, adventurer_meta::AdventurerMetadata, bag::Bag};
+use adventurer::{adventurer::Adventurer, bag::Bag};
 use tournament::ls15_components::constants::{Operation, StatRequirementEnum, TokenType};
-
-#[derive(Drop, Copy, Serde, Introspect)]
-struct PrizeDistribution {
-    first: u8,
-    second: u8,
-    third: u8,
-}
+use tournament::ls15_components::loot_survivor::AdventurerMetadata;
 
 #[derive(Drop, Copy, Serde, Introspect)]
 struct Token {
@@ -55,13 +49,12 @@ struct ERC1155Prize {
     token_distribution: Array<u8>,
 }
 
-#[derive(Drop, Copy, Serde, Introspect)]
-struct Prize2 {
+#[derive(Drop, Serde, PartialEq, Introspect)]
+struct Premium {
     token: ContractAddress,
-    token_id: Option<u128>,
-    token_amount: Option<u128>,
-    token_distribution: Option<PrizeDistribution>,
-    token_type: TokenType,
+    token_amount: u128,
+    token_distribution: Array<u8>,
+    creator_fee: u8,
 }
 
 #[derive(Drop, Copy, Serde, Introspect)]
@@ -78,28 +71,28 @@ struct LootRequirement {
     operation: Operation,
 }
 
-#[derive(Drop, Serde)]
-struct ExclusiveRegistrationConfig {
-    gated_token: ContractAddress,
-    start_time: u64,
-    end_time: u64,
-    entry_premium_token: ContractAddress,
-    entry_premium_amount: u128,
-    prizes: Array<Prize2>,
-    stat_requirements: Array<StatRequirement>,
-    loot_requirements: Array<LootRequirement>,
-}
+// #[derive(Drop, Serde)]
+// struct ExclusiveRegistrationConfig {
+//     gated_token: ContractAddress,
+//     start_time: u64,
+//     end_time: u64,
+//     entry_premium_token: ContractAddress,
+//     entry_premium_amount: u128,
+//     prizes: Array<Prize2>,
+//     stat_requirements: Array<StatRequirement>,
+//     loot_requirements: Array<LootRequirement>,
+// }
 
-#[derive(Drop, Serde)]
-struct OpenRegistrationConfig {
-    start_time: u64,
-    end_time: u64,
-    entry_premium_token: ContractAddress,
-    entry_premium_amount: u128,
-    prizes: Array<Prize2>,
-    stat_requirements: Array<StatRequirement>,
-    loot_requirements: Array<LootRequirement>,
-}
+// #[derive(Drop, Serde)]
+// struct OpenRegistrationConfig {
+//     start_time: u64,
+//     end_time: u64,
+//     entry_premium_token: ContractAddress,
+//     entry_premium_amount: u128,
+//     prizes: Array<Prize2>,
+//     stat_requirements: Array<StatRequirement>,
+//     loot_requirements: Array<LootRequirement>,
+// }
 
 #[derive(Drop, Copy, Serde)]
 enum DataType {
