@@ -1,6 +1,6 @@
 kind = "DojoModel"
-class_hash = "0x82049976c51a8a54a2d5a1e9b4bf20034bcaf3f96a9fd8155596b6c8693024"
-original_class_hash = "0x82049976c51a8a54a2d5a1e9b4bf20034bcaf3f96a9fd8155596b6c8693024"
+class_hash = "0x52442a1e8004abfb4b8a7592823e0571035b244825f50a4680429f527bafcdf"
+original_class_hash = "0x52442a1e8004abfb4b8a7592823e0571035b244825f50a4680429f527bafcdf"
 abi = "manifests/dev/base/abis/models/tournament-TournamentEntryModel-278948ec.json"
 tag = "tournament-TournamentEntryModel"
 qualified_path = "tournament::ls15_components::tournament::tournament_entry_model"
@@ -13,7 +13,7 @@ key = true
 
 [[members]]
 name = "game_id"
-type = "u128"
+type = "u64"
 key = true
 
 [[members]]

@@ -385,6 +385,16 @@
     ]
   },
   {
+    "type": "struct",
+    "name": "core::array::Span::<tournament::ls15_components::interfaces::EntryCriteria>",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<tournament::ls15_components::interfaces::EntryCriteria>"
+      }
+    ]
+  },
+  {
     "type": "enum",
     "name": "tournament::ls15_components::constants::TokenType",
     "variants": [
@@ -412,7 +422,7 @@
       },
       {
         "name": "entry_criteria",
-        "type": "core::array::Array::<tournament::ls15_components::interfaces::EntryCriteria>"
+        "type": "core::array::Span::<tournament::ls15_components::interfaces::EntryCriteria>"
       },
       {
         "name": "token_type",
@@ -448,7 +458,7 @@
       },
       {
         "name": "token_distribution",
-        "type": "core::array::Array::<core::integer::u8>"
+        "type": "core::array::Span::<core::integer::u8>"
       },
       {
         "name": "creator_fee",

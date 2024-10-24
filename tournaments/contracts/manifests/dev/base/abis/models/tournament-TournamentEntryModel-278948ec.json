@@ -390,7 +390,7 @@
       },
       {
         "name": "game_id",
-        "type": "core::integer::u128"
+        "type": "core::integer::u64"
       },
       {
         "name": "address",

@@ -1,6 +1,6 @@
 kind = "DojoModel"
-class_hash = "0xd7dfe292af5867169fcf64a107b0870cf04792ea6e9d5f5927c27789996a37"
-original_class_hash = "0xd7dfe292af5867169fcf64a107b0870cf04792ea6e9d5f5927c27789996a37"
+class_hash = "0x281de60a89ef68a3ee9a8f360b38ac9fbb93d8d90cdddc0dc4d703838b914bf"
+original_class_hash = "0x281de60a89ef68a3ee9a8f360b38ac9fbb93d8d90cdddc0dc4d703838b914bf"
 abi = "manifests/dev/base/abis/models/tournament-TournamentModel-45244913.json"
 tag = "tournament-TournamentModel"
 qualified_path = "tournament::ls15_components::tournament::tournament_model"

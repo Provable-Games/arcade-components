@@ -1,6 +1,6 @@
 kind = "DojoModel"
-class_hash = "0x75ce6bccb35e6ffbc2fb79ea72f9d138974b1fd0277093e80cbbd98a35088f3"
-original_class_hash = "0x75ce6bccb35e6ffbc2fb79ea72f9d138974b1fd0277093e80cbbd98a35088f3"
+class_hash = "0x4fa112da6aef93f027d7c3651c82999c60bbfefc2b51b08924e789caa84d221"
+original_class_hash = "0x4fa112da6aef93f027d7c3651c82999c60bbfefc2b51b08924e789caa84d221"
 abi = "manifests/dev/base/abis/models/tournament-TournamentEntriesAddressModel-71659e89.json"
 tag = "tournament-TournamentEntriesAddressModel"
 qualified_path = "tournament::ls15_components::tournament::tournament_entries_address_model"
@@ -23,5 +23,5 @@ key = false
 
 [[members]]
 name = "game_ids"
-type = "Array<u128>"
+type = "Array<u64>"
 key = false

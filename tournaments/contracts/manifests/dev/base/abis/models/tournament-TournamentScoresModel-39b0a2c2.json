@@ -376,7 +376,7 @@
       },
       {
         "name": "top_score_ids",
-        "type": "core::array::Array::<core::integer::u128>"
+        "type": "core::array::Array::<core::integer::u64>"
       }
     ]
   },

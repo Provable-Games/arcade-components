@@ -27,8 +27,9 @@ fn ORACLE() -> starknet::ContractAddress {
 }
 
 const VRF_COST_PER_GAME: u32 = 50000000; // $0.50 with 8 decimals
-const MIN_REGISTRATION_PERIOD: u32 = 3600; // 1 day
-const SUBMISSION_PERIOD: u32 = 86400; // 1 day
+const MIN_REGISTRATION_PERIOD: u32 = 300; // 5 minutes
+const MIN_SUBMISSION_PERIOD: u32 = 3600; // 1 hour
+const MAX_SUBMISSION_PERIOD: u32 = 604800; // 1 week
 const GAME_EXPIRATION_PERIOD: u32 = 864000; // 10 days
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]

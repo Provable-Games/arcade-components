@@ -19,10 +19,11 @@ struct EntryCriteria {
     entry_count: u8,
 }
 
-#[derive(Drop, Serde, PartialEq, Introspect)]
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 struct GatedToken {
     token: ContractAddress,
-    entry_criteria: Array<EntryCriteria>,
+    // TODO: create a different type custom entry criteria and uniform entry criteria
+    entry_criteria: Span<EntryCriteria>,
     token_type: TokenType,
 }
 
@@ -49,11 +50,11 @@ struct ERC1155Prize {
     token_distribution: Array<u8>,
 }
 
-#[derive(Drop, Serde, PartialEq, Introspect)]
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 struct Premium {
     token: ContractAddress,
     token_amount: u128,
-    token_distribution: Array<u8>,
+    token_distribution: Span<u8>,
     creator_fee: u8,
 }
 

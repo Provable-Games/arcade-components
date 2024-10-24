@@ -8,7 +8,7 @@ use tournament::ls15_components::constants::{TokenType, PrizeType};
 trait ITournamentMock<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn top_scores(self: @TState, tournament_id: u64) -> Array<u16>;
+    fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
     fn is_tournament_active(self: @TState, tournament_id: u64) -> bool;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     fn create_tournament(
@@ -30,7 +30,7 @@ trait ITournamentMock<TState> {
         gated_token_id: u256
     );
     fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);
-    fn submit_scores(ref self: TState, tournament_id: u64, character_ids: Array<u256>);
+    fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
     fn claim_prizes(ref self: TState, tournament_id: u64);
 
     // IWorldProvider

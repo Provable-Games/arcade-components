@@ -15,7 +15,7 @@ impl TournamentEntriesAddressModelIntrospect<> of dojo::model::introspect::Intro
                 },
                 dojo::model::FieldLayout {
                     selector: 265866676642830162498721691547279957379484306165912539482818020839472807558,
-                    layout: dojo::model::introspect::Introspect::<Array<u128>>::layout()
+                    layout: dojo::model::introspect::Introspect::<Array<u64>>::layout()
                 }
             ]
                 .span()
@@ -48,7 +48,7 @@ impl TournamentEntriesAddressModelIntrospect<> of dojo::model::introspect::Intro
                         name: 'game_ids',
                         attrs: array![].span(),
                         ty: dojo::model::introspect::Ty::Array(
-                            array![dojo::model::introspect::Introspect::<u128>::ty()].span()
+                            array![dojo::model::introspect::Introspect::<u64>::ty()].span()
                         )
                     }
                 ]
@@ -62,7 +62,7 @@ impl TournamentEntriesAddressModelIntrospect<> of dojo::model::introspect::Intro
 pub struct TournamentEntriesAddressModelEntity {
     __id: felt252, // private field
     pub entry_count: u8,
-    pub game_ids: Array<u128>,
+    pub game_ids: Array<u64>,
 }
 
 #[generate_trait]
@@ -113,7 +113,7 @@ pub impl TournamentEntriesAddressModelEntityStoreImpl of TournamentEntriesAddres
             );
     }
 
-    fn get_game_ids(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> Array<u128> {
+    fn get_game_ids(world: dojo::world::IWorldDispatcher, entity_id: felt252) -> Array<u64> {
         let mut values = dojo::model::ModelEntity::<
             TournamentEntriesAddressModelEntity
         >::get_member(
@@ -121,19 +121,19 @@ pub impl TournamentEntriesAddressModelEntityStoreImpl of TournamentEntriesAddres
             entity_id,
             265866676642830162498721691547279957379484306165912539482818020839472807558
         );
-        let field_value = core::serde::Serde::<Array<u128>>::deserialize(ref values);
+        let field_value = core::serde::Serde::<Array<u64>>::deserialize(ref values);
 
-        if core::option::OptionTrait::<Array<u128>>::is_none(@field_value) {
+        if core::option::OptionTrait::<Array<u64>>::is_none(@field_value) {
             panic!("Field `TournamentEntriesAddressModel::game_ids`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<Array<u128>>::unwrap(field_value)
+        core::option::OptionTrait::<Array<u64>>::unwrap(field_value)
     }
 
     fn set_game_ids(
         self: @TournamentEntriesAddressModelEntity,
         world: dojo::world::IWorldDispatcher,
-        value: Array<u128>
+        value: Array<u64>
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);
@@ -237,7 +237,7 @@ pub impl TournamentEntriesAddressModelStoreImpl of TournamentEntriesAddressModel
 
     fn get_game_ids(
         world: dojo::world::IWorldDispatcher, tournament_id: u64, address: ContractAddress
-    ) -> Array<u128> {
+    ) -> Array<u64> {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
         core::serde::Serde::serialize(@address, ref serialized);
@@ -250,19 +250,19 @@ pub impl TournamentEntriesAddressModelStoreImpl of TournamentEntriesAddressModel
             265866676642830162498721691547279957379484306165912539482818020839472807558
         );
 
-        let field_value = core::serde::Serde::<Array<u128>>::deserialize(ref values);
+        let field_value = core::serde::Serde::<Array<u64>>::deserialize(ref values);
 
-        if core::option::OptionTrait::<Array<u128>>::is_none(@field_value) {
+        if core::option::OptionTrait::<Array<u64>>::is_none(@field_value) {
             panic!("Field `TournamentEntriesAddressModel::game_ids`: deserialization failed.");
         }
 
-        core::option::OptionTrait::<Array<u128>>::unwrap(field_value)
+        core::option::OptionTrait::<Array<u64>>::unwrap(field_value)
     }
 
     fn set_game_ids(
         self: @TournamentEntriesAddressModel,
         world: dojo::world::IWorldDispatcher,
-        value: Array<u128>
+        value: Array<u64>
     ) {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@value, ref serialized);

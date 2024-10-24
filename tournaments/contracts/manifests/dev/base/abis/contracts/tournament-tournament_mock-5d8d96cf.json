@@ -226,6 +226,16 @@
     ]
   },
   {
+    "type": "struct",
+    "name": "core::array::Span::<tournament::ls15_components::interfaces::EntryCriteria>",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<tournament::ls15_components::interfaces::EntryCriteria>"
+      }
+    ]
+  },
+  {
     "type": "enum",
     "name": "tournament::ls15_components::constants::TokenType",
     "variants": [
@@ -253,7 +263,7 @@
       },
       {
         "name": "entry_criteria",
-        "type": "core::array::Array::<tournament::ls15_components::interfaces::EntryCriteria>"
+        "type": "core::array::Span::<tournament::ls15_components::interfaces::EntryCriteria>"
       },
       {
         "name": "token_type",
@@ -277,6 +287,16 @@
   },
   {
     "type": "struct",
+    "name": "core::array::Span::<core::integer::u8>",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::integer::u8>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
     "name": "tournament::ls15_components::interfaces::Premium",
     "members": [
       {
@@ -289,7 +309,7 @@
       },
       {
         "name": "token_distribution",
-        "type": "core::array::Array::<core::integer::u8>"
+        "type": "core::array::Span::<core::integer::u8>"
       },
       {
         "name": "creator_fee",
@@ -607,7 +627,7 @@
         ],
         "outputs": [
           {
-            "type": "core::array::Array::<core::integer::u128>"
+            "type": "core::array::Array::<core::integer::u64>"
           }
         ],
         "state_mutability": "view"
@@ -746,7 +766,7 @@
           },
           {
             "name": "game_ids",
-            "type": "core::array::Array::<core::integer::u256>"
+            "type": "core::array::Array::<core::felt252>"
           }
         ],
         "outputs": [],
@@ -853,7 +873,7 @@
       },
       {
         "name": "game_id",
-        "type": "core::integer::u256",
+        "type": "core::felt252",
         "kind": "data"
       },
       {
@@ -875,7 +895,7 @@
       },
       {
         "name": "game_id",
-        "type": "core::integer::u256",
+        "type": "core::felt252",
         "kind": "data"
       },
       {

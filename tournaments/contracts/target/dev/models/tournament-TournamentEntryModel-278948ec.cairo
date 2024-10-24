@@ -44,7 +44,7 @@ impl TournamentEntryModelIntrospect<> of dojo::model::introspect::Introspect<
                     dojo::model::introspect::Member {
                         name: 'game_id',
                         attrs: array!['key'].span(),
-                        ty: dojo::model::introspect::Introspect::<u128>::ty()
+                        ty: dojo::model::introspect::Introspect::<u64>::ty()
                     },
                     dojo::model::introspect::Member {
                         name: 'address',
@@ -152,7 +152,7 @@ pub impl TournamentEntryModelEntityStoreImpl of TournamentEntryModelEntityStore 
 
 #[generate_trait]
 pub impl TournamentEntryModelStoreImpl of TournamentEntryModelStore {
-    fn entity_id_from_keys(tournament_id: u64, game_id: u128) -> felt252 {
+    fn entity_id_from_keys(tournament_id: u64, game_id: u64) -> felt252 {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
         core::serde::Serde::serialize(@game_id, ref serialized);
@@ -178,7 +178,7 @@ pub impl TournamentEntryModelStoreImpl of TournamentEntryModelStore {
     }
 
     fn get(
-        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u128
+        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u64
     ) -> TournamentEntryModel {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
@@ -197,7 +197,7 @@ pub impl TournamentEntryModelStoreImpl of TournamentEntryModelStore {
 
 
     fn get_address(
-        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u128
+        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u64
     ) -> ContractAddress {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
@@ -235,7 +235,7 @@ pub impl TournamentEntryModelStoreImpl of TournamentEntryModelStore {
     }
 
     fn get_status(
-        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u128
+        world: dojo::world::IWorldDispatcher, tournament_id: u64, game_id: u64
     ) -> EntryStatus {
         let mut serialized = core::array::ArrayTrait::new();
         core::serde::Serde::serialize(@tournament_id, ref serialized);
