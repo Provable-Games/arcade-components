@@ -45,7 +45,6 @@ struct TournamentModel {
     winners_count: u8,
     gated_type: Option<GatedType>,
     entry_premium: Option<Premium>,
-    prizes: Array<PrizeType>,
     stat_requirements: Array<StatRequirement>,
     claimed: bool,
 }
@@ -106,6 +105,22 @@ struct TournamentScoresModel {
 }
 
 #[dojo::model]
+#[derive(Copy, Drop, Serde)]
+struct TournamentTotalModel {
+    #[key]
+    contract: ContractAddress,
+    total_tournaments: u64,
+}
+
+#[dojo::model]
+#[derive(Drop, Serde)]
+struct TournamentPrizesModel {
+    #[key]
+    tournament_id: u64,
+    prizes: Array<PrizeType>,
+}
+
+#[dojo::model]
 #[derive(Drop, Serde)]
 struct TokenModel {
     #[key]
@@ -114,14 +129,6 @@ struct TokenModel {
     symbol: ByteArray,
     token_type: TokenType,
     is_registered: bool,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-struct TournamentTotalModel {
-    #[key]
-    contract: ContractAddress,
-    total_tournaments: u64,
 }
 
 #[dojo::model]
@@ -155,7 +162,6 @@ trait ITournament<TState> {
         submission_period: u64,
         winners_count: u8,
         entry_premium: Option<Premium>,
-        prizes: Array<PrizeType>,
         stat_requirements: Array<StatRequirement>,
     ) -> u64;
     fn register_tokens(ref self: TState, tokens: Array<Token>);
@@ -164,7 +170,8 @@ trait ITournament<TState> {
     );
     fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);
     fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
-    fn claim_prizes(ref self: TState, tournament_id: u64);
+    fn add_prizes(ref self: TState, tournament_id: u64, prizes: Array<PrizeType>);
+    fn claim_prizes(ref self: TState, tournament_id: u64, game_ids: Option<Array<felt252>>);
 }
 
 ///
@@ -179,8 +186,9 @@ mod tournament_component {
     use super::TournamentStartIdsModel;
     use super::TournamentEntriesModel;
     use super::TournamentScoresModel;
-    use super::TokenModel;
     use super::TournamentTotalModel;
+    use super::TournamentPrizesModel;
+    use super::TokenModel;
     use super::TournamentContracts;
     use super::ITournament;
 
@@ -189,7 +197,8 @@ mod tournament_component {
     use tournament::ls15_components::constants::{
         LOOT_SURVIVOR, Operation, StatRequirementEnum, TokenType, LORDS, ETH, ORACLE,
         VRF_COST_PER_GAME, TWO_POW_128, MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD,
-        MAX_SUBMISSION_PERIOD, GAME_EXPIRATION_PERIOD, PrizeType, EntryStatus, GatedType, GatedSubmissionType
+        MAX_SUBMISSION_PERIOD, GAME_EXPIRATION_PERIOD, PrizeType, EntryStatus, GatedType,
+        GatedSubmissionType
     };
     use tournament::ls15_components::interfaces::{
         LootRequirement, Token, StatRequirement, ILootSurvivor, ILootSurvivorDispatcher,
@@ -233,6 +242,7 @@ mod tournament_component {
         StartTournament: StartTournament,
         SubmitScore: SubmitScore,
         NewHighScore: NewHighScore,
+        // AddNewPrize: AddNewPrize,
         SettleTournament: SettleTournament,
         RegisterToken: RegisterToken,
     }
@@ -269,6 +279,12 @@ mod tournament_component {
         score: u16,
         rank: u8,
     }
+
+    // #[derive(Copy, Drop, Serde, starknet::Event)]
+    // struct AddNewPrize {
+    //     tournament_id: u64,
+    //     prize: PrizeType,
+    // }
 
     #[derive(Copy, Drop, Serde, starknet::Event)]
     struct SettleTournament {
@@ -359,7 +375,6 @@ mod tournament_component {
             submission_period: u64,
             winners_count: u8,
             entry_premium: Option<Premium>,
-            prizes: Array<PrizeType>,
             stat_requirements: Array<StatRequirement>,
         ) -> u64 {
             // assert the start time is not in the past and is larger the minimum registration
@@ -394,9 +409,6 @@ mod tournament_component {
                 Errors::INVALID_DISTRIBUTION
             );
 
-            // add prizes to the contract
-            self._deposit_prizes(prizes.span(), winners_count);
-
             // create a new tournament
             self
                 ._create_tournament(
@@ -408,7 +420,6 @@ mod tournament_component {
                     submission_period,
                     winners_count,
                     entry_premium,
-                    prizes,
                     stat_requirements,
                 )
         }
@@ -668,8 +679,16 @@ mod tournament_component {
             );
         }
 
-        // TODO: to protect step errors can be claimed for set of game ids
-        fn claim_prizes(ref self: ComponentState<TContractState>, tournament_id: u64) {
+        fn add_prizes(
+            ref self: ComponentState<TContractState>, tournament_id: u64, prizes: Array<PrizeType>
+        ) {
+            // add prizes to the contract
+            self._deposit_prizes(tournament_id, prizes.span());
+            // TODO: look into fixing non copyable array when trying to append
+            // self._add_prizes(tournament_id, prizes);
+        }
+
+        fn claim_prizes(ref self: ComponentState<TContractState>, tournament_id: u64, game_ids: Option<Array<felt252>>) {
             let tournament = get!(self.get_contract().world(), (tournament_id), (TournamentModel));
             assert(
                 tournament.end_time + tournament.submission_period <= get_block_timestamp(),
@@ -679,8 +698,9 @@ mod tournament_component {
 
             let mut top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
             let tournament = self.get_tournament(tournament_id);
+            let tournament_prizes = self.get_prizes(tournament_id);
 
-            self._distribute_prizes(tournament.prizes, ref top_score_ids);
+            self._distribute_prizes(tournament_prizes, ref top_score_ids, true);
             match tournament.entry_premium {
                 Option::Some(premium) => {
                     self
@@ -779,6 +799,12 @@ mod tournament_component {
                 contract_address: self.get_tournament_contracts().loot_survivor
             };
             ls_dispatcher.get_adventurer_meta(game_id).death_date
+        }
+
+        fn get_prizes(
+            ref self: ComponentState<TContractState>, tournament_id: u64
+        ) -> Array<PrizeType> {
+            get!(self.get_contract().world(), (tournament_id), (TournamentPrizesModel)).prizes
         }
 
         fn _is_tournament_started(
@@ -960,6 +986,29 @@ mod tournament_component {
             emit!(self.get_contract().world(), (Event::SubmitScore(submit_score_event)));
         }
 
+        // fn _add_prizes(
+        //     ref self: ComponentState<TContractState>, tournament_id: u64, prizes: Array<PrizeType>
+        // ) {
+        //     let mut tournament_prizes = self.get_prizes(tournament_id);
+        //     let num_prizes = prizes.len();
+        //     let mut prize_index = 0;
+        //     loop {
+        //         if prize_index == num_prizes {
+        //             break;
+        //         }
+        //         let prize = *prizes.at(prize_index);
+        //         tournament_prizes.append(prize);
+        //         // let add_prize_event = AddNewPrize { tournament_id, prize };
+        //         // self.emit(add_prize_event.clone());
+        //         // emit!(self.get_contract().world(), (Event::AddNewPrize(add_prize_event)));
+        //         prize_index += 1;
+        //     };
+        //     set!(
+        //         self.get_contract().world(),
+        //         TournamentPrizesModel { tournament_id, prizes: tournament_prizes }
+        //     );
+        // }
+
         fn _create_tournament(
             ref self: ComponentState<TContractState>,
             name: ByteArray,
@@ -970,7 +1019,6 @@ mod tournament_component {
             submission_period: u64,
             winners_count: u8,
             entry_premium: Option<Premium>,
-            prizes: Array<PrizeType>,
             stat_requirements: Array<StatRequirement>,
         ) -> u64 {
             let new_tournament_id = self.get_total_tournaments().total_tournaments + 1;
@@ -986,7 +1034,6 @@ mod tournament_component {
                     submission_period,
                     winners_count,
                     entry_premium,
-                    prizes,
                     stat_requirements,
                     claimed: false
                 }
@@ -1203,8 +1250,9 @@ mod tournament_component {
         }
 
         fn _deposit_prizes(
-            ref self: ComponentState<TContractState>, prizes: Span<PrizeType>, winners_count: u8
+            ref self: ComponentState<TContractState>, tournament_id: u64, prizes: Span<PrizeType>
         ) {
+            let winners_count = self.get_tournament(tournament_id).winners_count;
             let num_prizes = prizes.len();
             let mut prize_index = 0;
             loop {
@@ -1276,7 +1324,8 @@ mod tournament_component {
         fn _distribute_prizes(
             ref self: ComponentState<TContractState>,
             prizes: Array<PrizeType>,
-            ref top_score_ids: Array<u64>
+            ref top_score_ids: Array<u64>,
+            distribute_all: bool
         ) {
             let tournament_contracts = self.get_tournament_contracts();
             let num_prizes = prizes.len();
@@ -1412,7 +1461,10 @@ mod tournament_component {
             match gated_type {
                 GatedType::token(token) => {
                     // assert the caller has a qualifying nft
-                    self._assert_has_qualifying_nft(token, gated_submission_type, address, ref entries);
+                    self
+                        ._assert_has_qualifying_nft(
+                            token, gated_submission_type, address, ref entries
+                        );
                 },
                 GatedType::tournament(tournament_ids) => {
                     // assert the owner owns game ids and has a top score in tournaments
@@ -1491,7 +1543,8 @@ mod tournament_component {
                                 }
                                 let owner = self
                                     ._get_owner(
-                                        tournament_contracts.loot_survivor, (*game_ids.at(loop_index)).try_into().unwrap()
+                                        tournament_contracts.loot_survivor,
+                                        (*game_ids.at(loop_index)).try_into().unwrap()
                                     );
                                 assert(owner == address, Errors::NO_QUALIFYING_NFT);
                                 let adventurer = ls_dispatcher

@@ -26,7 +26,9 @@ trait ITournamentMock<TState> {
         stat_requirements: Array<StatRequirement>
     ) -> u64;
     fn register_tokens(ref self: TState, tokens: Array<Token>);
-    fn enter_tournament(ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>);
+    fn enter_tournament(
+        ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>
+    );
     fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);
     fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
     fn claim_prizes(ref self: TState, tournament_id: u64);
