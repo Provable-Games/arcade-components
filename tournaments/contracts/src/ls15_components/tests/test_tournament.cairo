@@ -6,9 +6,11 @@ use dojo::model::{Model, ModelTest, ModelIndex, ModelEntityTest};
 use dojo::utils::test::spawn_test_world;
 
 use tournament::ls15_components::constants::{
-    MIN_REGISTRATION_PERIOD, SUBMISSION_PERIOD, TokenType, PrizeType
+    MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, TokenType, PrizeType
 };
-use tournament::ls15_components::interfaces::{ERC20Prize, ERC721Prize, ERC1155Prize, Token, Premium};
+use tournament::ls15_components::interfaces::{
+    ERC20Prize, ERC721Prize, ERC1155Prize, Token, Premium
+};
 use adventurer::{
     adventurer::Adventurer, adventurer_meta::AdventurerMetadata, bag::Bag, equipment::Equipment,
     item::Item, stats::Stats
@@ -268,10 +270,10 @@ fn test_create_tournament() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
@@ -304,10 +306,10 @@ fn test_create_tournament_invalid_start_time() {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
@@ -324,10 +326,10 @@ fn test_create_tournament_invalid_end_time() {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             2 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
@@ -400,19 +402,17 @@ fn test_create_tournament_with_prizes() {
                 token_distribution: array![100],
             }
         ),
-        PrizeType::erc721(
-            ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }
-        ),
+        PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }),
     ];
     erc20.approve(tournament.contract_address, STARTING_BALANCE);
     erc721.approve(tournament.contract_address, 1);
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             prizes,
@@ -460,10 +460,10 @@ fn test_create_tournament_with_prizes_token_not_registered() {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             prizes,
@@ -506,19 +506,17 @@ fn test_create_tournament_with_prizes_invalid_distribution() {
                 token_distribution: array![100, 0],
             }
         ),
-        PrizeType::erc721(
-            ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }
-        ),
+        PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }),
     ];
     erc20.approve(tournament.contract_address, STARTING_BALANCE);
     erc721.approve(tournament.contract_address, 1);
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             prizes,
@@ -530,17 +528,7 @@ fn test_create_tournament_with_prizes_invalid_distribution() {
 
 #[test]
 fn test_enter_tournament() {
-    let (
-        _world,
-        mut tournament,
-        mut loot_survivor,
-        _pragma,
-        mut eth,
-        mut lords,
-        _erc20,
-        _erc721,
-        _erc1155
-    ) =
+    let (_world, mut tournament, _loot_survivor, _pragma, _eth, _lords, _erc20, _erc721, _erc1155) =
         setup();
 
     testing::set_account_contract_address(OWNER());
@@ -549,29 +537,17 @@ fn test_enter_tournament() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
             array![]
         );
 
-    lords.approve(tournament.contract_address, 50000000000000000000);
-    // calculate eth to approve, $0.5 / 2500 = 0.0002
-    eth.approve(tournament.contract_address, 200000000000000);
-
-    tournament.enter_tournament(tournament_id, 0);
-
-    // check lords and eth balances of owner after entering
-    assert(lords.balance_of(OWNER()) == STARTING_BALANCE - 50000000000000000000, 'Invalid balance');
-    assert(eth.balance_of(OWNER()) == STARTING_BALANCE - 200000000000000, 'Invalid balance');
-
-    // check lords and eth balances of tournament after entering
-    assert(lords.balance_of(tournament.contract_address) == 50000000000000000000, 'Invalid balance');
-    assert(eth.balance_of(tournament.contract_address) == 200000000000000, 'Invalid balance');
+    tournament.enter_tournament(tournament_id, Option::None);
 }
 
 #[test]
@@ -583,10 +559,10 @@ fn test_enter_tournament_already_started() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
@@ -595,7 +571,7 @@ fn test_enter_tournament_already_started() {
 
     testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
 
-    tournament.enter_tournament(tournament_id, 0);
+    tournament.enter_tournament(tournament_id, Option::None);
 }
 
 #[test]
@@ -619,23 +595,24 @@ fn test_start_tournament() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
             array![]
         );
 
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
     lords.approve(tournament.contract_address, 50000000000000000000);
     // calculate eth to approve, $0.5 / 2500 = 0.0002
     eth.approve(tournament.contract_address, 200000000000000);
 
-    tournament.enter_tournament(tournament_id, 0);
-
-    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
     tournament.start_tournament(tournament_id, false);
 
     // check owner now has game token
@@ -645,6 +622,10 @@ fn test_start_tournament() {
         lords.balance_of(loot_survivor.contract_address) == 50000000000000000000, 'Invalid balance'
     );
     assert(eth.balance_of(loot_survivor.contract_address) == 200000000000000, 'Invalid balance');
+
+    // check lords and eth balances of owner after starting
+    assert(lords.balance_of(OWNER()) == STARTING_BALANCE - 50000000000000000000, 'Invalid balance');
+    assert(eth.balance_of(OWNER()) == STARTING_BALANCE - 200000000000000, 'Invalid balance');
 }
 
 #[test]
@@ -669,23 +650,24 @@ fn test_start_tournament_entry_already_started() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
             array![]
         );
 
-    lords.approve(tournament.contract_address, 50000000000000000000);
-    // calculate eth to approve, $0.5 / 2500 = 0.0002
-    eth.approve(tournament.contract_address, 200000000000000);
-
-    tournament.enter_tournament(tournament_id, 0);
+    tournament.enter_tournament(tournament_id, Option::None);
 
     testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
+    lords.approve(tournament.contract_address, 2 * 50000000000000000000);
+    // calculate eth to approve, $0.5 / 2500 = 0.0002
+    eth.approve(tournament.contract_address, 2 * 200000000000000);
+
     tournament.start_tournament(tournament_id, false);
     tournament.start_tournament(tournament_id, false);
 }
@@ -711,23 +693,24 @@ fn test_submit_scores() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             array![],
             array![]
         );
 
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
     lords.approve(tournament.contract_address, 50000000000000000000);
     // calculate eth to approve, $0.5 / 2500 = 0.0002
     eth.approve(tournament.contract_address, 200000000000000);
 
-    tournament.enter_tournament(tournament_id, 0);
-
-    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
     tournament.start_tournament(tournament_id, false);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
@@ -785,27 +768,28 @@ fn test_submit_multiple_scores() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             3, // three top score
             Option::None, // zero entry premium
             array![],
             array![]
         );
 
+    tournament.enter_tournament(tournament_id, Option::None);
+    tournament.enter_tournament(tournament_id, Option::None);
+    tournament.enter_tournament(tournament_id, Option::None);
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
     // approve base costs for 4 entries
     lords.approve(tournament.contract_address, 4 * 50000000000000000000);
     // calculate eth to approve, $0.5 / 2500 = 0.0002
     eth.approve(tournament.contract_address, 4 * 200000000000000);
 
-    tournament.enter_tournament(tournament_id, 0);
-    tournament.enter_tournament(tournament_id, 0);
-    tournament.enter_tournament(tournament_id, 0);
-    tournament.enter_tournament(tournament_id, 0);
-
-    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
     tournament.start_tournament(tournament_id, false);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
@@ -845,7 +829,6 @@ fn test_submit_multiple_scores() {
     submitted_adventurer.xp = 1;
     loot_survivor.set_adventurer(4, submitted_adventurer);
 
-
     tournament.submit_scores(tournament_id, array![3, 2, 1]);
     let scores = tournament.top_scores(tournament_id);
     assert(scores.len() == 3, 'Invalid scores length');
@@ -856,9 +839,18 @@ fn test_submit_multiple_scores() {
 
 #[test]
 fn test_claim_prizes() {
-    let (_world, mut tournament, mut loot_survivor, _pragma, mut eth, mut lords, mut erc20, mut erc721,
-    _erc1155) =
-    setup();
+    let (
+        _world,
+        mut tournament,
+        mut loot_survivor,
+        _pragma,
+        mut eth,
+        mut lords,
+        mut erc20,
+        mut erc721,
+        _erc1155
+    ) =
+        setup();
 
     testing::set_account_contract_address(OWNER());
     testing::set_contract_address(OWNER());
@@ -879,9 +871,7 @@ fn test_claim_prizes() {
                 token_distribution: array![100],
             }
         ),
-        PrizeType::erc721(
-            ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }
-        ),
+        PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }),
     ];
     erc20.approve(tournament.contract_address, STARTING_BALANCE);
     erc721.approve(tournament.contract_address, 1);
@@ -889,23 +879,24 @@ fn test_claim_prizes() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated token
+            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
-            SUBMISSION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero entry premium
             prizes,
             array![]
         );
 
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
     lords.approve(tournament.contract_address, 50000000000000000000);
     // calculate eth to approve, $0.5 / 2500 = 0.0002
     eth.approve(tournament.contract_address, 200000000000000);
 
-    tournament.enter_tournament(tournament_id, 0);
-
-    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
     tournament.start_tournament(tournament_id, false);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
@@ -915,13 +906,7 @@ fn test_claim_prizes() {
         health: 0,
         xp: 1,
         stats: Stats {
-            strength: 0,
-            dexterity: 0,
-            vitality: 0,
-            intelligence: 0,
-            wisdom: 0,
-            charisma: 0,
-            luck: 0
+            strength: 0, dexterity: 0, vitality: 0, intelligence: 0, wisdom: 0, charisma: 0, luck: 0
         },
         gold: 0,
         equipment: Equipment {
@@ -944,12 +929,11 @@ fn test_claim_prizes() {
 
     tournament.submit_scores(tournament_id, array![1]);
 
-    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + SUBMISSION_PERIOD.into());
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
     tournament.claim_prizes(tournament_id);
 
     // check balances of owner after claiming prizes
     assert(erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
     assert(erc721.owner_of(1) == OWNER(), 'Invalid owner');
 }
-
 

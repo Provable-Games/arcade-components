@@ -15,7 +15,6 @@ struct Token {
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 struct EntryCriteria {
     token_id: u128,
-    token_amount: u128, // not essential
     entry_count: u8,
 }
 
@@ -24,7 +23,6 @@ struct GatedToken {
     token: ContractAddress,
     // TODO: create a different type custom entry criteria and uniform entry criteria
     entry_criteria: Span<EntryCriteria>,
-    token_type: TokenType,
 }
 
 // enum config ERC20, ERC721, ERC1155

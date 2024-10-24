@@ -1,6 +1,4 @@
-use tournament::ls15_components::interfaces::{
-    ERC20Prize, ERC721Prize, ERC1155Prize
-};
+use tournament::ls15_components::interfaces::{ERC20Prize, ERC721Prize, ERC1155Prize, GatedToken};
 
 fn LOOT_SURVIVOR() -> starknet::ContractAddress {
     starknet::contract_address_const::<
@@ -61,11 +59,17 @@ enum TokenType {
 
 const TWO_POW_128: u128 = 100000000000000000000000000000000;
 
-// #[derive(Drop, Serde)]
-// enum RegistrationType {
-//     open: OpenRegistrationConfig,
-//     exclusive: ExclusiveRegistrationConfig,
-// }
+#[derive(Copy, Drop, Serde, Introspect)]
+enum GatedType {
+    token: GatedToken,
+    tournament: Span<u64>,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+enum GatedSubmissionType {
+    token_id: u256,
+    game_id: Span<felt252>,
+}
 
 #[derive(Drop, Serde, Introspect)]
 enum PrizeType {

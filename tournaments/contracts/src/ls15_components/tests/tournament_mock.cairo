@@ -1,8 +1,10 @@
 use starknet::{ContractAddress, ClassHash};
 use dojo::world::IWorldDispatcher;
 use tournament::ls15_components::tournament::{TournamentModel};
-use tournament::ls15_components::interfaces::{LootRequirement, Token, StatRequirement, GatedToken, Premium};
-use tournament::ls15_components::constants::{TokenType, PrizeType};
+use tournament::ls15_components::interfaces::{
+    LootRequirement, Token, StatRequirement, GatedToken, Premium
+};
+use tournament::ls15_components::constants::{TokenType, PrizeType, GatedType, GatedSubmissionType};
 
 #[starknet::interface]
 trait ITournamentMock<TState> {
@@ -14,21 +16,17 @@ trait ITournamentMock<TState> {
     fn create_tournament(
         ref self: TState,
         name: ByteArray,
-        gated_token: Option<GatedToken>,
+        gated_submission_type: Option<GatedSubmissionType>,
         start_time: u64,
         end_time: u64,
         submission_period: u64,
-        leaderboard_size: u8,
+        winners_count: u8,
         entry_premium: Option<Premium>,
         prizes: Array<PrizeType>,
         stat_requirements: Array<StatRequirement>
     ) -> u64;
     fn register_tokens(ref self: TState, tokens: Array<Token>);
-    fn enter_tournament(
-        ref self: TState,
-        tournament_id: u64,
-        gated_token_id: u256
-    );
+    fn enter_tournament(ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>);
     fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);
     fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
     fn claim_prizes(ref self: TState, tournament_id: u64);

@@ -1,6 +1,10 @@
 use starknet::ContractAddress;
-use tournament::ls15_components::interfaces::{LootRequirement, Token, StatRequirement, GatedToken, Premium};
-use tournament::ls15_components::constants::{TokenType, PrizeType, EntryStatus};
+use tournament::ls15_components::interfaces::{
+    LootRequirement, Token, StatRequirement, GatedToken, Premium
+};
+use tournament::ls15_components::constants::{
+    TokenType, PrizeType, EntryStatus, GatedType, GatedSubmissionType
+};
 
 /// Raise a number to a power.
 /// O(log n) time complexity.
@@ -35,11 +39,11 @@ struct TournamentModel {
     tournament_id: u64,
     name: ByteArray,
     creator: ContractAddress,
-    gated_token: Option<GatedToken>,
     start_time: u64,
     end_time: u64,
     submission_period: u64,
-    leaderboard_size: u8,
+    winners_count: u8,
+    gated_type: Option<GatedType>,
     entry_premium: Option<Premium>,
     prizes: Array<PrizeType>,
     stat_requirements: Array<StatRequirement>,
@@ -65,7 +69,6 @@ struct TournamentAddressesModel {
     addresses: Array<ContractAddress>,
 }
 
-// create 2 seperate tables for entry and game ids list
 #[dojo::model]
 #[derive(Drop, Serde)]
 struct TournamentEntriesAddressModel {
@@ -74,6 +77,15 @@ struct TournamentEntriesAddressModel {
     #[key]
     address: ContractAddress,
     entry_count: u8,
+}
+
+#[dojo::model]
+#[derive(Drop, Serde)]
+struct TournamentStartIdsModel {
+    #[key]
+    tournament_id: u64,
+    #[key]
+    address: ContractAddress,
     game_ids: Array<u64>,
 }
 
@@ -82,7 +94,7 @@ struct TournamentEntriesAddressModel {
 struct TournamentEntriesModel {
     #[key]
     tournament_id: u64,
-    game_ids: Array<u64>,
+    entry_count: u8,
 }
 
 #[dojo::model]
@@ -137,20 +149,18 @@ trait ITournament<TState> {
     fn create_tournament(
         ref self: TState,
         name: ByteArray,
-        gated_token: Option<GatedToken>,
+        gated_type: Option<GatedType>,
         start_time: u64,
         end_time: u64,
         submission_period: u64,
-        leaderboard_size: u8,
+        winners_count: u8,
         entry_premium: Option<Premium>,
         prizes: Array<PrizeType>,
         stat_requirements: Array<StatRequirement>,
     ) -> u64;
     fn register_tokens(ref self: TState, tokens: Array<Token>);
     fn enter_tournament(
-        ref self: TState,
-        tournament_id: u64,
-        gated_token_id: u256
+        ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>
     );
     fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);
     fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
@@ -166,6 +176,7 @@ mod tournament_component {
     use super::TournamentEntryModel;
     use super::TournamentAddressesModel;
     use super::TournamentEntriesAddressModel;
+    use super::TournamentStartIdsModel;
     use super::TournamentEntriesModel;
     use super::TournamentScoresModel;
     use super::TokenModel;
@@ -177,8 +188,8 @@ mod tournament_component {
 
     use tournament::ls15_components::constants::{
         LOOT_SURVIVOR, Operation, StatRequirementEnum, TokenType, LORDS, ETH, ORACLE,
-        VRF_COST_PER_GAME, TWO_POW_128, MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD,
-        GAME_EXPIRATION_PERIOD, PrizeType, EntryStatus
+        VRF_COST_PER_GAME, TWO_POW_128, MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD,
+        MAX_SUBMISSION_PERIOD, GAME_EXPIRATION_PERIOD, PrizeType, EntryStatus, GatedType, GatedSubmissionType
     };
     use tournament::ls15_components::interfaces::{
         LootRequirement, Token, StatRequirement, ILootSurvivor, ILootSurvivorDispatcher,
@@ -276,13 +287,14 @@ mod tournament_component {
     mod Errors {
         const INVALID_START_TIME: felt252 = 'invalid start time';
         const INVALID_END_TIME: felt252 = 'invalid end time';
-        const INVALID_LEADERBOARD_SIZE: felt252 = 'invalid leaderboard size';
+        const INVALID_WINNERS_COUNT: felt252 = 'invalid winners count';
         const NO_QUALIFYING_NFT: felt252 = 'no qualifying nft';
         const TOURNAMENT_ALREADY_STARTED: felt252 = 'tournament already started';
         const TOURNAMENT_NOT_STARTED: felt252 = 'tournament not started';
         const TOURNAMENT_NOT_ENDED: felt252 = 'tournament not ended';
         const TOURNAMENT_NOT_ACTIVE: felt252 = 'tournament not active';
         const TOURNAMENT_NOT_SETTLED: felt252 = 'tournament not settled';
+        const TOURNAMENT_NOT_CLAIMED: felt252 = 'tournament not claimed';
         const TOURNAMENT_ALREADY_SETTLED: felt252 = 'tournament already settled';
         const NOT_OWNER: felt252 = 'not owner';
         const NOT_ENTERED: felt252 = 'tournament not entered';
@@ -300,6 +312,11 @@ mod tournament_component {
         const INVALID_SCORES_SUBMISSION: felt252 = 'invalid scores submission';
         const ALL_ENTRIES_STARTED: felt252 = 'all entries started';
         const INVALID_SUBMISSION_PERIOD: felt252 = 'invalid submission period';
+        const TOURNAMENT_PERIOD_TOO_LONG: felt252 = 'tournament period too long';
+        const INVALID_GATED_SUBMISSION_TYPE: felt252 = 'invalid gated submission type';
+        const INVALID_SUBMITTED_GAMES_LENGTH: felt252 = 'invalid submitted games length';
+        const NOT_OWNER_OF_SUBMITTED_GAME_ID: felt252 = 'not owner of submitted game';
+        const SUBMITTED_GAME_NOT_TOP_SCORE: felt252 = 'submitted game not top score';
     }
 
     #[embeddable_as(TournamentImpl)]
@@ -336,16 +353,17 @@ mod tournament_component {
         fn create_tournament(
             ref self: ComponentState<TContractState>,
             name: ByteArray,
-            gated_token: Option<GatedToken>,
+            gated_type: Option<GatedType>,
             start_time: u64,
             end_time: u64,
             submission_period: u64,
-            leaderboard_size: u8,
+            winners_count: u8,
             entry_premium: Option<Premium>,
             prizes: Array<PrizeType>,
             stat_requirements: Array<StatRequirement>,
         ) -> u64 {
-            // assert the start time is not in the past and is larger the minimum registration period
+            // assert the start time is not in the past and is larger the minimum registration
+            // period
             assert(
                 start_time >= get_block_timestamp() + MIN_REGISTRATION_PERIOD.into(),
                 Errors::INVALID_START_TIME
@@ -353,33 +371,42 @@ mod tournament_component {
             // assert the end time is larger than start_time
             assert(end_time > start_time, Errors::INVALID_END_TIME);
             // assert the submission period is larger than minimum
-            assert(submission_period >= MIN_SUBMISSION_PERIOD.into(), Errors::INVALID_SUBMISSION_PERIOD);
+            assert(
+                submission_period >= MIN_SUBMISSION_PERIOD.into(), Errors::INVALID_SUBMISSION_PERIOD
+            );
             // assert the submission period is less than the maximum
-            assert(submission_period <= MAX_SUBMISSION_PERIOD.into(), Errors::INVALID_SUBMISSION_PERIOD);
-            // TODO: change name from leaderboard (number of prize winners?)
-            // assert leaderboard size is bigger than 0
-            assert(leaderboard_size > 0, Errors::INVALID_LEADERBOARD_SIZE);
+            assert(
+                submission_period <= MAX_SUBMISSION_PERIOD.into(), Errors::INVALID_SUBMISSION_PERIOD
+            );
+            // assert winners count is bigger than 0
+            assert(winners_count > 0, Errors::INVALID_WINNERS_COUNT);
 
-            // assert the gated token is registered (if exists)
-            assert(self._is_gated_token_registered(gated_token.clone()), Errors::TOKEN_NOT_REGISTERED);
+            // assert the gated type validates
+            self._assert_gated_type_validates(gated_type);
 
             // assert premium distribution is valid
-            assert(self._is_premium_token_registered(entry_premium.clone()), Errors::TOKEN_NOT_REGISTERED);
-            assert(self._is_token_distribution_valid(entry_premium.clone(), leaderboard_size), Errors::INVALID_DISTRIBUTION);
+            assert(
+                self._is_premium_token_registered(entry_premium.clone()),
+                Errors::TOKEN_NOT_REGISTERED
+            );
+            assert(
+                self._is_token_distribution_valid(entry_premium.clone(), winners_count),
+                Errors::INVALID_DISTRIBUTION
+            );
 
             // add prizes to the contract
-            self._deposit_prizes(prizes.span(), leaderboard_size);
+            self._deposit_prizes(prizes.span(), winners_count);
 
             // create a new tournament
             self
                 ._create_tournament(
                     name,
                     get_caller_address(),
-                    gated_token,
+                    gated_type,
                     start_time,
                     end_time,
                     submission_period,
-                    leaderboard_size,
+                    winners_count,
                     entry_premium,
                     prizes,
                     stat_requirements,
@@ -394,56 +421,24 @@ mod tournament_component {
         fn enter_tournament(
             ref self: ComponentState<TContractState>,
             tournament_id: u64,
-            // TODO: make optional
-            gated_token_id: u256
+            gated_submission_type: Option<GatedSubmissionType>,
         ) {
             // assert game tournament has not started
             assert(!self._is_tournament_started(tournament_id), Errors::TOURNAMENT_ALREADY_STARTED);
 
             let tournament = self.get_tournament(tournament_id);
 
-            let mut entries = 1;
+            let mut entries: u8 = 1;
 
-            match tournament.gated_token {
-                Option::Some(token) => {
-                    // assert the caller has a qualifying nft
+            match tournament.gated_type {
+                Option::Some(gated_type) => {
                     self
-                        ._assert_has_qualifying_nft(
-                            token.token, get_caller_address(), gated_token_id
+                        ._assert_gated_submission_qualifies(
+                            gated_type, gated_submission_type, get_caller_address(), ref entries
                         );
-                    entries = self._get_entries(token, gated_token_id);
                 },
                 Option::None => {},
             };
-
-            // TODO: defer inserting base costs until you start tournament
-
-            let tournament_contracts = self.get_contracts();
-
-            // get current game cost
-            let ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: tournament_contracts.loot_survivor
-            };
-            let cost_to_play = ls_dispatcher.get_cost_to_play();
-
-            // transfer base game cost
-            let lords_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: tournament_contracts.lords
-            };
-            lords_dispatcher
-                .transfer_from(
-                    get_caller_address(),
-                    get_contract_address(),
-                    entries.into() * cost_to_play.into()
-                );
-
-            // transfer VRF cost
-            let eth_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: tournament_contracts.eth
-            };
-            let vrf_cost = self._convert_usd_to_wei(entries.into() * VRF_COST_PER_GAME.into());
-            eth_dispatcher
-                .transfer_from(get_caller_address(), get_contract_address(), vrf_cost.into());
 
             match tournament.entry_premium {
                 Option::Some(premium) => {
@@ -461,29 +456,23 @@ mod tournament_component {
             let address_entries = self.get_address_entries(tournament_id, get_caller_address());
             // store the addresses and entries count
             if (address_entries.entry_count == 0) {
-                // TODO: rename to tournament address list?
-                self.set_tournament_address(tournament_id, get_caller_address());
+                self.append_tournament_address_list(tournament_id, get_caller_address());
             }
             // store individual entries and append to list of entries by address
-            self.set_tournament_entries(tournament_id, entries);
+            self.increment_entries(tournament_id, entries);
             // TODO: can store multiple game ids in single felt with merkle tree?
         }
 
         // TODO: check there are enough entries to cover the top scores size
         // TODO: if start all, caller pays for all base costs
-        // TODO: if tournament lasts longer than 10 days don't allow start all
-        fn start_tournament(ref self: ComponentState<TContractState>, tournament_id: u64, start_all: bool) {
+        fn start_tournament(
+            ref self: ComponentState<TContractState>, tournament_id: u64, start_all: bool
+        ) {
             assert(self._is_tournament_active(tournament_id), Errors::TOURNAMENT_NOT_ACTIVE);
-            let contracts = self.get_contracts();
-            let mut ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: contracts.loot_survivor
-            };
-            let lords_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: contracts.lords
-            };
-            let eth_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: contracts.eth
-            };
+            // if starting all games assert tournament period is within max
+            if (start_all) {
+                self._assert_tournament_period_within_max(tournament_id);
+            }
 
             let mut entries = 0;
 
@@ -495,15 +484,44 @@ mod tournament_component {
                 entries = self.get_address_entries(tournament_id, get_caller_address()).entry_count;
                 assert(entries > 0, Errors::ALL_ENTRIES_STARTED);
             }
-            // set the approvals according to entries
-            let vrf_cost = self._convert_usd_to_wei(entries.into() * VRF_COST_PER_GAME.into());
+
+            // define contract interfaces
+            let tournament_contracts = self.get_tournament_contracts();
+            let mut ls_dispatcher = ILootSurvivorDispatcher {
+                contract_address: tournament_contracts.loot_survivor
+            };
+            let lords_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
+                contract_address: tournament_contracts.lords
+            };
+            let eth_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
+                contract_address: tournament_contracts.eth
+            };
+
+            // get current game cost
             let cost_to_play = ls_dispatcher.get_cost_to_play();
-            lords_dispatcher.approve(contracts.loot_survivor, entries.into() * cost_to_play.into());
-            eth_dispatcher.approve(contracts.loot_survivor, vrf_cost.into());
+
+            // transfer base game cost
+            lords_dispatcher
+                .transfer_from(
+                    get_caller_address(),
+                    get_contract_address(),
+                    entries.into() * cost_to_play.into()
+                );
+
+            // transfer VRF cost
+            let vrf_cost = self._convert_usd_to_wei(entries.into() * VRF_COST_PER_GAME.into());
+            eth_dispatcher
+                .transfer_from(get_caller_address(), get_contract_address(), vrf_cost.into());
+
+            // set the approvals according to entries
+            lords_dispatcher
+                .approve(tournament_contracts.loot_survivor, entries.into() * cost_to_play.into());
+            eth_dispatcher.approve(tournament_contracts.loot_survivor, vrf_cost.into());
 
             // to avoid extra storage we are just providing defualt configs for the adventurers
             if start_all {
-                // if start all then we need to loop through stored  addresses and mint games for each
+                // if start all then we need to loop through stored  addresses and mint games for
+                // each
                 let addresses = self.get_tournament_addresses(tournament_id).addresses;
                 let mut address_index = 0;
                 loop {
@@ -511,7 +529,9 @@ mod tournament_component {
                         break;
                     }
                     let address = *addresses.at(address_index);
-                    let address_entries = self.get_address_entries(tournament_id, address).entry_count;
+                    let address_entries = self
+                        .get_address_entries(tournament_id, address)
+                        .entry_count;
                     let mut entry_index = 0;
                     let mut game_ids = ArrayTrait::<u64>::new();
                     loop {
@@ -519,16 +539,16 @@ mod tournament_component {
                             break;
                         }
                         let game_id = ls_dispatcher
-                        .new_game(
-                            get_contract_address(),
-                            12, // wand
-                            'test',
-                            0,
-                            true,
-                            contract_address_const::<0>(),
-                            0,
-                            address
-                        );
+                            .new_game(
+                                get_contract_address(),
+                                12, // wand
+                                'test',
+                                0,
+                                true,
+                                contract_address_const::<0>(),
+                                0,
+                                address
+                            );
                         game_ids.append(game_id.try_into().unwrap());
                         set!(
                             self.get_contract().world(),
@@ -541,14 +561,18 @@ mod tournament_component {
                         );
                         entry_index += 1;
                     };
-                    self.set_tournament_starts(tournament_id, address, 0, game_ids);
+                    self.set_tournament_starts(tournament_id, address, game_ids);
+                    // set entries to 0
+                    self.set_tournament_entries(tournament_id, address, 0);
                     address_index += 1;
                 };
                 // set stored addresses to empty
                 let mut addresses = ArrayTrait::<ContractAddress>::new();
-                self.set_tournament_addresses(tournament_id, addresses);
+                self.set_tournament_address_list(tournament_id, addresses);
             } else {
-                let address_entries = self.get_address_entries(tournament_id, get_caller_address()).entry_count;
+                let address_entries = self
+                    .get_address_entries(tournament_id, get_caller_address())
+                    .entry_count;
                 let mut entry_index = 0;
                 let mut game_ids = ArrayTrait::<u64>::new();
                 loop {
@@ -556,16 +580,16 @@ mod tournament_component {
                         break;
                     }
                     let game_id = ls_dispatcher
-                    .new_game(
-                        get_contract_address(),
-                        12, // wand
-                        'test',
-                        0,
-                        true,
-                        contract_address_const::<0>(),
-                        0,
-                        get_caller_address()
-                    );
+                        .new_game(
+                            get_contract_address(),
+                            12, // wand
+                            'test',
+                            0,
+                            true,
+                            contract_address_const::<0>(),
+                            0,
+                            get_caller_address()
+                        );
                     game_ids.append(game_id.try_into().unwrap());
                     set!(
                         self.get_contract().world(),
@@ -578,8 +602,10 @@ mod tournament_component {
                     );
                     entry_index += 1;
                 };
-                // set stored addresses to empty
-                self.set_tournament_starts(tournament_id, get_caller_address(), 0, game_ids);
+                // set stored addresses
+                self.set_tournament_starts(tournament_id, get_caller_address(), game_ids);
+                // set entries to 0
+                self.set_tournament_entries(tournament_id, get_caller_address(), 0);
             }
         }
 
@@ -591,13 +617,15 @@ mod tournament_component {
             // assert tournament ended but not settled
             self._assert_tournament_ended(tournament_id);
             // assert the submitted scores are less than or equal to leaderboard size
-            assert(game_ids.len() <= tournament.leaderboard_size.into(), Errors::INVALID_SCORES_SUBMISSION);
+            assert(
+                game_ids.len() <= tournament.winners_count.into(), Errors::INVALID_SCORES_SUBMISSION
+            );
             assert(
                 tournament.end_time + tournament.submission_period > get_block_timestamp(),
                 Errors::TOURNAMENT_ALREADY_SETTLED
             );
 
-            let contracts = self.get_contracts();
+            let contracts = self.get_tournament_contracts();
             let mut ls_dispatcher = ILootSurvivorDispatcher {
                 contract_address: contracts.loot_survivor
             };
@@ -620,7 +648,15 @@ mod tournament_component {
                 // // self._assert_stat_requirements(tournament_id, adventurer);
 
                 if self._is_top_score(tournament_id, adventurer.xp) {
-                    self._update_tournament_scores(tournament_id, game_id, adventurer.xp, death_date, ref new_score_ids, game_index);
+                    self
+                        ._update_tournament_scores(
+                            tournament_id,
+                            game_id,
+                            adventurer.xp,
+                            death_date,
+                            ref new_score_ids,
+                            game_index
+                        );
                 }
 
                 self.set_submitted_score(tournament_id, game_id, adventurer.xp);
@@ -647,7 +683,10 @@ mod tournament_component {
             self._distribute_prizes(tournament.prizes, ref top_score_ids);
             match tournament.entry_premium {
                 Option::Some(premium) => {
-                    self._distribute_premium(tournament_id, premium, tournament.creator, ref top_score_ids);
+                    self
+                        ._distribute_premium(
+                            tournament_id, premium, tournament.creator, ref top_score_ids
+                        );
                 },
                 Option::None => {},
             };
@@ -679,7 +718,7 @@ mod tournament_component {
             );
         }
 
-        fn get_contracts(self: @ComponentState<TContractState>) -> TournamentContracts {
+        fn get_tournament_contracts(self: @ComponentState<TContractState>) -> TournamentContracts {
             get!(self.get_contract().world(), (get_contract_address()), (TournamentContracts))
         }
 
@@ -709,7 +748,11 @@ mod tournament_component {
         fn get_address_entries(
             self: @ComponentState<TContractState>, tournament_id: u64, address: ContractAddress
         ) -> TournamentEntriesAddressModel {
-            get!(self.get_contract().world(), (tournament_id, address), (TournamentEntriesAddressModel))
+            get!(
+                self.get_contract().world(),
+                (tournament_id, address),
+                (TournamentEntriesAddressModel)
+            )
         }
 
         fn get_total_entries(
@@ -724,20 +767,16 @@ mod tournament_component {
             get!(self.get_contract().world(), (tournament_id), (TournamentScoresModel))
         }
 
-        fn get_score_from_id(
-            self: @ComponentState<TContractState>, game_id: felt252
-        ) -> u16 {
+        fn get_score_from_id(self: @ComponentState<TContractState>, game_id: felt252) -> u16 {
             let ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: self.get_contracts().loot_survivor
+                contract_address: self.get_tournament_contracts().loot_survivor
             };
             ls_dispatcher.get_adventurer(game_id).xp
         }
 
-        fn get_death_date_from_id(
-            self: @ComponentState<TContractState>, game_id: felt252
-        ) -> u64 {
+        fn get_death_date_from_id(self: @ComponentState<TContractState>, game_id: felt252) -> u64 {
             let ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: self.get_contracts().loot_survivor
+                contract_address: self.get_tournament_contracts().loot_survivor
             };
             ls_dispatcher.get_adventurer_meta(game_id).death_date
         }
@@ -763,6 +802,13 @@ mod tournament_component {
             tournament.end_time <= get_block_timestamp()
         }
 
+        fn _is_tournament_claimed(
+            self: @ComponentState<TContractState>, tournament_id: u64
+        ) -> bool {
+            let tournament = get!(self.get_contract().world(), (tournament_id), (TournamentModel));
+            tournament.claimed
+        }
+
         fn _is_top_score(
             self: @ComponentState<TContractState>, tournament_id: u64, score: u16
         ) -> bool {
@@ -786,11 +832,14 @@ mod tournament_component {
         }
 
         fn _is_gated_token_registered(
-            self: @ComponentState<TContractState>, gated_token: Option<GatedToken>
+            self: @ComponentState<TContractState>, gated_type: Option<GatedType>
         ) -> bool {
-            match gated_token {
+            match gated_type {
                 Option::Some(token) => {
-                    self._is_token_registered(token.token)
+                    match token {
+                        GatedType::token(token) => { self._is_token_registered(token.token) },
+                        GatedType::tournament(_) => { true },
+                    }
                 },
                 Option::None => true,
             }
@@ -800,20 +849,18 @@ mod tournament_component {
             self: @ComponentState<TContractState>, premium: Option<Premium>
         ) -> bool {
             match premium {
-                Option::Some(token) => {
-                    self._is_token_registered(token.token)
-                },
+                Option::Some(token) => { self._is_token_registered(token.token) },
                 Option::None => true,
             }
         }
 
         fn _is_token_distribution_valid(
-            self: @ComponentState<TContractState>, premium: Option<Premium>, leaderboard_size: u8
+            self: @ComponentState<TContractState>, premium: Option<Premium>, winners_count: u8
         ) -> bool {
             match premium {
                 Option::Some(token) => {
                     // TODO: check that the distribution sums to 100%
-                    token.token_distribution.len() == leaderboard_size.into()
+                    token.token_distribution.len() == winners_count.into()
                 },
                 Option::None => true,
             }
@@ -827,13 +874,34 @@ mod tournament_component {
         }
 
         fn set_tournament_entries(
+            self: @ComponentState<TContractState>,
+            tournament_id: u64,
+            address: ContractAddress,
+            entries: u8
+        ) {
+            set!(
+                self.get_contract().world(),
+                TournamentEntriesAddressModel { tournament_id, address, entry_count: entries }
+            );
+        }
+
+        fn increment_entries(
             self: @ComponentState<TContractState>, tournament_id: u64, entries: u8
         ) {
             let address_entries = self.get_address_entries(tournament_id, get_caller_address());
             set!(
                 self.get_contract().world(),
                 TournamentEntriesAddressModel {
-                    tournament_id, address: get_caller_address(), entry_count: address_entries.entry_count + entries, game_ids: array![]
+                    tournament_id,
+                    address: get_caller_address(),
+                    entry_count: address_entries.entry_count + entries
+                }
+            );
+            let total_entries = self.get_total_entries(tournament_id);
+            set!(
+                self.get_contract().world(),
+                TournamentEntriesModel {
+                    tournament_id, entry_count: total_entries.entry_count + entries
                 }
             );
         }
@@ -842,18 +910,15 @@ mod tournament_component {
             self: @ComponentState<TContractState>,
             tournament_id: u64,
             address: ContractAddress,
-            entry_count: u8,
             game_ids: Array<u64>,
         ) {
             set!(
                 self.get_contract().world(),
-                TournamentEntriesAddressModel {
-                    tournament_id, address, entry_count, game_ids
-                }
+                TournamentStartIdsModel { tournament_id, address, game_ids }
             );
         }
 
-        fn set_tournament_address(
+        fn append_tournament_address_list(
             self: @ComponentState<TContractState>, tournament_id: u64, address: ContractAddress
         ) {
             let mut tournament_addresses = self.get_tournament_addresses(tournament_id).addresses;
@@ -864,17 +929,21 @@ mod tournament_component {
             );
         }
 
-        fn set_tournament_addresses(
-            self: @ComponentState<TContractState>, tournament_id: u64, addresses: Array<ContractAddress>
+        fn set_tournament_address_list(
+            self: @ComponentState<TContractState>,
+            tournament_id: u64,
+            addresses: Array<ContractAddress>
         ) {
             set!(
-                self.get_contract().world(),
-                TournamentAddressesModel { tournament_id, addresses }
+                self.get_contract().world(), TournamentAddressesModel { tournament_id, addresses }
             );
         }
 
         fn set_submitted_score(
-            ref self: ComponentState<TContractState>, tournament_id: u64, game_id: felt252, score: u16
+            ref self: ComponentState<TContractState>,
+            tournament_id: u64,
+            game_id: felt252,
+            score: u16
         ) {
             let entry = self.get_tournament_entry(tournament_id, game_id);
             set!(
@@ -895,11 +964,11 @@ mod tournament_component {
             ref self: ComponentState<TContractState>,
             name: ByteArray,
             creator: ContractAddress,
-            gated_token: Option<GatedToken>,
+            gated_type: Option<GatedType>,
             start_time: u64,
             end_time: u64,
             submission_period: u64,
-            leaderboard_size: u8,
+            winners_count: u8,
             entry_premium: Option<Premium>,
             prizes: Array<PrizeType>,
             stat_requirements: Array<StatRequirement>,
@@ -909,20 +978,22 @@ mod tournament_component {
                 self.get_contract().world(),
                 TournamentModel {
                     tournament_id: new_tournament_id,
-                    name: name,
-                    creator: creator,
-                    gated_token: gated_token,
-                    start_time: start_time,
-                    end_time: end_time,
-                    submission_period: submission_period,
-                    leaderboard_size: leaderboard_size,
-                    entry_premium: entry_premium,
-                    prizes: prizes,
-                    stat_requirements: stat_requirements,
+                    name,
+                    creator,
+                    gated_type,
+                    start_time,
+                    end_time,
+                    submission_period,
+                    winners_count,
+                    entry_premium,
+                    prizes,
+                    stat_requirements,
                     claimed: false
                 }
             );
-            let create_tournament_event = CreateTournament { creator, tournament_id: new_tournament_id };
+            let create_tournament_event = CreateTournament {
+                creator, tournament_id: new_tournament_id
+            };
             self.emit(create_tournament_event.clone());
             emit!(self.get_contract().world(), (Event::CreateTournament(create_tournament_event)));
             self.set_total_tournaments(new_tournament_id);
@@ -1056,7 +1127,13 @@ mod tournament_component {
         }
 
         fn _update_tournament_scores(
-            ref self: ComponentState<TContractState>, tournament_id: u64, game_id: felt252, score: u16, death_date: u64, ref new_score_ids: Array<u64>, game_index: u32
+            ref self: ComponentState<TContractState>,
+            tournament_id: u64,
+            game_id: felt252,
+            score: u16,
+            death_date: u64,
+            ref new_score_ids: Array<u64>,
+            game_index: u32
         ) {
             // get current scores which will be mutated as part of this function
             let mut top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
@@ -1077,7 +1154,8 @@ mod tournament_component {
                         new_score = score;
                     } else if (score == top_score) {
                         // if scores are the same then use death date as the deciding factor
-                        let top_death_date = self.get_death_date_from_id(top_score_id.try_into().unwrap());
+                        let top_death_date = self
+                            .get_death_date_from_id(top_score_id.try_into().unwrap());
                         if (death_date < top_death_date) {
                             new_score_id = game_id.try_into().unwrap();
                             new_score = score;
@@ -1092,7 +1170,9 @@ mod tournament_component {
                 }
             }
             new_score_ids.append(new_score_id);
-            let new_high_score_event = NewHighScore { tournament_id, game_id, score: new_score, rank: (game_index + 1).try_into().unwrap() };
+            let new_high_score_event = NewHighScore {
+                tournament_id, game_id, score: new_score, rank: (game_index + 1).try_into().unwrap()
+            };
             self.emit(new_high_score_event.clone());
             emit!(self.get_contract().world(), (Event::NewHighScore(new_high_score_event)));
         }
@@ -1112,8 +1192,10 @@ mod tournament_component {
         }
 
         fn _convert_usd_to_wei(self: @ComponentState<TContractState>, usd: u128) -> u128 {
-            let contracts = self.get_contracts();
-            let oracle_dispatcher = IPragmaABIDispatcher { contract_address: contracts.oracle };
+            let tournament_contracts = self.get_tournament_contracts();
+            let oracle_dispatcher = IPragmaABIDispatcher {
+                contract_address: tournament_contracts.oracle
+            };
             let response = oracle_dispatcher.get_data_median(DataType::SpotEntry('ETH/USD'));
             assert(response.price > 0, Errors::FETCHING_ETH_PRICE_ERROR);
             (usd * pow(10, response.decimals.into()) * 1000000000000000000)
@@ -1121,9 +1203,7 @@ mod tournament_component {
         }
 
         fn _deposit_prizes(
-            ref self: ComponentState<TContractState>,
-            prizes: Span<PrizeType>,
-            leaderboard_size: u8
+            ref self: ComponentState<TContractState>, prizes: Span<PrizeType>, winners_count: u8
         ) {
             let num_prizes = prizes.len();
             let mut prize_index = 0;
@@ -1139,7 +1219,7 @@ mod tournament_component {
                         );
                         // TODO: support that it can be less than leaderboard size
                         assert(
-                            prize.token_distribution.len() == leaderboard_size.into(),
+                            prize.token_distribution.len() == winners_count.into(),
                             Errors::INVALID_DISTRIBUTION
                         );
                         let token_dispatcher = IERC20Dispatcher { contract_address: *prize.token };
@@ -1156,7 +1236,7 @@ mod tournament_component {
                         );
                         // check that the position is less than or equal to the leaderboard size
                         assert(
-                            *prize.position <= leaderboard_size.into(), Errors::INVALID_DISTRIBUTION
+                            *prize.position <= winners_count.into(), Errors::INVALID_DISTRIBUTION
                         );
                         let token_dispatcher = IERC721Dispatcher { contract_address: *prize.token };
                         token_dispatcher
@@ -1172,7 +1252,7 @@ mod tournament_component {
                         );
                         // TODO: support that it can be less than leaderboard size
                         assert(
-                            prize.token_distribution.len() == leaderboard_size.into(),
+                            prize.token_distribution.len() == winners_count.into(),
                             Errors::INVALID_DISTRIBUTION
                         );
                         let token_dispatcher = IERC1155Dispatcher {
@@ -1198,7 +1278,7 @@ mod tournament_component {
             prizes: Array<PrizeType>,
             ref top_score_ids: Array<u64>
         ) {
-            let contracts = self.get_contracts();
+            let tournament_contracts = self.get_tournament_contracts();
             let num_prizes = prizes.len();
             let mut prize_index = 0;
             loop {
@@ -1206,8 +1286,9 @@ mod tournament_component {
                     break;
                 }
                 let prize = prizes.at(prize_index);
-                // TODO: loop through scores and payout based on distributions. If the length of scores is
-                // less than the length of distributions, then payout the remaining scores back to the creator.
+                // TODO: loop through scores and payout based on distributions. If the length of
+                // scores is less than the length of distributions, then payout the remaining scores
+                // back to the creator.
                 // Do the same based on position of the prize NFT
                 match prize {
                     PrizeType::erc20(prize) => {
@@ -1226,7 +1307,9 @@ mod tournament_component {
                                 ._calculate_payout(distribution.into(), *prize.token_amount);
                             if (amount > 0) {
                                 let address = self
-                                    ._get_owner(contracts.loot_survivor, score_id.into());
+                                    ._get_owner(
+                                        tournament_contracts.loot_survivor, score_id.into()
+                                    );
                                 token_dispatcher.transfer(address, amount.into());
                             }
                             distribution_index += 1;
@@ -1236,7 +1319,8 @@ mod tournament_component {
                         let token_dispatcher = IERC721Dispatcher { contract_address: *prize.token };
                         let distribution_position = *prize.position;
                         let score_id = *top_score_ids.at(distribution_position.into() - 1);
-                        let address = self._get_owner(contracts.loot_survivor, score_id.into());
+                        let address = self
+                            ._get_owner(tournament_contracts.loot_survivor, score_id.into());
                         token_dispatcher
                             .transfer_from(
                                 get_contract_address(), address, (*prize.token_id).into()
@@ -1261,7 +1345,9 @@ mod tournament_component {
                                 ._calculate_payout(distribution.into(), *prize.token_amount);
                             if (amount > 0) {
                                 let address = self
-                                    ._get_owner(contracts.loot_survivor, score_id.into());
+                                    ._get_owner(
+                                        tournament_contracts.loot_survivor, score_id.into()
+                                    );
                                 token_dispatcher
                                     .safe_transfer_from(
                                         get_contract_address(),
@@ -1286,12 +1372,13 @@ mod tournament_component {
             creator: ContractAddress,
             ref top_score_ids: Array<u64>
         ) {
-            let contracts = self.get_contracts();
+            let tournament_contracts = self.get_tournament_contracts();
             let token_dispatcher = IERC20Dispatcher { contract_address: premium.token };
             // calculate fee for creator
             let creator_fee = premium.creator_fee;
-            let entry_count = self.get_total_entries(tournament_id).game_ids.len();
-            let creator_amount = self._calculate_payout(creator_fee.into(), entry_count.into() * premium.token_amount);
+            let entry_count = self.get_total_entries(tournament_id).entry_count;
+            let creator_amount = self
+                ._calculate_payout(creator_fee.into(), entry_count.into() * premium.token_amount);
             if creator_amount > 0 {
                 token_dispatcher.transfer(creator, creator_amount.into());
             }
@@ -1307,21 +1394,121 @@ mod tournament_component {
                 let score_id = *top_score_ids.at(distribution_index);
                 let amount = self._calculate_payout(distribution.into(), players_amount);
                 if amount > 0 {
-                    let address = self._get_owner(contracts.loot_survivor, score_id.into());
+                    let address = self
+                        ._get_owner(tournament_contracts.loot_survivor, score_id.into());
                     token_dispatcher.transfer(address, amount.into());
                 }
                 distribution_index += 1;
             }
         }
 
+        fn _assert_gated_submission_qualifies(
+            self: @ComponentState<TContractState>,
+            gated_type: GatedType,
+            gated_submission_type: Option<GatedSubmissionType>,
+            address: ContractAddress,
+            ref entries: u8
+        ) {
+            match gated_type {
+                GatedType::token(token) => {
+                    // assert the caller has a qualifying nft
+                    self._assert_has_qualifying_nft(token, gated_submission_type, address, ref entries);
+                },
+                GatedType::tournament(tournament_ids) => {
+                    // assert the owner owns game ids and has a top score in tournaments
+                    self
+                        ._assert_has_qualified_in_tournaments(
+                            tournament_ids, gated_submission_type, address
+                        );
+                },
+            }
+        }
+
         fn _assert_has_qualifying_nft(
             self: @ComponentState<TContractState>,
-            gated_token: ContractAddress,
-            account: ContractAddress,
-            token_id: u256
+            gated_token: GatedToken,
+            gated_submission_type: Option<GatedSubmissionType>,
+            address: ContractAddress,
+            ref entries: u8
         ) {
-            let owner = self._get_owner(gated_token, token_id);
-            assert(owner == account, Errors::NO_QUALIFYING_NFT);
+            match gated_submission_type {
+                Option::Some(submission) => {
+                    match submission {
+                        GatedSubmissionType::token_id(token_id) => {
+                            let owner = self._get_owner(gated_token.token, token_id);
+                            assert(owner == address, Errors::NO_QUALIFYING_NFT);
+                            let entry_criteria = gated_token.entry_criteria;
+
+                            let mut entry_count = 0;
+                            let num_criteria = entry_criteria.len();
+                            let mut criteria_index = 0;
+                            loop {
+                                if criteria_index == num_criteria {
+                                    break;
+                                }
+                                let criteria = *entry_criteria.at(criteria_index);
+                                if criteria.token_id == token_id.low {
+                                    entry_count += criteria.entry_count;
+                                }
+                                criteria_index += 1;
+                            };
+                            entries = entry_count;
+                        },
+                        GatedSubmissionType::game_id(_) => {
+                            assert(false, Errors::INVALID_GATED_SUBMISSION_TYPE)
+                        },
+                    }
+                },
+                Option::None => { assert(false, Errors::INVALID_GATED_SUBMISSION_TYPE); }
+            }
+        }
+
+        fn _assert_has_qualified_in_tournaments(
+            self: @ComponentState<TContractState>,
+            tournament_ids: Span<u64>,
+            gated_submission_type: Option<GatedSubmissionType>,
+            address: ContractAddress
+        ) {
+            match gated_submission_type {
+                Option::Some(submission) => {
+                    match submission {
+                        GatedSubmissionType::token_id(_) => {
+                            assert(false, Errors::INVALID_GATED_SUBMISSION_TYPE)
+                        },
+                        GatedSubmissionType::game_id(game_ids) => {
+                            assert(
+                                game_ids.len() == tournament_ids.len(),
+                                Errors::INVALID_SUBMITTED_GAMES_LENGTH
+                            );
+                            let tournament_contracts = self.get_tournament_contracts();
+                            let ls_dispatcher = ILootSurvivorDispatcher {
+                                contract_address: tournament_contracts.loot_survivor
+                            };
+                            let mut loop_index = 0;
+                            loop {
+                                if loop_index == tournament_ids.len() {
+                                    break;
+                                }
+                                let owner = self
+                                    ._get_owner(
+                                        tournament_contracts.loot_survivor, (*game_ids.at(loop_index)).try_into().unwrap()
+                                    );
+                                assert(owner == address, Errors::NO_QUALIFYING_NFT);
+                                let adventurer = ls_dispatcher
+                                    .get_adventurer(*game_ids.at(loop_index).try_into().unwrap());
+                                assert(
+                                    self
+                                        ._is_top_score(
+                                            *tournament_ids.at(loop_index), adventurer.xp
+                                        ),
+                                    Errors::SUBMITTED_GAME_NOT_TOP_SCORE
+                                );
+                            }
+                        }
+                    }
+                },
+                Option::None => { assert(false, Errors::INVALID_GATED_SUBMISSION_TYPE); }
+            }
         }
 
         fn _assert_tournament_is_active(self: @ComponentState<TContractState>, tournament_id: u64) {
@@ -1348,11 +1535,23 @@ mod tournament_component {
             assert(entry.status == EntryStatus::Started, Errors::TOURNAMENT_NOT_STARTED);
         }
 
+        fn _assert_tournament_period_within_max(
+            self: @ComponentState<TContractState>, tournament_id: u64
+        ) {
+            let tournament = self.get_tournament(tournament_id);
+            assert(
+                tournament.end_time - tournament.start_time < GAME_EXPIRATION_PERIOD.into(),
+                Errors::TOURNAMENT_PERIOD_TOO_LONG
+            );
+        }
+
         fn _assert_tournament_not_submitted(
             self: @ComponentState<TContractState>, tournament_id: u64, game_id: felt252
         ) {
             let entry = self.get_tournament_entry(tournament_id, game_id);
-            assert(entry.status != EntryStatus::Submitted, Errors::TOURNAMENT_ENTRY_ALREADY_SUBMITTED);
+            assert(
+                entry.status != EntryStatus::Submitted, Errors::TOURNAMENT_ENTRY_ALREADY_SUBMITTED
+            );
         }
 
         fn _assert_token_owner(
@@ -1361,9 +1560,39 @@ mod tournament_component {
             game_id: u256,
             account: ContractAddress
         ) {
-            let contracts = self.get_contracts();
-            let owner = self._get_owner(contracts.loot_survivor, game_id);
+            let tournament_contracts = self.get_tournament_contracts();
+            let owner = self._get_owner(tournament_contracts.loot_survivor, game_id);
             assert(owner == account, Errors::NOT_OWNER);
+        }
+
+        fn _assert_gated_type_validates(
+            self: @ComponentState<TContractState>, gated_type: Option<GatedType>
+        ) {
+            match gated_type {
+                Option::Some(gated_type) => {
+                    match gated_type {
+                        GatedType::token(token) => {
+                            assert(
+                                self._is_token_registered(token.token), Errors::TOKEN_NOT_REGISTERED
+                            )
+                        },
+                        GatedType::tournament(tournament_ids) => {
+                            let mut loop_index = 0;
+                            loop {
+                                if loop_index == tournament_ids.len() {
+                                    break;
+                                }
+                                assert(
+                                    self._is_tournament_claimed(*tournament_ids.at(loop_index)),
+                                    Errors::TOURNAMENT_NOT_CLAIMED
+                                );
+                                loop_index += 1;
+                            }
+                        },
+                    }
+                },
+                Option::None => {},
+            }
         }
 
         fn _assert_valid_score(self: @ComponentState<TContractState>, adventurer: Adventurer) {
@@ -1480,30 +1709,15 @@ mod tournament_component {
         }
 
         fn _get_entries(
-            self: @ComponentState<TContractState>, gated_token: GatedToken, token_id: u256
+            self: @ComponentState<TContractState>, gated_token: GatedToken, token_id: Option<u256>
         ) -> u8 {
-            let entry_criteria = gated_token.entry_criteria;
+            match token_id {
+                Option::Some(token_id) => {
+                    let entry_criteria = gated_token.entry_criteria;
 
-            let mut entry_count = 0;
-            let num_criteria = entry_criteria.len();
-            let mut criteria_index = 0;
-            match gated_token.token_type {
-                // TODO: remove ERC20 + 1155
-                TokenType::ERC20 => {
-                    let balance = IERC20Dispatcher { contract_address: gated_token.token }
-                        .balance_of(get_caller_address());
-                    loop {
-                        if criteria_index == num_criteria {
-                            break;
-                        }
-                        let criteria = *entry_criteria.at(criteria_index);
-                        if balance.low >= criteria.token_amount {
-                            entry_count += criteria.entry_count;
-                        }
-                        criteria_index += 1;
-                    };
-                },
-                TokenType::ERC721 => {
+                    let mut entry_count = 0;
+                    let num_criteria = entry_criteria.len();
+                    let mut criteria_index = 0;
                     loop {
                         if criteria_index == num_criteria {
                             break;
@@ -1514,27 +1728,16 @@ mod tournament_component {
                         }
                         criteria_index += 1;
                     };
+                    entry_count
                 },
-                TokenType::ERC1155 => {
-                    let balance = IERC1155Dispatcher { contract_address: gated_token.token }
-                        .balance_of(get_caller_address(), token_id);
-                    loop {
-                        if criteria_index == num_criteria {
-                            break;
-                        }
-                        let criteria = *entry_criteria.at(criteria_index);
-                        if balance.low >= criteria.token_amount {
-                            entry_count += criteria.entry_count;
-                        }
-                        criteria_index += 1;
-                    };
-                }
+                Option::None => { 0 }
             }
-            entry_count
         }
 
         fn _calculate_total_entries(
-            self: @ComponentState<TContractState>, tournament_id: u64, addresses: Array<ContractAddress>
+            self: @ComponentState<TContractState>,
+            tournament_id: u64,
+            addresses: Array<ContractAddress>
         ) -> u8 {
             let mut entries = 0;
             let num_addresses = addresses.len();
