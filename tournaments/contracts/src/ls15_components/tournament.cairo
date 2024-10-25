@@ -448,6 +448,8 @@ mod tournament_component {
 
             let mut entries: u8 = 1;
 
+            // if tournament is gated then assert the submission type qualifies
+            // also add mutate the entries based on criteria
             match tournament.gated_type {
                 Option::Some(gated_type) => {
                     self
@@ -458,9 +460,9 @@ mod tournament_component {
                 Option::None => {},
             };
 
+            // if tournament has a premium then transfer it
             match tournament.entry_premium {
                 Option::Some(premium) => {
-                    // transfer tournament premium
                     let premium_dispatcher = IERC20Dispatcher { contract_address: premium.token };
                     premium_dispatcher
                         .transfer_from(
@@ -472,11 +474,11 @@ mod tournament_component {
                 Option::None => {},
             };
             let address_entries = self.get_address_entries(tournament_id, get_caller_address());
-            // store the addresses and entries count
+            // if caller not currently stored append their address
             if (address_entries.entry_count == 0) {
                 self.append_tournament_address_list(tournament_id, get_caller_address());
             }
-            // store individual entries and append to list of entries by address
+            // increment both entries by address and total entries
             self.increment_entries(tournament_id, entries);
             // TODO: can store multiple game ids in single felt with merkle tree?
         }
@@ -484,8 +486,9 @@ mod tournament_component {
         fn start_tournament(
             ref self: ComponentState<TContractState>, tournament_id: u64, start_all: bool
         ) {
+            // assert tournament is active
             assert(self._is_tournament_active(tournament_id), Errors::TOURNAMENT_NOT_ACTIVE);
-            // if starting all games assert tournament period is within max
+            // if starting all games, assert the tournament period is within max
             if (start_all) {
                 self._assert_tournament_period_within_max(tournament_id);
             }
@@ -493,10 +496,13 @@ mod tournament_component {
             let mut entries = 0;
 
             if start_all {
+                // if starting all games, assert there are entries that haven't started
+                // get the total number of entries to mint
                 let addresses = self.get_tournament_addresses(tournament_id).addresses;
                 assert(addresses.len() > 0, Errors::ALL_ENTRIES_STARTED);
                 entries = self._calculate_total_entries(tournament_id, addresses);
             } else {
+                // else, get entries by caller address and assert count is greater than 0
                 entries = self.get_address_entries(tournament_id, get_caller_address()).entry_count;
                 assert(entries > 0, Errors::ALL_ENTRIES_STARTED);
             }
@@ -674,6 +680,7 @@ mod tournament_component {
             assert(
                 game_ids.len() <= tournament.winners_count.into(), Errors::INVALID_SCORES_SUBMISSION
             );
+            // assert submission period is not over
             assert(
                 tournament.end_time + tournament.submission_period > get_block_timestamp(),
                 Errors::TOURNAMENT_ALREADY_SETTLED
@@ -683,6 +690,8 @@ mod tournament_component {
             let mut ls_dispatcher = ILootSurvivorDispatcher {
                 contract_address: contracts.loot_survivor
             };
+
+            // loop through game ids and update scores
             let mut num_games = game_ids.len();
             let mut game_index = 0;
             let mut new_score_ids = ArrayTrait::<u64>::new();
@@ -701,6 +710,7 @@ mod tournament_component {
                 // // TODO: look into for v2
                 // // self._assert_stat_requirements(tournament_id, adventurer);
 
+                // check whether it is a top score, if so update the scores
                 if self._is_top_score(tournament_id, adventurer.xp) {
                     self
                         ._update_tournament_scores(
@@ -737,6 +747,7 @@ mod tournament_component {
             game_ids: Option<Array<felt252>>
         ) {
             let tournament = get!(self.get_contract().world(), (tournament_id), (TournamentModel));
+            // assert tournament settled
             assert(
                 tournament.end_time + tournament.submission_period <= get_block_timestamp(),
                 Errors::TOURNAMENT_NOT_SETTLED
@@ -747,7 +758,10 @@ mod tournament_component {
             let tournament = self.get_tournament(tournament_id);
             let tournament_prizes = self.get_prizes(tournament_id, get_caller_address()).prizes;
 
+            // TODO: check if game ids are provided, else distribute rewards to everyone
             self._distribute_prizes(tournament_prizes, ref top_score_ids, true);
+
+            // if there is a premium then distribute it
             match tournament.entry_premium {
                 Option::Some(premium) => {
                     self
