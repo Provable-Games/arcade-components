@@ -30,7 +30,6 @@ pub fn pow<T, +Sub<T>, +Mul<T>, +Div<T>, +Rem<T>, +PartialEq<T>, +Into<u8, T>, +
 /// Model
 ///
 
-// TODO: add previous tournament ids for qualification as a different type to GatedTokens
 // TODO: condense the model to consist of type enums
 #[dojo::model]
 #[derive(Drop, Serde)]
@@ -334,7 +333,7 @@ mod tournament_component {
         const TOKEN_BALANCE_TOO_HIGH: felt252 = 'token supply too high';
         const TOKEN_NOT_REGISTERED: felt252 = 'token not registered';
         const FETCHING_ETH_PRICE_ERROR: felt252 = 'error fetching eth price';
-        const INVALID_DISTRIBUTION: felt252 = 'invalid distribution';
+        const INVALID_TOKEN_DISTRIBUTION: felt252 = 'invalid token distribution';
         const INVALID_SCORE: felt252 = 'invalid score';
         const INVALID_SCORES_SUBMISSION: felt252 = 'invalid scores submission';
         const ALL_ENTRIES_STARTED: felt252 = 'all entries started';
@@ -415,10 +414,7 @@ mod tournament_component {
                 self._is_premium_token_registered(entry_premium.clone()),
                 Errors::TOKEN_NOT_REGISTERED
             );
-            assert(
-                self._is_token_distribution_valid(entry_premium.clone(), winners_count),
-                Errors::INVALID_DISTRIBUTION
-            );
+            self._assert_token_distribution_valid(entry_premium.clone(), winners_count);
 
             // create a new tournament
             self
@@ -485,7 +481,6 @@ mod tournament_component {
             // TODO: can store multiple game ids in single felt with merkle tree?
         }
 
-        // TODO: check there are enough entries to cover the top scores size
         fn start_tournament(
             ref self: ComponentState<TContractState>, tournament_id: u64, start_all: bool
         ) {
@@ -509,6 +504,7 @@ mod tournament_component {
             let tournament = self.get_tournament(tournament_id);
             let total_entries = self.get_total_entries(tournament_id).entry_count;
 
+            // check there are enough entries to cover the top scores size, if not refund
             if (total_entries < tournament.winners_count.into()) {
                 if start_all {
                     let addresses = self.get_tournament_addresses(tournament_id).addresses;
@@ -535,7 +531,6 @@ mod tournament_component {
                         ._process_premium_refunds(
                             tournament_id, get_caller_address(), entries, true
                         );
-                    // TODO: process prize refunds
                     self._process_prize_refunds(tournament_id);
                     // set entries to 0
                     self.set_tournament_entries(tournament_id, get_caller_address(), 0);
@@ -733,7 +728,7 @@ mod tournament_component {
             // add prizes to the contract
             self._deposit_prizes(tournament_id, prizes.span());
             // TODO: look into fixing non copyable array when trying to append
-            // self._add_prizes(tournament_id, prizes);
+        // self._add_prizes(tournament_id, prizes);
         }
 
         fn claim_prizes(
@@ -938,18 +933,6 @@ mod tournament_component {
             }
         }
 
-        fn _is_token_distribution_valid(
-            self: @ComponentState<TContractState>, premium: Option<Premium>, winners_count: u8
-        ) -> bool {
-            match premium {
-                Option::Some(token) => {
-                    // TODO: check that the distribution sums to 100%
-                    token.token_distribution.len() == winners_count.into()
-                },
-                Option::None => true,
-            }
-        }
-
         fn set_total_tournaments(self: @ComponentState<TContractState>, total_tournaments: u64) {
             set!(
                 self.get_contract().world(),
@@ -1048,7 +1031,8 @@ mod tournament_component {
         //     ref self: ComponentState<TContractState>, tournament_id: u64, prizes:
         //     Array<PrizeType>
         // ) {
-        //     let mut tournament_prizes = self.get_prizes(tournament_id);
+        //     let mut tournament_prizes = self.get_prizes(tournament_id,
+        //     get_caller_address()).prizes;
         //     let num_prizes = prizes.len();
         //     let mut prize_index = 0;
         //     loop {
@@ -1325,10 +1309,9 @@ mod tournament_component {
                         assert(
                             self._is_token_registered(*prize.token), Errors::TOKEN_NOT_REGISTERED
                         );
-                        // TODO: support that it can be less than leaderboard size
                         assert(
-                            prize.token_distribution.len() == winners_count.into(),
-                            Errors::INVALID_DISTRIBUTION
+                            prize.token_distribution.len() <= winners_count.into(),
+                            Errors::INVALID_TOKEN_DISTRIBUTION
                         );
                         let token_dispatcher = IERC20Dispatcher { contract_address: *prize.token };
                         token_dispatcher
@@ -1344,7 +1327,8 @@ mod tournament_component {
                         );
                         // check that the position is less than or equal to the leaderboard size
                         assert(
-                            *prize.position <= winners_count.into(), Errors::INVALID_DISTRIBUTION
+                            *prize.position <= winners_count.into(),
+                            Errors::INVALID_TOKEN_DISTRIBUTION
                         );
                         let token_dispatcher = IERC721Dispatcher { contract_address: *prize.token };
                         token_dispatcher
@@ -1358,10 +1342,9 @@ mod tournament_component {
                         assert(
                             self._is_token_registered(*prize.token), Errors::TOKEN_NOT_REGISTERED
                         );
-                        // TODO: support that it can be less than leaderboard size
                         assert(
-                            prize.token_distribution.len() == winners_count.into(),
-                            Errors::INVALID_DISTRIBUTION
+                            prize.token_distribution.len() <= winners_count.into(),
+                            Errors::INVALID_TOKEN_DISTRIBUTION
                         );
                         let token_dispatcher = IERC1155Dispatcher {
                             contract_address: *prize.token
@@ -1588,6 +1571,33 @@ mod tournament_component {
                     prize_index += 1;
                 };
                 depositers_index += 1;
+            }
+        }
+
+        fn _assert_token_distribution_valid(
+            self: @ComponentState<TContractState>, premium: Option<Premium>, winners_count: u8
+        ) {
+            match premium {
+                Option::Some(token) => {
+                    // check the distribution list is the same size as the winners count
+                    assert(
+                        token.token_distribution.len() == winners_count.into(),
+                        Errors::INVALID_TOKEN_DISTRIBUTION
+                    );
+                    // check the sum of distributions is equal to 100%
+                    let mut distribution_sum: u8 = 0;
+                    let mut distribution_index: u32 = 0;
+                    loop {
+                        if distribution_index == token.token_distribution.len() {
+                            break;
+                        }
+                        let distribution = *token.token_distribution.at(distribution_index);
+                        distribution_sum += distribution;
+                        distribution_index += 1;
+                    };
+                    assert(distribution_sum == 100, Errors::INVALID_TOKEN_DISTRIBUTION);
+                },
+                Option::None => {},
             }
         }
 
