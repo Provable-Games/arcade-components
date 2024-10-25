@@ -45,7 +45,7 @@ struct TournamentModel {
     winners_count: u8,
     gated_type: Option<GatedType>,
     entry_premium: Option<Premium>,
-    stat_requirements: Array<StatRequirement>,
+    // stat_requirements: Array<StatRequirement>,
     claimed: bool,
 }
 
@@ -117,7 +117,17 @@ struct TournamentTotalModel {
 struct TournamentPrizesModel {
     #[key]
     tournament_id: u64,
+    #[key]
+    depositer: ContractAddress,
     prizes: Array<PrizeType>,
+}
+
+#[dojo::model]
+#[derive(Drop, Serde)]
+struct TournamentPrizeDepositersModel {
+    #[key]
+    tournament_id: u64,
+    depositers: Array<ContractAddress>,
 }
 
 #[dojo::model]
@@ -162,7 +172,7 @@ trait ITournament<TState> {
         submission_period: u64,
         winners_count: u8,
         entry_premium: Option<Premium>,
-        stat_requirements: Array<StatRequirement>,
+        // stat_requirements: Array<StatRequirement>,
     ) -> u64;
     fn register_tokens(ref self: TState, tokens: Array<Token>);
     fn enter_tournament(
@@ -188,6 +198,7 @@ mod tournament_component {
     use super::TournamentScoresModel;
     use super::TournamentTotalModel;
     use super::TournamentPrizesModel;
+    use super::TournamentPrizeDepositersModel;
     use super::TokenModel;
     use super::TournamentContracts;
     use super::ITournament;
@@ -375,7 +386,7 @@ mod tournament_component {
             submission_period: u64,
             winners_count: u8,
             entry_premium: Option<Premium>,
-            stat_requirements: Array<StatRequirement>,
+            // stat_requirements: Array<StatRequirement>,
         ) -> u64 {
             // assert the start time is not in the past and is larger the minimum registration
             // period
@@ -420,7 +431,7 @@ mod tournament_component {
                     submission_period,
                     winners_count,
                     entry_premium,
-                    stat_requirements,
+                    // stat_requirements,
                 )
         }
 
@@ -475,7 +486,6 @@ mod tournament_component {
         }
 
         // TODO: check there are enough entries to cover the top scores size
-        // TODO: if start all, caller pays for all base costs
         fn start_tournament(
             ref self: ComponentState<TContractState>, tournament_id: u64, start_all: bool
         ) {
@@ -496,52 +506,130 @@ mod tournament_component {
                 assert(entries > 0, Errors::ALL_ENTRIES_STARTED);
             }
 
-            // define contract interfaces
-            let tournament_contracts = self.get_tournament_contracts();
-            let mut ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: tournament_contracts.loot_survivor
-            };
-            let lords_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: tournament_contracts.lords
-            };
-            let eth_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: tournament_contracts.eth
-            };
+            let tournament = self.get_tournament(tournament_id);
+            let total_entries = self.get_total_entries(tournament_id).entry_count;
 
-            // get current game cost
-            let cost_to_play = ls_dispatcher.get_cost_to_play();
+            if (total_entries < tournament.winners_count.into()) {
+                if start_all {
+                    let addresses = self.get_tournament_addresses(tournament_id).addresses;
+                    let mut address_index = 0;
+                    loop {
+                        if address_index == addresses.len() {
+                            break;
+                        }
+                        let address = *addresses.at(address_index);
+                        let address_entries = self
+                            .get_address_entries(tournament_id, address)
+                            .entry_count;
+                        self
+                            ._process_premium_refunds(
+                                tournament_id, address, address_entries, false
+                            );
+                        // set entries to 0
+                        self.set_tournament_entries(tournament_id, address, 0);
+                        address_index += 1;
+                    };
+                    self._process_prize_refunds(tournament_id);
+                } else {
+                    self
+                        ._process_premium_refunds(
+                            tournament_id, get_caller_address(), entries, true
+                        );
+                    // TODO: process prize refunds
+                    self._process_prize_refunds(tournament_id);
+                    // set entries to 0
+                    self.set_tournament_entries(tournament_id, get_caller_address(), 0);
+                }
+            } else {
+                // define contract interfaces
+                let tournament_contracts = self.get_tournament_contracts();
+                let mut ls_dispatcher = ILootSurvivorDispatcher {
+                    contract_address: tournament_contracts.loot_survivor
+                };
+                let lords_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
+                    contract_address: tournament_contracts.lords
+                };
+                let eth_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
+                    contract_address: tournament_contracts.eth
+                };
 
-            // transfer base game cost
-            lords_dispatcher
-                .transfer_from(
-                    get_caller_address(),
-                    get_contract_address(),
-                    entries.into() * cost_to_play.into()
-                );
+                // get current game cost
+                let cost_to_play = ls_dispatcher.get_cost_to_play();
 
-            // transfer VRF cost
-            let vrf_cost = self._convert_usd_to_wei(entries.into() * VRF_COST_PER_GAME.into());
-            eth_dispatcher
-                .transfer_from(get_caller_address(), get_contract_address(), vrf_cost.into());
+                // transfer base game cost
+                lords_dispatcher
+                    .transfer_from(
+                        get_caller_address(),
+                        get_contract_address(),
+                        entries.into() * cost_to_play.into()
+                    );
 
-            // set the approvals according to entries
-            lords_dispatcher
-                .approve(tournament_contracts.loot_survivor, entries.into() * cost_to_play.into());
-            eth_dispatcher.approve(tournament_contracts.loot_survivor, vrf_cost.into());
+                // transfer VRF cost
+                let vrf_cost = self._convert_usd_to_wei(entries.into() * VRF_COST_PER_GAME.into());
+                eth_dispatcher
+                    .transfer_from(get_caller_address(), get_contract_address(), vrf_cost.into());
 
-            // to avoid extra storage we are just providing defualt configs for the adventurers
-            if start_all {
-                // if start all then we need to loop through stored  addresses and mint games for
-                // each
-                let addresses = self.get_tournament_addresses(tournament_id).addresses;
-                let mut address_index = 0;
-                loop {
-                    if address_index == addresses.len() {
-                        break;
-                    }
-                    let address = *addresses.at(address_index);
+                // set the approvals according to entries
+                lords_dispatcher
+                    .approve(
+                        tournament_contracts.loot_survivor, entries.into() * cost_to_play.into()
+                    );
+                eth_dispatcher.approve(tournament_contracts.loot_survivor, vrf_cost.into());
+
+                // to avoid extra storage we are just providing defualt configs for the adventurers
+                if start_all {
+                    // if start all then we need to loop through stored  addresses and mint games
+                    // for each
+                    let addresses = self.get_tournament_addresses(tournament_id).addresses;
+                    let mut address_index = 0;
+                    loop {
+                        if address_index == addresses.len() {
+                            break;
+                        }
+                        let address = *addresses.at(address_index);
+                        let address_entries = self
+                            .get_address_entries(tournament_id, address)
+                            .entry_count;
+                        let mut entry_index = 0;
+                        let mut game_ids = ArrayTrait::<u64>::new();
+                        loop {
+                            if entry_index == address_entries {
+                                break;
+                            }
+                            let game_id = ls_dispatcher
+                                .new_game(
+                                    get_contract_address(),
+                                    12, // wand
+                                    'test',
+                                    0,
+                                    true,
+                                    contract_address_const::<0>(),
+                                    0,
+                                    address
+                                );
+                            game_ids.append(game_id.try_into().unwrap());
+                            set!(
+                                self.get_contract().world(),
+                                TournamentEntryModel {
+                                    tournament_id,
+                                    game_id: game_id.try_into().unwrap(),
+                                    address: address,
+                                    status: EntryStatus::Started
+                                }
+                            );
+                            entry_index += 1;
+                        };
+                        self.set_tournament_starts(tournament_id, address, game_ids);
+                        // set entries to 0
+                        self.set_tournament_entries(tournament_id, address, 0);
+                        address_index += 1;
+                    };
+                    // set stored addresses to empty
+                    let mut addresses = ArrayTrait::<ContractAddress>::new();
+                    self.set_tournament_address_list(tournament_id, addresses);
+                } else {
                     let address_entries = self
-                        .get_address_entries(tournament_id, address)
+                        .get_address_entries(tournament_id, get_caller_address())
                         .entry_count;
                     let mut entry_index = 0;
                     let mut game_ids = ArrayTrait::<u64>::new();
@@ -558,7 +646,7 @@ mod tournament_component {
                                 true,
                                 contract_address_const::<0>(),
                                 0,
-                                address
+                                get_caller_address()
                             );
                         game_ids.append(game_id.try_into().unwrap());
                         set!(
@@ -566,57 +654,17 @@ mod tournament_component {
                             TournamentEntryModel {
                                 tournament_id,
                                 game_id: game_id.try_into().unwrap(),
-                                address: address,
+                                address: get_caller_address(),
                                 status: EntryStatus::Started
                             }
                         );
                         entry_index += 1;
                     };
-                    self.set_tournament_starts(tournament_id, address, game_ids);
+                    // set stored addresses
+                    self.set_tournament_starts(tournament_id, get_caller_address(), game_ids);
                     // set entries to 0
-                    self.set_tournament_entries(tournament_id, address, 0);
-                    address_index += 1;
-                };
-                // set stored addresses to empty
-                let mut addresses = ArrayTrait::<ContractAddress>::new();
-                self.set_tournament_address_list(tournament_id, addresses);
-            } else {
-                let address_entries = self
-                    .get_address_entries(tournament_id, get_caller_address())
-                    .entry_count;
-                let mut entry_index = 0;
-                let mut game_ids = ArrayTrait::<u64>::new();
-                loop {
-                    if entry_index == address_entries {
-                        break;
-                    }
-                    let game_id = ls_dispatcher
-                        .new_game(
-                            get_contract_address(),
-                            12, // wand
-                            'test',
-                            0,
-                            true,
-                            contract_address_const::<0>(),
-                            0,
-                            get_caller_address()
-                        );
-                    game_ids.append(game_id.try_into().unwrap());
-                    set!(
-                        self.get_contract().world(),
-                        TournamentEntryModel {
-                            tournament_id,
-                            game_id: game_id.try_into().unwrap(),
-                            address: get_caller_address(),
-                            status: EntryStatus::Started
-                        }
-                    );
-                    entry_index += 1;
-                };
-                // set stored addresses
-                self.set_tournament_starts(tournament_id, get_caller_address(), game_ids);
-                // set entries to 0
-                self.set_tournament_entries(tournament_id, get_caller_address(), 0);
+                    self.set_tournament_entries(tournament_id, get_caller_address(), 0);
+                }
             }
         }
 
@@ -688,7 +736,11 @@ mod tournament_component {
             // self._add_prizes(tournament_id, prizes);
         }
 
-        fn claim_prizes(ref self: ComponentState<TContractState>, tournament_id: u64, game_ids: Option<Array<felt252>>) {
+        fn claim_prizes(
+            ref self: ComponentState<TContractState>,
+            tournament_id: u64,
+            game_ids: Option<Array<felt252>>
+        ) {
             let tournament = get!(self.get_contract().world(), (tournament_id), (TournamentModel));
             assert(
                 tournament.end_time + tournament.submission_period <= get_block_timestamp(),
@@ -698,7 +750,7 @@ mod tournament_component {
 
             let mut top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
             let tournament = self.get_tournament(tournament_id);
-            let tournament_prizes = self.get_prizes(tournament_id);
+            let tournament_prizes = self.get_prizes(tournament_id, get_caller_address()).prizes;
 
             self._distribute_prizes(tournament_prizes, ref top_score_ids, true);
             match tournament.entry_premium {
@@ -802,9 +854,15 @@ mod tournament_component {
         }
 
         fn get_prizes(
+            ref self: ComponentState<TContractState>, tournament_id: u64, address: ContractAddress
+        ) -> TournamentPrizesModel {
+            get!(self.get_contract().world(), (tournament_id, address), (TournamentPrizesModel))
+        }
+
+        fn get_prize_depositers(
             ref self: ComponentState<TContractState>, tournament_id: u64
-        ) -> Array<PrizeType> {
-            get!(self.get_contract().world(), (tournament_id), (TournamentPrizesModel)).prizes
+        ) -> TournamentPrizeDepositersModel {
+            get!(self.get_contract().world(), (tournament_id), (TournamentPrizeDepositersModel))
         }
 
         fn _is_tournament_started(
@@ -987,7 +1045,8 @@ mod tournament_component {
         }
 
         // fn _add_prizes(
-        //     ref self: ComponentState<TContractState>, tournament_id: u64, prizes: Array<PrizeType>
+        //     ref self: ComponentState<TContractState>, tournament_id: u64, prizes:
+        //     Array<PrizeType>
         // ) {
         //     let mut tournament_prizes = self.get_prizes(tournament_id);
         //     let num_prizes = prizes.len();
@@ -1005,7 +1064,8 @@ mod tournament_component {
         //     };
         //     set!(
         //         self.get_contract().world(),
-        //         TournamentPrizesModel { tournament_id, prizes: tournament_prizes }
+        //         TournamentPrizesModel { tournament_id, depositer: get_caller_address(), prizes:
+        //         tournament_prizes }
         //     );
         // }
 
@@ -1019,7 +1079,7 @@ mod tournament_component {
             submission_period: u64,
             winners_count: u8,
             entry_premium: Option<Premium>,
-            stat_requirements: Array<StatRequirement>,
+            // stat_requirements: Array<StatRequirement>,
         ) -> u64 {
             let new_tournament_id = self.get_total_tournaments().total_tournaments + 1;
             set!(
@@ -1034,7 +1094,7 @@ mod tournament_component {
                     submission_period,
                     winners_count,
                     entry_premium,
-                    stat_requirements,
+                    // stat_requirements,
                     claimed: false
                 }
             );
@@ -1451,6 +1511,86 @@ mod tournament_component {
             }
         }
 
+        fn _process_premium_refunds(
+            ref self: ComponentState<TContractState>,
+            tournament_id: u64,
+            address: ContractAddress,
+            entries: u8,
+            process_all: bool
+        ) {
+            // process premium refunds back to entrant
+            let tournament = self.get_tournament(tournament_id);
+            let total_entries = self.get_total_entries(tournament_id).entry_count;
+            let premium = tournament.entry_premium;
+            match premium {
+                Option::Some(premium) => {
+                    let token_dispatcher = IERC20Dispatcher { contract_address: premium.token };
+                    let total_amount = premium.token_amount;
+                    let amount_each = total_amount / total_entries.into();
+                    let amount_to_refund = amount_each * entries.into();
+                    token_dispatcher.transfer(address, amount_to_refund.into());
+                },
+                Option::None => {},
+            }
+        }
+
+        fn _process_prize_refunds(ref self: ComponentState<TContractState>, tournament_id: u64) {
+            // process refunds of prizes back to depositers
+            let prize_depositers = self.get_prize_depositers(tournament_id).depositers;
+            let num_depositers = prize_depositers.len();
+            let mut depositers_index = 0;
+            loop {
+                if depositers_index == num_depositers {
+                    break;
+                }
+                let address = *prize_depositers.at(depositers_index);
+                let prizes = self.get_prizes(tournament_id, address).prizes;
+                let num_prizes = prizes.len();
+                let mut prize_index = 0;
+                loop {
+                    if prize_index == num_prizes {
+                        break;
+                    }
+                    let prize = prizes.at(prize_index);
+                    match prize {
+                        PrizeType::erc20(prize) => {
+                            let token_dispatcher = IERC20Dispatcher {
+                                contract_address: *prize.token
+                            };
+
+                            token_dispatcher.transfer(address, (*prize.token_amount).into());
+                        },
+                        PrizeType::erc721(prize) => {
+                            let token_dispatcher = IERC721Dispatcher {
+                                contract_address: *prize.token
+                            };
+                            token_dispatcher
+                                .transfer_from(
+                                    get_contract_address(), address, (*prize.token_id).into()
+                                );
+                        },
+                        PrizeType::erc1155(prize) => {
+                            let token_dispatcher = IERC1155Dispatcher {
+                                contract_address: *prize.token
+                            };
+                            let data = ArrayTrait::<felt252>::new();
+
+                            token_dispatcher
+                                .safe_transfer_from(
+                                    get_contract_address(),
+                                    address,
+                                    (*prize.token_id).into(),
+                                    (*prize.token_amount).into(),
+                                    data.span()
+                                );
+                        },
+                    }
+                    prize_index += 1;
+                };
+                depositers_index += 1;
+            }
+        }
+
         fn _assert_gated_submission_qualifies(
             self: @ComponentState<TContractState>,
             gated_type: GatedType,
@@ -1652,108 +1792,109 @@ mod tournament_component {
             assert(adventurer.health == 0, Errors::INVALID_SCORE);
         }
 
-        // TODO: add stat requirements in v2
-        fn _assert_stat_requirements(
-            self: @ComponentState<TContractState>, tournament_id: u64, adventurer: Adventurer
-        ) {
-            let stat_requirements: Array<StatRequirement> = self
-                .get_tournament(tournament_id)
-                .stat_requirements;
+        // // TODO: add stat requirements in v2
+        // fn _assert_stat_requirements(
+        //     self: @ComponentState<TContractState>, tournament_id: u64, adventurer: Adventurer
+        // ) {
+        //     let stat_requirements: Array<StatRequirement> = self
+        //         .get_tournament(tournament_id)
+        //         .stat_requirements;
 
-            let num_requirements = stat_requirements.len();
-            let mut requirement_index = 0;
-            loop {
-                if requirement_index == num_requirements {
-                    break;
-                }
-                // get requirement
-                let requirement: StatRequirement = *stat_requirements.at(requirement_index);
-                // handle requirement stat
-                match requirement.stat.into() {
-                    StatRequirementEnum::Xp => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.xp, requirement.value, requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Gold => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.gold, requirement.value, requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Strength => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.stats.strength.into(),
-                                requirement.value,
-                                requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Dexterity => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.stats.dexterity.into(),
-                                requirement.value,
-                                requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Vitality => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.stats.vitality.into(),
-                                requirement.value,
-                                requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Intelligence => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.stats.intelligence.into(),
-                                requirement.value,
-                                requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Wisdom => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.stats.wisdom.into(),
-                                requirement.value,
-                                requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Charisma => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.stats.charisma.into(),
-                                requirement.value,
-                                requirement.operation
-                            );
-                    },
-                    StatRequirementEnum::Luck => {
-                        self
-                            ._assert_stat_operation(
-                                adventurer.stats.luck.into(),
-                                requirement.value,
-                                requirement.operation
-                            );
-                    },
-                };
-                requirement_index += 1;
-            }
-        }
+        //     let num_requirements = stat_requirements.len();
+        //     let mut requirement_index = 0;
+        //     loop {
+        //         if requirement_index == num_requirements {
+        //             break;
+        //         }
+        //         // get requirement
+        //         let requirement: StatRequirement = *stat_requirements.at(requirement_index);
+        //         // handle requirement stat
+        //         match requirement.stat.into() {
+        //             StatRequirementEnum::Xp => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.xp, requirement.value, requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Gold => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.gold, requirement.value, requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Strength => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.stats.strength.into(),
+        //                         requirement.value,
+        //                         requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Dexterity => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.stats.dexterity.into(),
+        //                         requirement.value,
+        //                         requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Vitality => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.stats.vitality.into(),
+        //                         requirement.value,
+        //                         requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Intelligence => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.stats.intelligence.into(),
+        //                         requirement.value,
+        //                         requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Wisdom => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.stats.wisdom.into(),
+        //                         requirement.value,
+        //                         requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Charisma => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.stats.charisma.into(),
+        //                         requirement.value,
+        //                         requirement.operation
+        //                     );
+        //             },
+        //             StatRequirementEnum::Luck => {
+        //                 self
+        //                     ._assert_stat_operation(
+        //                         adventurer.stats.luck.into(),
+        //                         requirement.value,
+        //                         requirement.operation
+        //                     );
+        //             },
+        //         };
+        //         requirement_index += 1;
+        //     }
+        // }
 
-        fn _assert_stat_operation(
-            self: @ComponentState<TContractState>, stat: u16, value: u16, operation: Operation,
-        ) {
-            match operation {
-                Operation::GreaterThan => {
-                    assert(stat > value, 'Tournament: requirement not met');
-                },
-                Operation::LessThan => { assert(stat < value, 'Tournament: requirement not met'); },
-                Operation::Equal => { assert(stat == value, 'Tournament: requirement not met'); }
-            };
-        }
+        // fn _assert_stat_operation(
+        //     self: @ComponentState<TContractState>, stat: u16, value: u16, operation: Operation,
+        // ) {
+        //     match operation {
+        //         Operation::GreaterThan => {
+        //             assert(stat > value, 'Tournament: requirement not met');
+        //         },
+        //         Operation::LessThan => { assert(stat < value, 'Tournament: requirement not met');
+        //         }, Operation::Equal => { assert(stat == value, 'Tournament: requirement not
+        //         met'); }
+        //     };
+        // }
 
         fn _get_owner(
             self: @ComponentState<TContractState>, token: ContractAddress, token_id: u256
