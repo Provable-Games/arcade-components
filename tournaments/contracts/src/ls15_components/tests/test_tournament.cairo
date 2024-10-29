@@ -6,10 +6,11 @@ use dojo::model::{Model, ModelTest, ModelIndex, ModelEntityTest};
 use dojo::utils::test::spawn_test_world;
 
 use tournament::ls15_components::constants::{
-    MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, TokenType, PrizeType
+    MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, TokenType, PrizeType, GatedType, GatedEntryType,
+    GatedSubmissionType
 };
 use tournament::ls15_components::interfaces::{
-    ERC20Prize, ERC721Prize, ERC1155Prize, Token, Premium
+    ERC20Prize, ERC721Prize, ERC1155Prize, Token, Premium, GatedToken, EntryCriteria
 };
 use adventurer::{
     adventurer::Adventurer, adventurer_meta::AdventurerMetadata, bag::Bag, equipment::Equipment,
@@ -270,19 +271,16 @@ fn test_create_tournament() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 
     let tournament_data = tournament.tournament(tournament_id);
     assert(tournament_data.name == TOURNAMENT_NAME(), 'Invalid tournament name');
-    assert(tournament_data.gated_token == Option::None, 'Invalid tournament gated token');
     assert(
         tournament_data.start_time == 2 + MIN_REGISTRATION_PERIOD.into(),
         'Invalid tournament start time'
@@ -291,9 +289,8 @@ fn test_create_tournament() {
         tournament_data.end_time == 3 + MIN_REGISTRATION_PERIOD.into(),
         'Invalid tournament end time'
     );
+    assert(tournament_data.gated_type == Option::None, 'Invalid tournament gated token');
     assert(tournament_data.entry_premium == Option::None, 'Invalid entry premium');
-    assert(tournament_data.prizes.len() == 0, 'Invalid tournament prizes');
-    assert(tournament_data.stat_requirements.len() == 0, 'Invalid stat requirements');
     assert(tournament.total_tournaments() == 1, 'Invalid tournaments count');
 }
 
@@ -306,14 +303,12 @@ fn test_create_tournament_invalid_start_time() {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 }
 
@@ -326,14 +321,12 @@ fn test_create_tournament_invalid_end_time() {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             2 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 }
 
@@ -385,6 +378,16 @@ fn test_create_tournament_with_prizes() {
 
     testing::set_account_contract_address(OWNER());
     testing::set_contract_address(OWNER());
+    tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::None, // zero entry premium
+        );
     erc20.approve(tournament.contract_address, 1);
     erc721.approve(tournament.contract_address, 1);
     let tokens = array![
@@ -397,27 +400,15 @@ fn test_create_tournament_with_prizes() {
     let prizes = array![
         PrizeType::erc20(
             ERC20Prize {
-                token: erc20.contract_address,
-                token_amount: STARTING_BALANCE.low,
-                token_distribution: array![100],
+                token: erc20.contract_address, token_amount: STARTING_BALANCE.low, position: 1,
             }
         ),
         PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }),
     ];
     erc20.approve(tournament.contract_address, STARTING_BALANCE);
     erc721.approve(tournament.contract_address, 1);
-    tournament
-        .create_tournament(
-            TOURNAMENT_NAME(),
-            Option::None, // zero gated type
-            2 + MIN_REGISTRATION_PERIOD.into(),
-            3 + MIN_REGISTRATION_PERIOD.into(),
-            MIN_SUBMISSION_PERIOD.into(),
-            1, // single top score
-            Option::None, // zero entry premium
-            prizes,
-            array![]
-        );
+    tournament.add_prize(1, *prizes.at(0));
+    tournament.add_prize(1, *prizes.at(1));
     assert(erc20.balance_of(OWNER()) == 0, 'Invalid balance');
     assert(erc721.balance_of(OWNER()) == 0, 'Invalid balance');
 }
@@ -440,15 +431,23 @@ fn test_create_tournament_with_prizes_token_not_registered() {
 
     testing::set_account_contract_address(OWNER());
     testing::set_contract_address(OWNER());
+    tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::None, // zero entry premium
+        );
     erc20.approve(tournament.contract_address, 1);
     erc721.approve(tournament.contract_address, 1);
 
     let prizes = array![
         PrizeType::erc20(
             ERC20Prize {
-                token: erc20.contract_address,
-                token_amount: STARTING_BALANCE.low,
-                token_distribution: array![100],
+                token: erc20.contract_address, token_amount: STARTING_BALANCE.low, position: 1,
             }
         ),
         PrizeType::erc721(
@@ -457,22 +456,12 @@ fn test_create_tournament_with_prizes_token_not_registered() {
     ];
     erc20.approve(tournament.contract_address, STARTING_BALANCE);
     erc721.approve(tournament.contract_address, 1);
-    tournament
-        .create_tournament(
-            TOURNAMENT_NAME(),
-            Option::None, // zero gated type
-            2 + MIN_REGISTRATION_PERIOD.into(),
-            3 + MIN_REGISTRATION_PERIOD.into(),
-            MIN_SUBMISSION_PERIOD.into(),
-            1, // single top score
-            Option::None, // zero entry premium
-            prizes,
-            array![]
-        );
+    tournament.add_prize(1, *prizes.at(0));
+    tournament.add_prize(1, *prizes.at(1));
 }
 
 #[test]
-#[should_panic(expected: ('invalid distribution', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ('invalid token distribution', 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_with_prizes_invalid_distribution() {
     let (
         _world,
@@ -489,6 +478,16 @@ fn test_create_tournament_with_prizes_invalid_distribution() {
 
     testing::set_account_contract_address(OWNER());
     testing::set_contract_address(OWNER());
+    tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::None, // zero entry premium
+        );
     erc20.approve(tournament.contract_address, 1);
     erc721.approve(tournament.contract_address, 1);
     let tokens = array![
@@ -501,29 +500,15 @@ fn test_create_tournament_with_prizes_invalid_distribution() {
     let prizes = array![
         PrizeType::erc20(
             ERC20Prize {
-                token: erc20.contract_address,
-                token_amount: STARTING_BALANCE.low,
-                token_distribution: array![100, 0],
+                token: erc20.contract_address, token_amount: STARTING_BALANCE.low, position: 2,
             }
         ),
-        PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }),
+        PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 2 }),
     ];
     erc20.approve(tournament.contract_address, STARTING_BALANCE);
     erc721.approve(tournament.contract_address, 1);
-    tournament
-        .create_tournament(
-            TOURNAMENT_NAME(),
-            Option::None, // zero gated type
-            2 + MIN_REGISTRATION_PERIOD.into(),
-            3 + MIN_REGISTRATION_PERIOD.into(),
-            MIN_SUBMISSION_PERIOD.into(),
-            1, // single top score
-            Option::None, // zero entry premium
-            prizes,
-            array![]
-        );
-    assert(erc20.balance_of(OWNER()) == 0, 'Invalid balance');
-    assert(erc721.balance_of(OWNER()) == 0, 'Invalid balance');
+    tournament.add_prize(1, *prizes.at(0));
+    tournament.add_prize(1, *prizes.at(1));
 }
 
 #[test]
@@ -537,14 +522,12 @@ fn test_enter_tournament() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 
     tournament.enter_tournament(tournament_id, Option::None);
@@ -559,14 +542,12 @@ fn test_enter_tournament_already_started() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 
     testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
@@ -595,14 +576,12 @@ fn test_start_tournament() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 
     tournament.enter_tournament(tournament_id, Option::None);
@@ -615,6 +594,8 @@ fn test_start_tournament() {
 
     tournament.start_tournament(tournament_id, false);
 
+    // check tournament entries
+    assert(tournament.tournament_entries(tournament_id) == 1, 'Invalid entries');
     // check owner now has game token
     assert(loot_survivor.owner_of(1) == OWNER(), 'Invalid owner');
     // check lords and eth balances of loot survivor after starting
@@ -650,14 +631,12 @@ fn test_start_tournament_entry_already_started() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 
     tournament.enter_tournament(tournament_id, Option::None);
@@ -693,14 +672,12 @@ fn test_submit_scores() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 
     tournament.enter_tournament(tournament_id, Option::None);
@@ -768,14 +745,12 @@ fn test_submit_multiple_scores() {
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            Option::None, // zero gated type
             2 + MIN_REGISTRATION_PERIOD.into(),
             3 + MIN_REGISTRATION_PERIOD.into(),
             MIN_SUBMISSION_PERIOD.into(),
             3, // three top score
+            Option::None, // zero gated type
             Option::None, // zero entry premium
-            array![],
-            array![]
         );
 
     tournament.enter_tournament(tournament_id, Option::None);
@@ -854,6 +829,18 @@ fn test_claim_prizes() {
 
     testing::set_account_contract_address(OWNER());
     testing::set_contract_address(OWNER());
+
+    let tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::None, // zero entry premium
+        );
+
     erc20.approve(tournament.contract_address, 1);
     erc721.approve(tournament.contract_address, 1);
     let tokens = array![
@@ -866,28 +853,15 @@ fn test_claim_prizes() {
     let prizes = array![
         PrizeType::erc20(
             ERC20Prize {
-                token: erc20.contract_address,
-                token_amount: STARTING_BALANCE.low,
-                token_distribution: array![100],
+                token: erc20.contract_address, token_amount: STARTING_BALANCE.low, position: 1,
             }
         ),
         PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }),
     ];
     erc20.approve(tournament.contract_address, STARTING_BALANCE);
     erc721.approve(tournament.contract_address, 1);
-
-    let tournament_id = tournament
-        .create_tournament(
-            TOURNAMENT_NAME(),
-            Option::None, // zero gated type
-            2 + MIN_REGISTRATION_PERIOD.into(),
-            3 + MIN_REGISTRATION_PERIOD.into(),
-            MIN_SUBMISSION_PERIOD.into(),
-            1, // single top score
-            Option::None, // zero entry premium
-            prizes,
-            array![]
-        );
+    tournament.add_prize(1, *prizes.at(0));
+    tournament.add_prize(1, *prizes.at(1));
 
     tournament.enter_tournament(tournament_id, Option::None);
 
@@ -930,10 +904,318 @@ fn test_claim_prizes() {
     tournament.submit_scores(tournament_id, array![1]);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.claim_prizes(tournament_id);
+    tournament.claim_prizes(tournament_id, true);
 
     // check balances of owner after claiming prizes
     assert(erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
     assert(erc721.owner_of(1) == OWNER(), 'Invalid owner');
 }
+
+#[test]
+#[should_panic(expected: ('prize already claimed', 'ENTRYPOINT_FAILED'))]
+fn test_claim_single_prize_already_claimed() {
+    let (
+        _world,
+        mut tournament,
+        mut loot_survivor,
+        _pragma,
+        mut eth,
+        mut lords,
+        mut erc20,
+        mut erc721,
+        _erc1155
+    ) =
+        setup();
+
+    testing::set_account_contract_address(OWNER());
+    testing::set_contract_address(OWNER());
+
+    let tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::None, // zero entry premium
+        );
+
+    erc20.approve(tournament.contract_address, 1);
+    erc721.approve(tournament.contract_address, 1);
+    let tokens = array![
+        Token { token: erc20.contract_address, token_id: 0, token_type: TokenType::ERC20 },
+        Token { token: erc721.contract_address, token_id: 1, token_type: TokenType::ERC721 },
+    ];
+
+    tournament.register_tokens(tokens);
+
+    let prizes = array![
+        PrizeType::erc20(
+            ERC20Prize {
+                token: erc20.contract_address, token_amount: STARTING_BALANCE.low, position: 1,
+            }
+        ),
+        PrizeType::erc721(ERC721Prize { token: erc721.contract_address, token_id: 1, position: 1 }),
+    ];
+    erc20.approve(tournament.contract_address, STARTING_BALANCE);
+    erc721.approve(tournament.contract_address, 1);
+    tournament.add_prize(1, *prizes.at(0));
+    tournament.add_prize(1, *prizes.at(1));
+
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
+    lords.approve(tournament.contract_address, 50000000000000000000);
+    // calculate eth to approve, $0.5 / 2500 = 0.0002
+    eth.approve(tournament.contract_address, 200000000000000);
+
+    tournament.start_tournament(tournament_id, false);
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
+
+    // set data to a dead adventurer with 1 xp
+    let submitted_adventurer = Adventurer {
+        health: 0,
+        xp: 1,
+        stats: Stats {
+            strength: 0, dexterity: 0, vitality: 0, intelligence: 0, wisdom: 0, charisma: 0, luck: 0
+        },
+        gold: 0,
+        equipment: Equipment {
+            weapon: Item { id: 12, xp: 0 },
+            chest: Item { id: 0, xp: 0 },
+            head: Item { id: 0, xp: 0 },
+            waist: Item { id: 0, xp: 0 },
+            foot: Item { id: 0, xp: 0 },
+            hand: Item { id: 0, xp: 0 },
+            neck: Item { id: 0, xp: 0 },
+            ring: Item { id: 0, xp: 0 }
+        },
+        beast_health: 3,
+        stat_upgrades_available: 0,
+        battle_action_count: 0,
+        mutated: false,
+        awaiting_item_specials: false
+    };
+    loot_survivor.set_adventurer(1, submitted_adventurer);
+
+    tournament.submit_scores(tournament_id, array![1]);
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
+    tournament.claim_prizes(tournament_id, false);
+    tournament.claim_prizes(tournament_id, false);
+}
+
+#[test]
+fn test_create_tournament_with_criteria_gated_tokens() {
+    let (
+        _world,
+        mut tournament,
+        mut loot_survivor,
+        _pragma,
+        mut eth,
+        mut lords,
+        _erc20,
+        mut erc721,
+        _erc1155
+    ) =
+        setup();
+
+    testing::set_account_contract_address(OWNER());
+    testing::set_contract_address(OWNER());
+
+    let tokens = array![
+        Token { token: erc721.contract_address, token_id: 1, token_type: TokenType::ERC721 },
+    ];
+
+    erc721.approve(tournament.contract_address, 1);
+
+    tournament.register_tokens(tokens);
+
+    let gated_type = GatedType::token(
+        GatedToken {
+            token: erc721.contract_address,
+            entry_type: GatedEntryType::criteria(
+                array![EntryCriteria { token_id: 1, entry_count: 2 }].span()
+            ),
+        }
+    );
+
+    let tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::Some(gated_type), // zero gated type
+            Option::None, // zero entry premium
+        );
+
+    let tournament_data = tournament.tournament(tournament_id);
+    assert(
+        tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated token'
+    );
+    let gated_submission_type = GatedSubmissionType::token_id(1);
+
+    tournament.enter_tournament(tournament_id, Option::Some(gated_submission_type));
+
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
+    // handle for 2 entries
+    lords.approve(tournament.contract_address, 2 * 50000000000000000000);
+    // calculate eth to approve, $0.5 / 2500 = 0.0002
+    eth.approve(tournament.contract_address, 2 * 200000000000000);
+
+    tournament.start_tournament(tournament_id, false);
+
+    // check tournament entries
+    assert(tournament.tournament_entries(tournament_id) == 2, 'Invalid entries');
+    // check owner now has game token
+    assert(loot_survivor.owner_of(1) == OWNER(), 'Invalid owner');
+    assert(loot_survivor.owner_of(2) == OWNER(), 'Invalid owner');
+    // check lords and eth balances of loot survivor after starting
+    assert(
+        lords.balance_of(loot_survivor.contract_address) == 2 * 50000000000000000000,
+        'Invalid balance'
+    );
+    assert(
+        eth.balance_of(loot_survivor.contract_address) == 2 * 200000000000000, 'Invalid balance'
+    );
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
+
+    // set data to a dead adventurer with 1 xp
+    let submitted_adventurer = Adventurer {
+        health: 0,
+        xp: 1,
+        stats: Stats {
+            strength: 0, dexterity: 0, vitality: 0, intelligence: 0, wisdom: 0, charisma: 0, luck: 0
+        },
+        gold: 0,
+        equipment: Equipment {
+            weapon: Item { id: 12, xp: 0 },
+            chest: Item { id: 0, xp: 0 },
+            head: Item { id: 0, xp: 0 },
+            waist: Item { id: 0, xp: 0 },
+            foot: Item { id: 0, xp: 0 },
+            hand: Item { id: 0, xp: 0 },
+            neck: Item { id: 0, xp: 0 },
+            ring: Item { id: 0, xp: 0 }
+        },
+        beast_health: 3,
+        stat_upgrades_available: 0,
+        battle_action_count: 0,
+        mutated: false,
+        awaiting_item_specials: false
+    };
+    loot_survivor.set_adventurer(1, submitted_adventurer);
+
+    tournament.submit_scores(tournament_id, array![1]);
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
+    tournament.claim_prizes(tournament_id, false);
+}
+// #[test]
+// fn test_create_tournament_with_premiums() {
+//     let (_world, mut tournament, mut loot_survivor, _pragma, mut eth, mut lords, _erc20, mut
+//     erc721, _erc1155) =
+//         setup();
+
+//     testing::set_account_contract_address(OWNER());
+//     testing::set_contract_address(OWNER());
+
+//     let tokens = array![
+//         Token { token: erc721.contract_address, token_id: 1, token_type: TokenType::ERC721 },
+//     ];
+
+//     erc721.approve(tournament.contract_address, 1);
+
+//     tournament.register_tokens(tokens);
+
+//     let entry_premium = EntryPremium {
+//         token: erc721.contract_address,
+//             entry_type: GatedEntryType::criteria(array![EntryCriteria { token_id: 1, entry_count:
+//             2 }].span()),
+//         }
+//     };
+
+//     let tournament_id = tournament
+//         .create_tournament(
+//             TOURNAMENT_NAME(),
+//             2 + MIN_REGISTRATION_PERIOD.into(),
+//             3 + MIN_REGISTRATION_PERIOD.into(),
+//             MIN_SUBMISSION_PERIOD.into(),
+//             1, // single top score
+//             Option::None, // zero gated type
+//             Option::Some(entry_premium), // zero entry premium
+//         );
+
+//     let tournament_data = tournament.tournament(tournament_id);
+//     assert(tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated
+//     token');
+//     let gated_submission_type = GatedSubmissionType::token_id(1);
+
+//     tournament.enter_tournament(tournament_id, Option::Some(gated_submission_type));
+
+//     testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
+//     // handle for 2 entries
+//     lords.approve(tournament.contract_address, 2 * 50000000000000000000);
+//     // calculate eth to approve, $0.5 / 2500 = 0.0002
+//     eth.approve(tournament.contract_address, 2 * 200000000000000);
+
+//     tournament.start_tournament(tournament_id, false);
+
+//     // check tournament entries
+//     assert(tournament.tournament_entries(tournament_id) == 2, 'Invalid entries');
+//     // check owner now has game token
+//     assert(loot_survivor.owner_of(1) == OWNER(), 'Invalid owner');
+//     assert(loot_survivor.owner_of(2) == OWNER(), 'Invalid owner');
+//     // check lords and eth balances of loot survivor after starting
+//     assert(
+//         lords.balance_of(loot_survivor.contract_address) == 2 * 50000000000000000000, 'Invalid
+//         balance'
+//     );
+//     assert(eth.balance_of(loot_survivor.contract_address) == 2 * 200000000000000, 'Invalid
+//     balance');
+
+//     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
+
+//     // set data to a dead adventurer with 1 xp
+//     let submitted_adventurer = Adventurer {
+//         health: 0,
+//         xp: 1,
+//         stats: Stats {
+//             strength: 0, dexterity: 0, vitality: 0, intelligence: 0, wisdom: 0, charisma: 0,
+//             luck: 0
+//         },
+//         gold: 0,
+//         equipment: Equipment {
+//             weapon: Item { id: 12, xp: 0 },
+//             chest: Item { id: 0, xp: 0 },
+//             head: Item { id: 0, xp: 0 },
+//             waist: Item { id: 0, xp: 0 },
+//             foot: Item { id: 0, xp: 0 },
+//             hand: Item { id: 0, xp: 0 },
+//             neck: Item { id: 0, xp: 0 },
+//             ring: Item { id: 0, xp: 0 }
+//         },
+//         beast_health: 3,
+//         stat_upgrades_available: 0,
+//         battle_action_count: 0,
+//         mutated: false,
+//         awaiting_item_specials: false
+//     };
+//     loot_survivor.set_adventurer(1, submitted_adventurer);
+
+//     tournament.submit_scores(tournament_id, array![1]);
+
+//     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() +
+//     MIN_SUBMISSION_PERIOD.into());
+//     tournament.claim_prizes(tournament_id, false);
+// }
+
 

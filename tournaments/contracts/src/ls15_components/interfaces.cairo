@@ -1,6 +1,8 @@
 use starknet::ContractAddress;
 use adventurer::{adventurer::Adventurer, bag::Bag};
-use tournament::ls15_components::constants::{Operation, StatRequirementEnum, TokenType};
+use tournament::ls15_components::constants::{
+    Operation, StatRequirementEnum, TokenType, GatedEntryType
+};
 use tournament::ls15_components::loot_survivor::AdventurerMetadata;
 
 #[derive(Drop, Copy, Serde, Introspect)]
@@ -10,8 +12,6 @@ struct Token {
     token_type: TokenType,
 }
 
-// TODO: add advanced config enum to enter ids for entries, and basic config enum for entries across
-// all ids
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 struct EntryCriteria {
     token_id: u128,
@@ -21,31 +21,24 @@ struct EntryCriteria {
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 struct GatedToken {
     token: ContractAddress,
-    // TODO: create a different type custom entry criteria and uniform entry criteria
-    entry_criteria: Span<EntryCriteria>,
+    entry_type: GatedEntryType,
 }
 
 // enum config ERC20, ERC721, ERC1155
-#[derive(Drop, Serde, Introspect)]
-struct ERC20Prize {
-    token: ContractAddress,
+#[derive(Copy, Drop, Serde, Introspect)]
+struct ERC20Data {
     token_amount: u128,
-    token_distribution: Array<u8>,
 }
 
-#[derive(Drop, Serde, Introspect)]
-struct ERC721Prize {
-    token: ContractAddress,
+#[derive(Copy, Drop, Serde, Introspect)]
+struct ERC721Data {
     token_id: u128,
-    position: u8,
 }
 
-#[derive(Drop, Serde, Introspect)]
-struct ERC1155Prize {
-    token: ContractAddress,
+#[derive(Copy, Drop, Serde, Introspect)]
+struct ERC1155Data {
     token_id: u128,
     token_amount: u128,
-    token_distribution: Array<u8>,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]

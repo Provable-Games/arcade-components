@@ -4,26 +4,27 @@ use tournament::ls15_components::tournament::{TournamentModel};
 use tournament::ls15_components::interfaces::{
     LootRequirement, Token, StatRequirement, GatedToken, Premium
 };
-use tournament::ls15_components::constants::{TokenType, PrizeType, GatedType, GatedSubmissionType};
+use tournament::ls15_components::constants::{
+    TokenType, TokenDataType, GatedType, GatedSubmissionType
+};
 
 #[starknet::interface]
 trait ITournamentMock<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
+    fn tournament_entries(self: @TState, tournament_id: u64) -> u8;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
     fn is_tournament_active(self: @TState, tournament_id: u64) -> bool;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     fn create_tournament(
         ref self: TState,
         name: ByteArray,
-        gated_submission_type: Option<GatedSubmissionType>,
         start_time: u64,
         end_time: u64,
         submission_period: u64,
         winners_count: u8,
+        gated_type: Option<GatedType>,
         entry_premium: Option<Premium>,
-        prizes: Array<PrizeType>,
-        stat_requirements: Array<StatRequirement>
     ) -> u64;
     fn register_tokens(ref self: TState, tokens: Array<Token>);
     fn enter_tournament(
@@ -31,7 +32,14 @@ trait ITournamentMock<TState> {
     );
     fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);
     fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
-    fn claim_prizes(ref self: TState, tournament_id: u64);
+    fn add_prize(
+        ref self: TState,
+        tournament_id: u64,
+        token: ContractAddress,
+        token_data_type: TokenDataType,
+        position: u8
+    );
+    fn distribute_prizes(ref self: TState, tournament_id: u64, distribute_all: bool);
 
     // IWorldProvider
     fn world(self: @TState,) -> IWorldDispatcher;
