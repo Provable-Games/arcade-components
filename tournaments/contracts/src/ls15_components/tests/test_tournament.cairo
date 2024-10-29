@@ -580,11 +580,108 @@ fn test_create_gated_tournament_with_unsettled_tournament() {
         );
 }
 
-// #[test]
-// fn test_create_tournament_gated_by_multiple_tournaments() {
-//     // Test creating tournament gated by multiple previous tournaments
-//     // Verify all tournament IDs are checked
-// }
+#[test]
+fn test_create_tournament_gated_by_multiple_tournaments() {
+    let (
+        _world,
+        mut tournament,
+        mut loot_survivor,
+        _pragma,
+        mut eth,
+        mut lords,
+        _erc20,
+        _erc721,
+        _erc1155
+    ) = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create first tournament
+    let first_tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1,
+            Option::None,
+            Option::None,
+        );
+
+    // Create second tournament
+    let second_tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1,
+            Option::None,
+            Option::None,
+        );
+
+    // Enter and complete first tournament
+    tournament.enter_tournament(first_tournament_id, Option::None);
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(first_tournament_id, false, Option::None);
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
+    let submitted_adventurer = create_dead_adventurer_with_xp(10);
+    loot_survivor.set_adventurer(1, submitted_adventurer);
+    tournament.submit_scores(first_tournament_id, array![1]);
+
+    // Settle first tournament
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
+    tournament.distribute_rewards(first_tournament_id, Option::None);
+
+    // Enter and complete second tournament
+    testing::set_block_timestamp(1);
+    tournament.enter_tournament(second_tournament_id, Option::None);
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(second_tournament_id, false, Option::None);
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
+    let submitted_adventurer = create_dead_adventurer_with_xp(20);
+    loot_survivor.set_adventurer(2, submitted_adventurer);
+    tournament.submit_scores(second_tournament_id, array![2]);
+
+    // Settle second tournament
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
+    tournament.distribute_rewards(second_tournament_id, Option::None);
+
+    // Create tournament gated by both previous tournaments
+    let gated_type = GatedType::tournament(array![first_tournament_id, second_tournament_id].span());
+
+    let current_time = get_block_timestamp();
+    let gated_tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            current_time + MIN_REGISTRATION_PERIOD.into(),
+            current_time + MIN_REGISTRATION_PERIOD.into() + 1,
+            MIN_SUBMISSION_PERIOD.into(),
+            1,
+            Option::Some(gated_type),
+            Option::None,
+        );
+
+    // Verify the gated tournament was created with correct parameters
+    let gated_tournament = tournament.tournament(gated_tournament_id);
+    assert(
+        gated_tournament.gated_type == Option::Some(gated_type),
+        'Invalid tournament gate type'
+    );
+
+
+    let gated_submission_type = GatedSubmissionType::game_id(array![1, 2].span());
+    // This should succeed since we completed both required tournaments
+    tournament.enter_tournament(gated_tournament_id, Option::Some(gated_submission_type));
+
+    // Verify entry was successful
+    let entries = tournament.tournament_entries(gated_tournament_id);
+    assert(entries == 1, 'Invalid entry count');
+}
 
 //
 // Test registering tokens
@@ -647,6 +744,72 @@ fn test_enter_tournament_already_started() {
     testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
 
     tournament.enter_tournament(tournament_id, Option::None);
+}
+
+#[test]
+#[should_panic(expected: ('invalid gated submission type', 'ENTRYPOINT_FAILED'))]
+fn test_enter_tournament_wrong_submission_type() {
+    let (
+        _world,
+        mut tournament,
+        mut loot_survivor,
+        _pragma,
+        mut eth,
+        mut lords,
+        _erc20,
+        _erc721,
+        _erc1155
+    ) = setup();
+
+    utils::impersonate(OWNER());
+
+    // First create and complete a tournament that will be used as a gate
+    let first_tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1,
+            Option::None,
+            Option::None,
+        );
+
+    // Complete the first tournament
+    tournament.enter_tournament(first_tournament_id, Option::None);
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(first_tournament_id, false, Option::None);
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
+    let submitted_adventurer = create_dead_adventurer_with_xp(10);
+    loot_survivor.set_adventurer(1, submitted_adventurer);
+    tournament.submit_scores(first_tournament_id, array![1]);
+
+    // Settle first tournament
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
+    tournament.distribute_rewards(first_tournament_id, Option::None);
+
+    // Create a tournament gated by the previous tournament
+    let gated_type = GatedType::tournament(array![first_tournament_id].span());
+
+    let current_time = get_block_timestamp();
+    let gated_tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            current_time + MIN_REGISTRATION_PERIOD.into(),
+            current_time + MIN_REGISTRATION_PERIOD.into() + 1,
+            MIN_SUBMISSION_PERIOD.into(),
+            1,
+            Option::Some(gated_type),
+            Option::None,
+        );
+
+    // Try to enter with wrong submission type (token_id instead of game_id)
+    let wrong_submission_type = GatedSubmissionType::token_id(1);
+
+    // This should panic because we're using token_id submission type for a tournament-gated tournament
+    tournament.enter_tournament(gated_tournament_id, Option::Some(wrong_submission_type));
 }
 
 //
@@ -975,18 +1138,97 @@ fn test_submit_scores_before_tournament_ends() {
     tournament.submit_scores(tournament_id, array![1]);
 }
 
-// #[test]
-// fn test_submit_scores_replace_lower_score() {
-//     // Test submitting a higher score should replace a lower score in rankings
-// }
+#[test]
+fn test_submit_scores_replace_lower_score() {
+    let (
+        _world,
+        mut tournament,
+        mut loot_survivor,
+        _pragma,
+        mut eth,
+        mut lords,
+        _erc20,
+        _erc721,
+        _erc1155
+    ) = setup();
 
-// #[test]
-// #[should_panic(expected: ('invalid gated submission type', 'ENTRYPOINT_FAILED'))]
-// fn test_enter_tournament_wrong_submission_type() {
-//     // Test entering tournament with wrong submission type
-//     // E.g., using token_id for tournament-gated tournament
-// }
+    utils::impersonate(OWNER());
 
+    // Create tournament with multiple top scores
+    let tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            3, // Track top 3 scores
+            Option::None,
+            Option::None,
+        );
+
+    // Create multiple players
+    let player2 = starknet::contract_address_const::<0x456>();
+    let player3 = starknet::contract_address_const::<0x789>();
+
+    // Enter tournament with all players
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player2);
+    eth.mint(player2, STARTING_BALANCE);
+    lords.mint(player2, STARTING_BALANCE);
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player3);
+    eth.mint(player3, STARTING_BALANCE);
+    lords.mint(player3, STARTING_BALANCE);
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    // Start tournament for all players
+    testing::set_block_timestamp(2 + MIN_REGISTRATION_PERIOD.into());
+
+    utils::impersonate(OWNER());
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(tournament_id, false, Option::None);
+
+    utils::impersonate(player2);
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(tournament_id, false, Option::None);
+
+    utils::impersonate(player3);
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(tournament_id, false, Option::None);
+
+    testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into());
+
+    // Submit initial scores
+    let low_score = create_dead_adventurer_with_xp(5);
+    let mid_score = create_dead_adventurer_with_xp(10);
+    let high_score = create_dead_adventurer_with_xp(15);
+
+    loot_survivor.set_adventurer(1, low_score);  // Owner's adventurer
+    loot_survivor.set_adventurer(2, mid_score);  // Player2's adventurer
+    loot_survivor.set_adventurer(3, high_score); // Player3's adventurer
+
+    utils::impersonate(OWNER());
+    tournament.submit_scores(tournament_id, array![1]);
+
+    // // Verify initial rankings
+    let scores = tournament.top_scores(tournament_id);
+    assert(scores.len() == 1, 'Invalid scores length');
+    assert(*scores.at(0) == 1, 'Wrong top score'); // owner
+    
+    utils::impersonate(player2);
+    tournament.submit_scores(tournament_id, array![1, 3, 2]);
+
+    // Verify updated rankings
+    let updated_scores = tournament.top_scores(tournament_id);
+    println!("Updated scores length: {}", updated_scores.len());
+    println!("Updated first score: {}", *updated_scores.at(0));
+    assert(updated_scores.len() == 3, 'Invalid updated scores length');
+    assert(*updated_scores.at(0) == 1, 'Wrong new top score'); // Owner
+    assert(*updated_scores.at(1) == 3, 'Wrong new second score'); // Player3
+    assert(*updated_scores.at(2) == 2, 'Wrong new third score'); // Player2
+}
 
 //
 // Test distributing rewards

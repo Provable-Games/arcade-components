@@ -670,26 +670,22 @@ mod tournament_component {
                     break;
                 }
                 let game_id = *game_ids.at(game_index);
-                self._assert_game_started(tournament_id, game_id);
-                self._assert_tournament_not_submitted(tournament_id, game_id);
-
+                self._assert_game_started_or_submitted(tournament_id, game_id);
+                
                 let adventurer = ls_dispatcher.get_adventurer(game_id.try_into().unwrap());
                 let death_date = self.get_death_date_from_id(game_id);
 
                 self._assert_valid_score(adventurer);
 
-                // check whether it is a top score, if so update the scores
-                if self._is_top_score(tournament_id, adventurer.xp) {
-                    self
-                        ._update_tournament_scores(
-                            tournament_id,
-                            game_id,
-                            adventurer.xp,
-                            death_date,
-                            ref new_score_ids,
-                            game_index
-                        );
-                }
+                self
+                    ._update_tournament_scores(
+                        tournament_id,
+                        game_id,
+                        adventurer.xp,
+                        death_date,
+                        ref new_score_ids,
+                        game_index
+                    );
 
                 self.set_submitted_score(tournament_id, game_id, adventurer.xp);
                 game_index += 1;
@@ -1093,11 +1089,11 @@ mod tournament_component {
             assert(tournament.start_time > get_block_timestamp(), Errors::TOURNAMENT_ALREADY_STARTED);
         }
 
-        fn _assert_game_started(
+        fn _assert_game_started_or_submitted(
             self: @ComponentState<TContractState>, tournament_id: u64, game_id: felt252
         ) {
             let entry = self.get_tournament_entry(tournament_id, game_id);
-            assert(entry.status == EntryStatus::Started, Errors::GAME_NOT_STARTED);
+            assert(entry.status == EntryStatus::Started || entry.status == EntryStatus::Submitted, Errors::GAME_NOT_STARTED);
         }
 
         fn _assert_tournament_active(self: @ComponentState<TContractState>, tournament_id: u64) {
@@ -1515,7 +1511,8 @@ mod tournament_component {
             game_index: u32
         ) {
             // get current scores which will be mutated as part of this function
-            let mut top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
+            let top_score_ids = self.get_tournament_scores(tournament_id).top_score_ids;
+
             let num_scores = top_score_ids.len();
 
             let mut new_score_id: u64 = 0;
@@ -1534,7 +1531,7 @@ mod tournament_component {
                     } else if (score == top_score) {
                         // if scores are the same then use death date as the deciding factor
                         let top_death_date = self
-                            .get_death_date_from_id(top_score_id.try_into().unwrap());
+                        .get_death_date_from_id(top_score_id.try_into().unwrap());
                         if (death_date < top_death_date) {
                             new_score_id = game_id.try_into().unwrap();
                             new_score = score;
@@ -1542,6 +1539,9 @@ mod tournament_component {
                             new_score_id = top_score_id;
                             new_score = top_score;
                         }
+                    } else {
+                        new_score_id = top_score_id;
+                        new_score = top_score;
                     }
                 } else {
                     new_score_id = game_id.try_into().unwrap();
