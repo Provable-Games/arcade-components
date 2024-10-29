@@ -718,7 +718,7 @@ fn test_tournament_score_tiebreaker() {
 }
 
 #[test]
-fn test_distribute_prizes() {
+fn test_distribute_rewards() {
     let (
         _world,
         mut tournament,
@@ -771,7 +771,7 @@ fn test_distribute_prizes() {
     tournament.submit_scores(tournament_id, array![1]);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.distribute_prizes(tournament_id, Option::Some(array![1, 2]));
+    tournament.distribute_rewards(tournament_id, Option::Some(array![1, 2]));
 
     // check balances of owner after claiming prizes
     assert(erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
@@ -833,8 +833,8 @@ fn test_claim_single_prize_already_claimed() {
     tournament.submit_scores(tournament_id, array![1]);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.distribute_prizes(tournament_id, Option::Some(array![1, 2]));
-    tournament.distribute_prizes(tournament_id, Option::Some(array![1, 2]));
+    tournament.distribute_rewards(tournament_id, Option::Some(array![1, 2]));
+    tournament.distribute_rewards(tournament_id, Option::Some(array![1, 2]));
 }
 
 #[test]
@@ -912,7 +912,7 @@ fn test_create_tournament_with_gated_tokens_criteria() {
     tournament.submit_scores(tournament_id, array![1]);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.distribute_prizes(tournament_id, Option::None);
+    tournament.distribute_rewards(tournament_id, Option::None);
 }
 
 #[test]
@@ -989,7 +989,7 @@ fn test_create_tournament_with_gated_tokens_uniform() {
     tournament.submit_scores(tournament_id, array![1]);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.distribute_prizes(tournament_id, Option::None);
+    tournament.distribute_rewards(tournament_id, Option::None);
 }
 
 #[test]
@@ -1039,7 +1039,7 @@ fn test_create_tournament_with_gated_tournaments() {
     tournament.submit_scores(tournament_id, array![1]);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.distribute_prizes(tournament_id, Option::None);
+    tournament.distribute_rewards(tournament_id, Option::None);
 
     // define a new tournament that has a gated type of the first tournament
     let gated_type = GatedType::tournament(array![1].span());
@@ -1082,7 +1082,7 @@ fn test_create_tournament_with_gated_tournaments() {
     tournament.submit_scores(tournament_id, array![2]);
 
     testing::set_block_timestamp(current_time + 1 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.distribute_prizes(tournament_id, Option::None);
+    tournament.distribute_rewards(tournament_id, Option::None);
 }
 
 #[test]
@@ -1152,9 +1152,87 @@ fn test_create_tournament_with_premiums() {
     tournament.submit_scores(tournament_id, array![1]);
 
     testing::set_block_timestamp(3 + MIN_REGISTRATION_PERIOD.into() + MIN_SUBMISSION_PERIOD.into());
-    tournament.distribute_prizes(tournament_id, Option::None);
+    tournament.distribute_rewards(tournament_id, Option::None);
 
     // check owner now has all premium funds back
     assert(erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
 }
+
+#[test]
+#[should_panic(expected: ('premium distributions too long', 'ENTRYPOINT_FAILED'))]
+fn test_create_tournament_with_premiums_too_long() {
+    let (
+        _world,
+        mut tournament,
+        _loot_survivor,
+        _pragma,
+        _eth,
+        _lords,
+        mut erc20,
+        mut erc721,
+        _erc1155
+    ) =
+        setup();
+
+    utils::impersonate(OWNER());
+    register_tokens_for_test(tournament, erc20, erc721);
+
+    let entry_premium = Premium {
+        token: erc20.contract_address,
+        token_amount: 1,
+        token_distribution: array![100, 0].span(),
+        creator_fee: 0,
+    };
+
+    tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::Some(entry_premium), // zero entry premium
+        );
+}
+
+#[test]
+#[should_panic(expected: ('premium distributions not 100%', 'ENTRYPOINT_FAILED'))]
+fn test_create_tournament_with_premiums_not_100() {
+    let (
+        _world,
+        mut tournament,
+        _loot_survivor,
+        _pragma,
+        _eth,
+        _lords,
+        mut erc20,
+        mut erc721,
+        _erc1155
+    ) =
+        setup();
+
+    utils::impersonate(OWNER());
+    register_tokens_for_test(tournament, erc20, erc721);
+
+    let entry_premium = Premium {
+        token: erc20.contract_address,
+        token_amount: 1,
+        token_distribution: array![95].span(),
+        creator_fee: 0,
+    };
+
+    tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            2 + MIN_REGISTRATION_PERIOD.into(),
+            3 + MIN_REGISTRATION_PERIOD.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::Some(entry_premium), // zero entry premium
+        );
+}
+
+
 

@@ -188,7 +188,7 @@ trait ITournament<TState> {
         token_data_type: TokenDataType,
         position: u8
     );
-    fn distribute_prizes(ref self: TState, tournament_id: u64, prize_keys: Option<Array<u64>>);
+    fn distribute_rewards(ref self: TState, tournament_id: u64, prize_keys: Option<Array<u64>>);
 }
 
 ///
@@ -710,7 +710,7 @@ mod tournament_component {
             self._deposit_prize(tournament_id, token, token_data_type, position);
         }
 
-        fn distribute_prizes(
+        fn distribute_rewards(
             ref self: ComponentState<TContractState>,
             tournament_id: u64,
             prize_keys: Option<Array<u64>>
@@ -1041,11 +1041,8 @@ mod tournament_component {
         ) {
             match premium {
                 Option::Some(token) => { 
-                    assert(self._is_token_registered(token.token), Errors::PREMIUM_TOKEN_NOT_REGISTERED);
-                    assert(
-                        token.token_distribution.len() <= winners_count.into(),
-                        Errors::PREMIUM_DISTRIBUTIONS_TOO_LONG
-                    );
+                    self._assert_premium_token_registered(token.token);
+                    self._assert_premium_token_distribution_length_not_too_long(token.token_distribution.len(), winners_count.into());
                     // check the sum of distributions is equal to 100%
                     let mut distribution_sum: u8 = 0;
                     let mut distribution_index: u32 = 0;
@@ -1057,10 +1054,25 @@ mod tournament_component {
                         distribution_sum += distribution;
                         distribution_index += 1;
                     };
-                    assert(distribution_sum == 100, Errors::PREMIUM_DISTRIBUTIONS_NOT_100);
+                    self._assert_premium_token_distribution_sum_is_100(distribution_sum);
                  },
                 Option::None => {},
             }
+        }
+
+        fn _assert_premium_token_registered(self: @ComponentState<TContractState>, token: ContractAddress) {
+            assert(self._is_token_registered(token), Errors::PREMIUM_TOKEN_NOT_REGISTERED);
+        }
+
+        fn _assert_premium_token_distribution_length_not_too_long(self: @ComponentState<TContractState>, distribution_length: u32, winners_count: u32) {
+            assert(
+                distribution_length <= winners_count,
+                Errors::PREMIUM_DISTRIBUTIONS_TOO_LONG
+            );
+        }
+
+        fn _assert_premium_token_distribution_sum_is_100(self: @ComponentState<TContractState>, sum: u8) {
+            assert(sum == 100, Errors::PREMIUM_DISTRIBUTIONS_NOT_100);
         }
 
         fn _assert_prize_token_registered(self: @ComponentState<TContractState>, token: ContractAddress) {

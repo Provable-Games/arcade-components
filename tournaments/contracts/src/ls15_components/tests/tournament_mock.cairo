@@ -41,7 +41,7 @@ trait ITournamentMock<TState> {
         token_data_type: TokenDataType,
         position: u8
     );
-    fn distribute_prizes(ref self: TState, tournament_id: u64, prize_keys: Option<Array<u64>>);
+    fn distribute_rewards(ref self: TState, tournament_id: u64, prize_keys: Option<Array<u64>>);
 
     // IWorldProvider
     fn world(self: @TState,) -> IWorldDispatcher;
