@@ -7,6 +7,8 @@ mod ls15_components {
         mod erc20_mock;
         mod erc721_mock;
         mod erc1155_mock;
+        #[cfg(test)]
+        mod helpers;
         mod loot_survivor_mock;
         mod pragma_mock;
         mod tournament_mock;

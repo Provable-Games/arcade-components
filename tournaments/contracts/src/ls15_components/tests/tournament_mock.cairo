@@ -12,7 +12,7 @@ use tournament::ls15_components::constants::{
 trait ITournamentMock<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn tournament_entries(self: @TState, tournament_id: u64) -> u8;
+    fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
     fn is_tournament_active(self: @TState, tournament_id: u64) -> bool;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
@@ -30,7 +30,9 @@ trait ITournamentMock<TState> {
     fn enter_tournament(
         ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>
     );
-    fn start_tournament(ref self: TState, tournament_id: u64, start_all: bool);
+    fn start_tournament(
+        ref self: TState, tournament_id: u64, start_all: bool, start_count: Option<u64>
+    );
     fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
     fn add_prize(
         ref self: TState,
@@ -39,7 +41,7 @@ trait ITournamentMock<TState> {
         token_data_type: TokenDataType,
         position: u8
     );
-    fn distribute_prizes(ref self: TState, tournament_id: u64, distribute_all: bool);
+    fn distribute_prizes(ref self: TState, tournament_id: u64, prize_keys: Option<Array<u64>>);
 
     // IWorldProvider
     fn world(self: @TState,) -> IWorldDispatcher;

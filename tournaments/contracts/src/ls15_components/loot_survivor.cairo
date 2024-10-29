@@ -165,6 +165,7 @@ trait ILootSurvivor<TState> {
         mint_to: ContractAddress
     ) -> felt252;
     fn set_adventurer(self: @TState, adventurer_id: felt252, adventurer: Adventurer);
+    fn set_adventurer_meta(self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata);
     fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
 }
 
@@ -325,7 +326,7 @@ mod loot_survivor_component {
                 delay_stat_reveal: delay_reveal,
                 golden_token_id,
             };
-            self.set_adventurer_meta(adventurer_id.into(), adventurer_meta);
+            self.set_adventurer_meta_internal(adventurer_id.into(), adventurer_meta);
             self.set_game_count(adventurer_id);
             adventurer_id.into()
         }
@@ -334,6 +335,12 @@ mod loot_survivor_component {
             self: @ComponentState<TContractState>, adventurer_id: felt252, adventurer: Adventurer
         ) {
             self.set_adventurer_internal(adventurer_id.into(), adventurer);
+        }
+
+        fn set_adventurer_meta(
+            self: @ComponentState<TContractState>, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
+        ) {
+            self.set_adventurer_meta_internal(adventurer_id.into(), adventurer_meta);
         }
 
         fn set_bag(self: @ComponentState<TContractState>, adventurer_id: felt252, bag: Bag) {
@@ -403,7 +410,7 @@ mod loot_survivor_component {
             set!(self.get_contract().world(), AdventurerModel { adventurer_id, adventurer, });
         }
 
-        fn set_adventurer_meta(
+        fn set_adventurer_meta_internal(
             self: @ComponentState<TContractState>,
             adventurer_id: felt252,
             adventurer_meta: AdventurerMetadata

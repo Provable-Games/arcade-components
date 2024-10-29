@@ -1,21 +1,20 @@
 use starknet::ContractAddress;
 use adventurer::{adventurer::Adventurer, bag::Bag};
 use tournament::ls15_components::constants::{
-    Operation, StatRequirementEnum, TokenType, GatedEntryType
+    Operation, StatRequirementEnum, TokenDataType, GatedEntryType
 };
 use tournament::ls15_components::loot_survivor::AdventurerMetadata;
 
 #[derive(Drop, Copy, Serde, Introspect)]
 struct Token {
     token: ContractAddress,
-    token_id: u128,
-    token_type: TokenType,
+    token_data_type: TokenDataType,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 struct EntryCriteria {
     token_id: u128,
-    entry_count: u8,
+    entry_count: u64,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]

@@ -77,7 +77,7 @@ enum GatedSubmissionType {
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 enum GatedEntryType {
     criteria: Span<EntryCriteria>,
-    uniform: u8,
+    uniform: u64,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
