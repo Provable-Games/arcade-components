@@ -1753,7 +1753,7 @@ mod tournament_component {
                 token_dispatcher.transfer(creator, creator_amount.into());
             }
             // distribute the remaining premium amount in accordance with the distributions
-            let players_amount = premium.token_amount - creator_amount;
+            let players_amount = (entry_count.into() * premium.token_amount) - creator_amount;
             let num_distributions = premium.token_distribution.len();
             let mut distribution_index = 0;
             loop {
