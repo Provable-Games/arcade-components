@@ -165,7 +165,9 @@ trait ILootSurvivor<TState> {
         mint_to: ContractAddress
     ) -> felt252;
     fn set_adventurer(self: @TState, adventurer_id: felt252, adventurer: Adventurer);
-    fn set_adventurer_meta(self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata);
+    fn set_adventurer_meta(
+        self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
+    );
     fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
 }
 
@@ -338,7 +340,9 @@ mod loot_survivor_component {
         }
 
         fn set_adventurer_meta(
-            self: @ComponentState<TContractState>, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
+            self: @ComponentState<TContractState>,
+            adventurer_id: felt252,
+            adventurer_meta: AdventurerMetadata
         ) {
             self.set_adventurer_meta_internal(adventurer_id.into(), adventurer_meta);
         }

@@ -13,12 +13,14 @@ trait ITournamentMock<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
+    fn tournament_prize_keys(self: @TState, tournament_id: u64) -> Array<u64>;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
     fn is_tournament_active(self: @TState, tournament_id: u64) -> bool;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     fn create_tournament(
         ref self: TState,
-        name: ByteArray,
+        name: felt252,
+        description: ByteArray,
         start_time: u64,
         end_time: u64,
         submission_period: u64,
@@ -41,7 +43,7 @@ trait ITournamentMock<TState> {
         token_data_type: TokenDataType,
         position: u8
     );
-    fn distribute_rewards(ref self: TState, tournament_id: u64, prize_keys: Option<Array<u64>>);
+    fn distribute_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
 
     // IWorldProvider
     fn world(self: @TState,) -> IWorldDispatcher;

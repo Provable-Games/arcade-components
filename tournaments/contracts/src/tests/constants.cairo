@@ -1,6 +1,8 @@
 use starknet::ContractAddress;
 use starknet::contract_address_const;
 
+use tournament::ls15_components::constants::{MIN_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH};
+
 fn ADMIN() -> ContractAddress {
     contract_address_const::<'ADMIN'>()
 }
@@ -59,8 +61,20 @@ fn BASE_URI() -> ByteArray {
     ("https://lootsurvivor.io")
 }
 
-fn TOURNAMENT_NAME() -> ByteArray {
+fn TOURNAMENT_NAME() -> felt252 {
+    ('Genesis Tournament')
+}
+
+fn TOURNAMENT_DESCRIPTION() -> ByteArray {
     ("Genesis Tournament")
 }
 
 const STARTING_BALANCE: u256 = 1000000000000000000000;
+
+fn TEST_START_TIME() -> u32 {
+    2 + MIN_REGISTRATION_PERIOD
+}
+
+fn TEST_END_TIME() -> u32 {
+    TEST_START_TIME() + MIN_TOURNAMENT_LENGTH
+}

@@ -29,7 +29,7 @@ source = "git+https://github.com/Provable-Games/loot-survivor#0370e3bac9defde26a
 [[package]]
 name = "dojo"
 version = "1.0.0-alpha.4"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.0.0-alpha.16#3b3a78cd8239ca2ee524c49c83f36db4d79cb4bc"
+source = "git+https://github.com/dojoengine/dojo?tag=v1.0.0-alpha.19#ef696ea9bbaa22d3f6db392d9692b4821578c23c"
 
 [[package]]
 name = "loot"
@@ -105,8 +105,8 @@ source = "git+https://github.com/starknetdev/cairo-contracts?branch=ls#4ed3a1a1a
 
 [[package]]
 name = "origami_token"
-version = "1.0.0-alpha.16"
-source = "git+https://github.com/dojoengine/origami#0b780c08172f8b37c8740b4b84386b11300a6493"
+version = "1.0.0-alpha.19"
+source = "git+https://github.com/dojoengine/origami#89172a1dcb6992763369df732e17e2368e2324bd"
 dependencies = [
  "dojo",
 ]
