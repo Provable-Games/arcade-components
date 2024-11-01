@@ -2,7 +2,7 @@ mod ls15_components {
     mod constants;
     mod interfaces;
     mod loot_survivor;
-    mod tournament;
+    // mod tournament;
     mod tests {
         mod erc20_mock;
         mod erc721_mock;

@@ -26,34 +26,14 @@ fn ORACLE() -> starknet::ContractAddress {
     >()
 }
 
-const VRF_COST_PER_GAME: u32 = 50000000; // $0.50 with 8 decimals
-const MIN_REGISTRATION_PERIOD: u32 = 300; // 5 minutes
-const MIN_SUBMISSION_PERIOD: u32 = 3600; // 1 hour
-const MAX_SUBMISSION_PERIOD: u32 = 604800; // 1 week
-const GAME_EXPIRATION_PERIOD: u32 = 864000; // 10 days
+pub const VRF_COST_PER_GAME: u32 = 50000000; // $0.50 with 8 decimals
+pub const MIN_REGISTRATION_PERIOD: u32 = 300; // 5 minutes
+pub const MIN_SUBMISSION_PERIOD: u32 = 3600; // 1 hour
+pub const MAX_SUBMISSION_PERIOD: u32 = 604800; // 1 week
+pub const GAME_EXPIRATION_PERIOD: u32 = 864000; // 10 days
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-enum StatRequirementEnum {
-    Xp,
-    Gold,
-    Strength,
-    Dexterity,
-    Vitality,
-    Intelligence,
-    Wisdom,
-    Charisma,
-    Luck
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-enum Operation {
-    GreaterThan,
-    LessThan,
-    Equal,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-enum TokenType {
+pub enum TokenType {
     ERC20,
     ERC721,
     ERC1155,
@@ -63,32 +43,32 @@ const TWO_POW_128: u128 = 100000000000000000000000000000000;
 
 // TODO: add account addresses
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-enum GatedType {
+pub enum GatedType {
     token: GatedToken,
     tournament: Span<u64>,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
-enum GatedSubmissionType {
+pub enum GatedSubmissionType {
     token_id: u256,
     game_id: Span<felt252>,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-enum GatedEntryType {
+pub enum GatedEntryType {
     criteria: Span<EntryCriteria>,
     uniform: u64,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
-enum TokenDataType {
+pub enum TokenDataType {
     erc20: ERC20Data,
     erc721: ERC721Data,
     erc1155: ERC1155Data,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-enum EntryStatus {
+pub enum EntryStatus {
     Started,
     Submitted,
 }

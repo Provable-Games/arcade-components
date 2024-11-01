@@ -28,8 +28,24 @@ source = "git+https://github.com/Provable-Games/loot-survivor#0370e3bac9defde26a
 
 [[package]]
 name = "dojo"
-version = "1.0.0-alpha.4"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.0.0-alpha.16#3b3a78cd8239ca2ee524c49c83f36db4d79cb4bc"
+version = "1.0.0-rc.0"
+source = "git+https://github.com/dojoengine/dojo.git?tag=v1.0.0-rc.0#f4199aec570a395278b8c8748bc46e2f6be3d0c7"
+dependencies = [
+ "dojo_plugin",
+]
+
+[[package]]
+name = "dojo_cairo_test"
+version = "1.0.0-rc.0"
+source = "git+https://github.com/dojoengine/dojo.git?tag=v1.0.0-rc.0#f4199aec570a395278b8c8748bc46e2f6be3d0c7"
+dependencies = [
+ "dojo",
+]
+
+[[package]]
+name = "dojo_plugin"
+version = "2.8.4"
+source = "git+https://github.com/dojoengine/dojo.git?tag=v1.0.0-rc.0#f4199aec570a395278b8c8748bc46e2f6be3d0c7"
 
 [[package]]
 name = "loot"
@@ -57,65 +73,44 @@ dependencies = [
 ]
 
 [[package]]
-name = "openzeppelin_access"
-version = "0.15.1"
-source = "git+https://github.com/starknetdev/cairo-contracts?branch=ls#4ed3a1a1a9355d6fc04260deccd002d9f00dcb02"
-dependencies = [
- "openzeppelin_introspection",
- "openzeppelin_utils",
-]
-
-[[package]]
 name = "openzeppelin_account"
-version = "0.15.1"
-source = "git+https://github.com/starknetdev/cairo-contracts?branch=ls#4ed3a1a1a9355d6fc04260deccd002d9f00dcb02"
+version = "0.18.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:83e6571cac4c67049c8d0ab4e3c7ad146d582d7605e7354248835833e1d26c4a"
 dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_utils",
-]
-
-[[package]]
-name = "openzeppelin_governance"
-version = "0.15.1"
-source = "git+https://github.com/starknetdev/cairo-contracts?branch=ls#4ed3a1a1a9355d6fc04260deccd002d9f00dcb02"
-dependencies = [
- "openzeppelin_access",
- "openzeppelin_introspection",
 ]
 
 [[package]]
 name = "openzeppelin_introspection"
-version = "0.15.1"
-source = "git+https://github.com/starknetdev/cairo-contracts?branch=ls#4ed3a1a1a9355d6fc04260deccd002d9f00dcb02"
+version = "0.18.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:46c4cc6c95c9baa4c7d5cc0ed2bdaf334f46c25a8c92b3012829fff936e3042b"
 
 [[package]]
 name = "openzeppelin_token"
-version = "0.15.1"
-source = "git+https://github.com/starknetdev/cairo-contracts?branch=ls#4ed3a1a1a9355d6fc04260deccd002d9f00dcb02"
+version = "0.18.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:eafbe13f6a0487ce212459e25a81ae07f340ba76208ad4616626eb2d25a9625e"
 dependencies = [
  "openzeppelin_account",
- "openzeppelin_governance",
  "openzeppelin_introspection",
+ "openzeppelin_utils",
 ]
 
 [[package]]
 name = "openzeppelin_utils"
-version = "0.15.1"
-source = "git+https://github.com/starknetdev/cairo-contracts?branch=ls#4ed3a1a1a9355d6fc04260deccd002d9f00dcb02"
-
-[[package]]
-name = "origami_token"
-version = "1.0.0-alpha.16"
-source = "git+https://github.com/dojoengine/origami#0b780c08172f8b37c8740b4b84386b11300a6493"
-dependencies = [
- "dojo",
-]
+version = "0.18.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:725b212839f3eddc32791408609099c5e808c167ca0cf331d8c1d778b07a4e21"
 
 [[package]]
 name = "tournament"
 version = "0.0.0"
 dependencies = [
  "adventurer",
+ "dojo",
+ "dojo_cairo_test",
  "openzeppelin_token",
- "origami_token",
 ]
