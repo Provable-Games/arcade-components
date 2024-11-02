@@ -14,7 +14,13 @@ mod ls15_components {
         mod tournament_mock;
         #[cfg(test)]
         mod test_tournament;
+        // #[cfg(test)]
+        // mod test_tournament_stress_tests;
     }
+}
+
+mod presets {
+    mod ls_tournament;
 }
 
 #[cfg(test)]

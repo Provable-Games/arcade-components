@@ -796,6 +796,51 @@ fn test_register_token() {
     assert(tournament.is_token_registered(erc721.contract_address), 'Invalid registration');
 }
 
+#[test]
+#[should_panic(expected: ('token already registered', 'ENTRYPOINT_FAILED'))]
+fn test_register_token_already_registered() {
+    let (
+        _world,
+        mut tournament,
+        _loot_survivor,
+        _pragma,
+        _eth,
+        _lords,
+        mut erc20,
+        mut erc721,
+        _erc1155
+    ) =
+        setup();
+
+    utils::impersonate(OWNER());
+    erc20.approve(tournament.contract_address, 1);
+    erc721.approve(tournament.contract_address, 1);
+    let tokens = array![
+        Token {
+            token: erc20.contract_address,
+            token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 })
+        },
+        Token {
+            token: erc721.contract_address,
+            token_data_type: TokenDataType::erc721(ERC721Data { token_id: 1 })
+        },
+    ];
+
+    tournament.register_tokens(tokens);
+    let tokens = array![
+        Token {
+            token: erc20.contract_address,
+            token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 })
+        },
+        Token {
+            token: erc721.contract_address,
+            token_data_type: TokenDataType::erc721(ERC721Data { token_id: 1 })
+        },
+    ];
+    tournament.register_tokens(tokens);
+}
+
+
 //
 // Test entering tournaments
 //
@@ -1452,12 +1497,6 @@ fn test_distribute_prizes_prize_already_claimed() {
     tournament.distribute_prizes(tournament_id, array![1, 2]);
     tournament.distribute_prizes(tournament_id, array![1, 2]);
 }
-
-// #[test]
-// fn test_distribute_prizes_multiple_prize_types() {
-//     // Test distribution of multiple prize types (ERC20, ERC721, ERC1155)
-//     // to same winner position
-// }
 
 #[test]
 fn test_distribute_prizes_with_gated_tokens_criteria() {
@@ -2116,5 +2155,113 @@ fn test_tournament_with_no_submissions() {
     assert(erc20.balance_of(player3) == 0, 'Invalid player3 refund');
 
     // Verify prize returns to tournament creator
-    assert(erc721.owner_of(1) == OWNER(), 'Prize should return to creator');
+    assert(erc721.owner_of(1) == OWNER(), 'Prize should return to caller');
+}
+
+#[test]
+fn test_tournament_with_no_starts() {
+    let (
+        _world,
+        mut tournament,
+        _loot_survivor,
+        _pragma,
+        _eth,
+        _lords,
+        mut erc20,
+        mut erc721,
+        _erc1155
+    ) =
+        setup();
+
+    utils::impersonate(OWNER());
+    register_tokens_for_test(tournament, erc20, erc721);
+
+    // Create tournament with prizes and premium
+    let entry_premium = Premium {
+        token: erc20.contract_address,
+        token_amount: 100,
+        token_distribution: array![100].span(), // 100% to winner
+        creator_fee: 10, // 10% creator fee
+    };
+
+    let tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            3, // Track top 3 scores
+            Option::None,
+            Option::Some(entry_premium),
+        );
+
+    // Add some prizes
+    erc20.approve(tournament.contract_address, STARTING_BALANCE);
+    erc721.approve(tournament.contract_address, 1);
+    tournament
+        .add_prize(
+            tournament_id,
+            erc20.contract_address,
+            TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
+            1
+        );
+    tournament
+        .add_prize(
+            tournament_id,
+            erc721.contract_address,
+            TokenDataType::erc721(ERC721Data { token_id: 1 }),
+            1
+        );
+
+    // Create multiple players
+    let player2 = starknet::contract_address_const::<0x456>();
+    let player3 = starknet::contract_address_const::<0x789>();
+
+    // Enter tournament with all players
+    erc20.mint(OWNER(), 100);
+    erc20.approve(tournament.contract_address, 100);
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player2);
+    erc20.mint(player2, 100);
+    erc20.approve(tournament.contract_address, 100);
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player3);
+    erc20.mint(player3, 100);
+    erc20.approve(tournament.contract_address, 100);
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    // Start tournament for all players
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    // Store initial balances
+    let creator_initial = erc20.balance_of(OWNER());
+
+    // Move to after tournament and submission period without any score submissions
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+
+    // Distribute rewards
+    utils::impersonate(OWNER());
+    // 2 deposited prizes and 1 tournament premium prize
+    tournament.distribute_prizes(tournament_id, array![1, 2, 3]);
+
+    // Verify final state
+    let final_scores = tournament.top_scores(tournament_id);
+    assert(final_scores.len() == 0, 'Should have no scores');
+
+    // Verify first caller gets all prizes
+    // creator also gets the prize balance back (STARTING BALANCE)
+    assert(
+        erc20.balance_of(OWNER()) == creator_initial
+            + 300
+            + STARTING_BALANCE,
+        'Invalid owner refund'
+    );
+    assert(erc20.balance_of(player2) == 0, 'Invalid player2 refund');
+    assert(erc20.balance_of(player3) == 0, 'Invalid player3 refund');
+
+    // Verify prize returns to tournament creator
+    assert(erc721.owner_of(1) == OWNER(), 'Prize should return to caller');
 }

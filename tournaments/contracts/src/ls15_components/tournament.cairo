@@ -322,49 +322,70 @@ mod tournament_component {
     }
 
     mod Errors {
+        //
         // Create Tournament
-
+        //
         const START_TIME_NOT_AFTER_MIN_REGISTRATION: felt252 = 'start time too close';
         const START_TIME_NOT_BEFORE_MAX_REGISTRATION: felt252 = 'start time too far';
         const TOURNAMENT_TOO_SHORT: felt252 = 'tournament too short';
         const TOURNAMENT_TOO_LONG: felt252 = 'tournament too long';
         const ZERO_WINNERS_COUNT: felt252 = 'zero winners count';
         const NO_QUALIFYING_NFT: felt252 = 'no qualifying nft';
-        const TOURNAMENT_ALREADY_STARTED: felt252 = 'tournament already started';
-        const TOURNAMENT_NOT_STARTED: felt252 = 'tournament not started';
-        const TOURNAMENT_NOT_ENDED: felt252 = 'tournament not ended';
-        const TOURNAMENT_NOT_ACTIVE: felt252 = 'tournament not active';
-        const TOURNAMENT_NOT_SETTLED: felt252 = 'tournament not settled';
-        const TOURNAMENT_ALREADY_SETTLED: felt252 = 'tournament already settled';
-        const NOT_GAME_OWNER: felt252 = 'not game owner';
-        const PRIZE_DOES_NOT_EXIST: felt252 = 'prize does not exist';
-        const PRIZE_ALREADY_CLAIMED: felt252 = 'prize already claimed';
-        const TOURNAMENT_ENTRY_ALREADY_SUBMITTED: felt252 = 'entry already submitted';
-        const TOKEN_TRANSFER_FAILED: felt252 = 'token transfer failed';
-        const TOKEN_ALREADY_REGISTERED: felt252 = 'token already registered';
         const GATED_TOKEN_NOT_REGISTERED: felt252 = 'gated token not registered';
-        const PRIZE_TOKEN_NOT_REGISTERED: felt252 = 'prize token not registered';
         const PREMIUM_TOKEN_NOT_REGISTERED: felt252 = 'premium token not registered';
-        const FETCHING_ETH_PRICE_ERROR: felt252 = 'error fetching eth price';
         const PREMIUM_DISTRIBUTIONS_TOO_LONG: felt252 = 'premium distributions too long';
         const PREMIUM_DISTRIBUTIONS_NOT_100: felt252 = 'premium distributions not 100%';
-        const INVALID_SCORE: felt252 = 'invalid score';
-        const INVALID_SCORES_SUBMISSION: felt252 = 'invalid scores submission';
+        const SUBMISSION_PERIOD_TOO_SHORT: felt252 = 'submission period too short';
+        const SUBMISSION_PERIOD_TOO_LONG: felt252 = 'submission period too long';
+        //
+        // Register Tokens
+        //
+        const TOKEN_ALREADY_REGISTERED: felt252 = 'token already registered';
+        const INVALID_TOKEN_ALLOWANCES: felt252 = 'invalid token allowances';
+        const INVALID_TOKEN_BALANCES: felt252 = 'invalid token balances';
+        const TOKEN_SUPPLY_TOO_LARGE: felt252 = 'token supply too large';
+        const INVALID_TOKEN_APPROVALS: felt252 = 'invalid token approvals';
+        const INVALID_TOKEN_OWNER: felt252 = 'invalid token owner';
+        //
+        // Enter Tournament
+        //
+        const TOURNAMENT_ALREADY_STARTED: felt252 = 'tournament already started';
+        const TOURNAMENT_NOT_STARTED: felt252 = 'tournament not started';
+        //
+        // Start Tournament
+        //
+        const TOURNAMENT_NOT_ACTIVE: felt252 = 'tournament not active';
+        const FETCHING_ETH_PRICE_ERROR: felt252 = 'error fetching eth price';
         const ALL_ENTRIES_STARTED: felt252 = 'all entries started';
         const ADDRESS_ENTRIES_STARTED: felt252 = 'address entries started';
         const START_COUNT_TOO_LARGE: felt252 = 'start count too large';
-        const SUBMISSION_PERIOD_TOO_SHORT: felt252 = 'submission period too short';
-        const SUBMISSION_PERIOD_TOO_LONG: felt252 = 'submission period too long';
-        const TOURNAMENT_PERIOD_TOO_LONG: felt252 = 'tournament period too long';
+        const TOURNAMENT_PERIOD_TOO_LONG: felt252 = 'period too long to start all';
+        //
+        // Submit Scores
+        //
+        const TOURNAMENT_NOT_ENDED: felt252 = 'tournament not ended';
+        const TOURNAMENT_ALREADY_SETTLED: felt252 = 'tournament already settled';
+        const NOT_GAME_OWNER: felt252 = 'not game owner';
+        const GAME_NOT_STARTED: felt252 = 'game not started';
+        const INVALID_SCORES_SUBMISSION: felt252 = 'invalid scores submission';
+        const INVALID_SCORE: felt252 = 'invalid score';
         const INVALID_GATED_SUBMISSION_TYPE: felt252 = 'invalid gated submission type';
         const INVALID_SUBMITTED_GAMES_LENGTH: felt252 = 'invalid submitted games length';
         const NOT_OWNER_OF_SUBMITTED_GAME_ID: felt252 = 'not owner of submitted game';
         const SUBMITTED_GAME_NOT_TOP_SCORE: felt252 = 'submitted game not top score';
-        const GAME_NOT_STARTED: felt252 = 'game not started';
+        //
+        // Add Prize
+        //
         const PRIZE_POSITION_TOO_LARGE: felt252 = 'prize position too large';
-        const NO_TOP_SCORES: felt252 = 'no top scores';
+        const PRIZE_TOKEN_NOT_REGISTERED: felt252 = 'prize token not registered';
+        //
+        // Distribute Prizes
+        //
+        const TOURNAMENT_NOT_SETTLED: felt252 = 'tournament not settled';
         const DISTRIBUTE_ALREADY_CALLED: felt252 = 'distribute already called';
         const NO_PRIZE_KEYS: felt252 = 'no prize keys provided';
+        const PRIZE_DOES_NOT_EXIST: felt252 = 'prize does not exist';
+        const PRIZE_ALREADY_CLAIMED: felt252 = 'prize already claimed';
     }
 
     #[embeddable_as(TournamentImpl)]
@@ -1222,15 +1243,6 @@ mod tournament_component {
             assert(!claimed, Errors::PRIZE_ALREADY_CLAIMED);
         }
 
-        fn _assert_tournament_not_submitted(
-            self: @ComponentState<TContractState>, tournament_id: u64, game_id: felt252
-        ) {
-            let entry = self.get_tournament_entry(tournament_id, game_id);
-            assert(
-                entry.status != EntryStatus::Submitted, Errors::TOURNAMENT_ENTRY_ALREADY_SUBMITTED
-            );
-        }
-
         fn _assert_gated_token_owner(
             self: @ComponentState<TContractState>,
             token: ContractAddress,
@@ -1491,7 +1503,7 @@ mod tournament_component {
                         // check that the contract is approved for the minimal amount
                         let allowance = token_dispatcher
                             .allowance(get_caller_address(), get_contract_address());
-                        assert(allowance == 1, Errors::TOKEN_TRANSFER_FAILED);
+                        assert(allowance == 1, Errors::INVALID_TOKEN_ALLOWANCES);
                         // take a reading of the current balance (incase contract has assets
                         // already)
                         let current_balance = token_dispatcher.balance_of(get_contract_address());
@@ -1500,12 +1512,12 @@ mod tournament_component {
                             .transfer_from(get_caller_address(), get_contract_address(), 1);
                         // take a reading of the new balance
                         let new_balance = token_dispatcher.balance_of(get_contract_address());
-                        assert(new_balance == current_balance + 1, Errors::TOKEN_TRANSFER_FAILED);
+                        assert(new_balance == current_balance + 1, Errors::INVALID_TOKEN_BALANCES);
                         // transfer back the minimal amount
                         token_dispatcher.transfer(get_caller_address(), 1);
                         // check the total supply is legitimate
                         let total_supply = token_dispatcher.total_supply();
-                        assert(total_supply < TWO_POW_128.into(), Errors::TOKEN_TRANSFER_FAILED);
+                        assert(total_supply < TWO_POW_128.into(), Errors::TOKEN_SUPPLY_TOO_LARGE);
                     },
                     TokenDataType::erc721(token_data_type) => {
                         let token_dispatcher = IERC721Dispatcher { contract_address: token.token };
@@ -1517,7 +1529,7 @@ mod tournament_component {
                         // check that the contract is approved for the specific id
                         let approved = token_dispatcher
                             .get_approved(token_data_type.token_id.into());
-                        assert(approved == get_contract_address(), Errors::TOKEN_TRANSFER_FAILED);
+                        assert(approved == get_contract_address(), Errors::INVALID_TOKEN_APPROVALS);
                         // transfer a specific id to the contract
                         token_dispatcher
                             .transfer_from(
@@ -1527,9 +1539,9 @@ mod tournament_component {
                             );
                         // check the balance of the contract
                         let balance = token_dispatcher.balance_of(get_contract_address());
-                        assert(balance == 1, Errors::TOKEN_TRANSFER_FAILED);
+                        assert(balance == 1, Errors::INVALID_TOKEN_BALANCES);
                         let owner = token_dispatcher.owner_of(token_data_type.token_id.into());
-                        assert(owner == get_contract_address(), Errors::TOKEN_TRANSFER_FAILED);
+                        assert(owner == get_contract_address(), Errors::INVALID_TOKEN_OWNER);
                         // transfer back the token
                         token_dispatcher
                             .transfer_from(
@@ -1549,7 +1561,7 @@ mod tournament_component {
                         // check that the contract is approved for all ids
                         let approved = token_dispatcher
                             .is_approved_for_all(get_caller_address(), get_contract_address());
-                        assert(approved, Errors::TOKEN_TRANSFER_FAILED);
+                        assert(approved, Errors::INVALID_TOKEN_APPROVALS);
                         // take a reading of the current balance (incase contract has assets
                         // already)
                         let current_balance = token_dispatcher
@@ -1566,7 +1578,7 @@ mod tournament_component {
                         // take a reading of the new balance
                         let new_balance = token_dispatcher
                             .balance_of(get_contract_address(), token_data_type.token_id.into());
-                        assert(new_balance == current_balance + 1, Errors::TOKEN_TRANSFER_FAILED);
+                        assert(new_balance == current_balance + 1, Errors::INVALID_TOKEN_BALANCES);
                         // transfer back the minimal amount
                         token_dispatcher
                             .safe_transfer_from(
