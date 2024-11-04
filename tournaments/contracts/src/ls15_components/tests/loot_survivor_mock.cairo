@@ -1,8 +1,7 @@
 // imports
 
 use adventurer::{
-    adventurer::{Adventurer, ImplAdventurer},
-    adventurer_meta::{ImplAdventurerMetadata}, bag::Bag
+    adventurer::{Adventurer, ImplAdventurer}, adventurer_meta::{ImplAdventurerMetadata}, bag::Bag
 };
 use tournament::ls15_components::loot_survivor::AdventurerMetadata;
 use starknet::ContractAddress;
@@ -67,7 +66,9 @@ trait ILootSurvivorMock<TState> {
         mint_to: ContractAddress
     ) -> felt252;
     fn set_adventurer(self: @TState, adventurer_id: felt252, adventurer: Adventurer);
-    fn set_adventurer_meta(self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata);
+    fn set_adventurer_meta(
+        self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
+    );
     fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
 
     // IWorldProvider
@@ -100,8 +101,8 @@ trait ILootSurvivorMockInit<TState> {
 #[dojo::contract]
 mod loot_survivor_mock {
     use adventurer::{
-        adventurer::{Adventurer, ImplAdventurer},
-        adventurer_meta::{ImplAdventurerMetadata}, bag::Bag
+        adventurer::{Adventurer, ImplAdventurer}, adventurer_meta::{ImplAdventurerMetadata},
+        bag::Bag
     };
     use tournament::ls15_components::loot_survivor::AdventurerMetadata;
     use starknet::{ContractAddress, get_caller_address};

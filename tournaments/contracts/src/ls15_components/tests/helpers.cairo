@@ -7,7 +7,7 @@ use tournament::tests::{
     utils,
     constants::{
         OWNER, RECIPIENT, SPENDER, ZERO, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, TOURNAMENT_NAME,
-        STARTING_BALANCE
+        TOURNAMENT_DESCRIPTION, STARTING_BALANCE, TEST_START_TIME, TEST_END_TIME
     },
 };
 use tournament::ls15_components::tests::erc20_mock::{
@@ -19,10 +19,7 @@ use tournament::ls15_components::tests::erc721_mock::{
 use tournament::ls15_components::tests::tournament_mock::{
     ITournamentMockDispatcher, ITournamentMockDispatcherTrait
 };
-use adventurer::{
-    adventurer::Adventurer, bag::Bag, equipment::Equipment,
-    item::Item, stats::Stats
-};
+use adventurer::{adventurer::Adventurer, bag::Bag, equipment::Equipment, item::Item, stats::Stats};
 use tournament::ls15_components::loot_survivor::AdventurerMetadata;
 use tournament::ls15_components::interfaces::{
     ERC20Data, ERC721Data, ERC1155Data, Token, Premium, GatedToken, EntryCriteria
@@ -36,8 +33,9 @@ fn create_basic_tournament(tournament: ITournamentMockDispatcher) -> u64 {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
-            2 + MIN_REGISTRATION_PERIOD.into(),
-            3 + MIN_REGISTRATION_PERIOD.into(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
             MIN_SUBMISSION_PERIOD.into(),
             1, // single top score
             Option::None, // zero gated type
@@ -45,7 +43,12 @@ fn create_basic_tournament(tournament: ITournamentMockDispatcher) -> u64 {
         )
 }
 
-fn approve_game_costs(eth: IERC20MockDispatcher, lords: IERC20MockDispatcher, tournament: ITournamentMockDispatcher, entries: u256) {
+fn approve_game_costs(
+    eth: IERC20MockDispatcher,
+    lords: IERC20MockDispatcher,
+    tournament: ITournamentMockDispatcher,
+    entries: u256
+) {
     lords.approve(tournament.contract_address, entries * 50000000000000000000);
     eth.approve(tournament.contract_address, entries * 200000000000000);
 }
@@ -94,18 +97,18 @@ fn register_tokens_for_test(
     erc721: IERC721MockDispatcher,
 ) {
     let tokens = array![
-        Token { 
-            token: erc20.contract_address, 
-            token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 }) 
+        Token {
+            token: erc20.contract_address,
+            token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 })
         },
-        Token { 
-            token: erc721.contract_address, 
-            token_data_type: TokenDataType::erc721(ERC721Data { token_id: 1 }) 
+        Token {
+            token: erc721.contract_address,
+            token_data_type: TokenDataType::erc721(ERC721Data { token_id: 1 })
         },
     ];
-    
+
     erc20.approve(tournament.contract_address, 1);
     erc721.approve(tournament.contract_address, 1);
-    
+
     tournament.register_tokens(tokens);
 }
