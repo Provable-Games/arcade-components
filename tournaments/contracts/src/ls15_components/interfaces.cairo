@@ -3,7 +3,9 @@ use adventurer::{adventurer::Adventurer, bag::Bag};
 use tournament::ls15_components::constants::{
     TokenDataType, GatedEntryType
 };
-use tournament::ls15_components::loot_survivor::AdventurerMetadata;
+use tournament::ls15_components::models::loot_survivor::AdventurerMetadata;
+
+use dojo::world::{WorldStorage, WorldStorageTrait, IWorldDispatcher};
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Token {
@@ -94,5 +96,16 @@ pub trait ILootSurvivor<TState> {
 #[starknet::interface]
 pub trait IPragmaABI<TContractState> {
     fn get_data_median(self: @TContractState, data_type: DataType) -> PragmaPricesResponse;
+}
+
+#[generate_trait]
+pub impl WorldImpl of WorldTrait {
+    // Create a Store from a dispatcher
+    // https://github.com/dojoengine/dojo/blob/main/crates/dojo/core/src/contract/components/world_provider.cairo
+    // https://github.com/dojoengine/dojo/blob/main/crates/dojo/core/src/world/storage.cairo
+    #[inline(always)]
+    fn storage(dispatcher: IWorldDispatcher, namespace: @ByteArray) -> WorldStorage {
+        (WorldStorageTrait::new(dispatcher, namespace))
+    }
 }
 

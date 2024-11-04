@@ -1,4 +1,5 @@
 use starknet::ContractAddress;
+use tournament::ls15_components::models::loot_survivor::{Adventurer, AdventurerMetadata, Bag};
 
 /// Raise a number to a power.
 /// O(log n) time complexity.
@@ -20,153 +21,26 @@ pub fn pow<T, +Sub<T>, +Mul<T>, +Div<T>, +Rem<T>, +PartialEq<T>, +Into<u8, T>, +
     }
 }
 
-// dojo compatible structs
-
-#[derive(Drop, Copy, Serde, Introspect)]
-struct Stats { // 30 bits total
-    strength: u8,
-    dexterity: u8,
-    vitality: u8, // 5 bits per stat
-    intelligence: u8,
-    wisdom: u8,
-    charisma: u8,
-    luck: u8, // dynamically generated, not stored.
-}
-
-
-#[derive(Drop, Copy, Serde, Introspect)]
-struct Equipment { // 128 bits
-    weapon: Item,
-    chest: Item,
-    head: Item,
-    waist: Item, // 16 bits per item
-    foot: Item,
-    hand: Item,
-    neck: Item,
-    ring: Item,
-}
-
-#[derive(Drop, Copy, Serde, Introspect)]
-pub struct Adventurer {
-    health: u16, // 10 bits
-    xp: u16, // 15 bits
-    gold: u16, // 9 bits
-    beast_health: u16, // 10 bits
-    stat_upgrades_available: u8, // 4 bits
-    stats: Stats, // 30 bits
-    equipment: Equipment, // 128 bits
-    battle_action_count: u8, // 8 bits
-    mutated: bool, // not packed
-    awaiting_item_specials: bool, // not packed
-}
-
-#[derive(Drop, Copy, Serde, Introspect)]
-pub struct AdventurerMetadata {
-    birth_date: u64, // 64 bits in storage
-    death_date: u64, // 64 bits in storage
-    level_seed: u64, // 64 bits in storage
-    item_specials_seed: u16, // 16 bits in storage
-    rank_at_death: u8, // 2 bits in storage
-    delay_stat_reveal: bool, // 1 bit in storage
-    golden_token_id: u8, // 8 bits in storage
-    // launch_tournament_winner_token_id: u128, // 32 bits in storage
-}
-
-
-#[derive(Drop, Copy, Serde, Introspect)]
-struct Item { // 21 storage bits
-    id: u8, // 7 bits
-    xp: u16, // 9 bits
-}
-
-
-#[derive(Drop, Copy, Serde, Introspect)]
-struct Bag { // 240 bits
-    item_1: Item, // 16 bits each
-    item_2: Item,
-    item_3: Item,
-    item_4: Item,
-    item_5: Item,
-    item_6: Item,
-    item_7: Item,
-    item_8: Item,
-    item_9: Item,
-    item_10: Item,
-    item_11: Item,
-    item_12: Item,
-    item_13: Item,
-    item_14: Item,
-    item_15: Item,
-    mutated: bool,
-}
-
-///
-/// Model
-///
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-struct AdventurerModel {
-    #[key]
-    adventurer_id: felt252,
-    adventurer: Adventurer,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-struct AdventurerMetaModel {
-    #[key]
-    adventurer_id: felt252,
-    adventurer_meta: AdventurerMetadata,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-struct BagModel {
-    #[key]
-    adventurer_id: felt252,
-    bag: Bag,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-struct GameCountModel {
-    #[key]
-    contract_address: ContractAddress,
-    game_count: u128,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-struct Contracts {
-    #[key]
-    contract: ContractAddress,
-    eth: ContractAddress,
-    lords: ContractAddress,
-    oracle: ContractAddress,
-}
-
-
 #[starknet::interface]
 trait ILootSurvivor<TState> {
     fn get_adventurer(self: @TState, adventurer_id: felt252) -> Adventurer;
-    // fn get_adventurer_meta(self: @TState, adventurer_id: felt252) -> AdventurerMetadata;
-    // fn get_bag(self: @TState, adventurer_id: felt252) -> Bag;
-    // fn get_cost_to_play(self: @TState) -> u128;
-    // fn new_game(
-    //     ref self: TState,
-    //     client_reward_address: ContractAddress,
-    //     weapon: u8,
-    //     name: felt252,
-    //     golden_token_id: u8,
-    //     delay_reveal: bool,
-    //     custom_renderer: ContractAddress,
-    //     launch_tournament_winner_token_id: u128,
-    //     mint_to: ContractAddress
-    // ) -> felt252;
-    // fn set_adventurer(self: @TState, adventurer_id: felt252, adventurer: Adventurer);
-    // fn set_adventurer_meta(self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata);
-    // fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
+    fn get_adventurer_meta(self: @TState, adventurer_id: felt252) -> AdventurerMetadata;
+    fn get_bag(self: @TState, adventurer_id: felt252) -> Bag;
+    fn get_cost_to_play(self: @TState) -> u128;
+    fn new_game(
+        ref self: TState,
+        client_reward_address: ContractAddress,
+        weapon: u8,
+        name: felt252,
+        golden_token_id: u8,
+        delay_reveal: bool,
+        custom_renderer: ContractAddress,
+        launch_tournament_winner_token_id: u128,
+        mint_to: ContractAddress
+    ) -> felt252;
+    fn set_adventurer(self: @TState, adventurer_id: felt252, adventurer: Adventurer);
+    fn set_adventurer_meta(self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata);
+    fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
 }
 
 ///
@@ -175,24 +49,25 @@ trait ILootSurvivor<TState> {
 #[starknet::component]
 mod loot_survivor_component {
     use super::ILootSurvivor;
-    use super::Adventurer;
-    use super::AdventurerMetadata;
-    use super::Bag;
-    use super::Item;
-    use super::Equipment;
-    use super::Stats;
-    use super::AdventurerModel;
-    use super::AdventurerMetaModel;
-    use super::BagModel;
-    use super::GameCountModel;
-    use super::Contracts;
-    use super::pow;
+    // use super::Adventurer;
+    // use super::AdventurerMetadata;
+    // use super::Bag;
+    // use super::Item;
+    // use super::Equipment;
+    // use super::Stats;
+    // use super::AdventurerModel;
+    // use super::AdventurerMetaModel;
+    // use super::BagModel;
+    // use super::GameCountModel;
+    // use super::Contracts;
+    // use super::pow;
 
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
-    use dojo::model::ModelStorage;
-    use dojo::world::{
-        IWorldDispatcher, IWorldDispatcherTrait, WorldStorage, WorldStorageTrait
-    };
+    use dojo::contract::components::world_provider::{IWorldProvider};
+
+    use tournament::ls15_components::models::loot_survivor::{Adventurer, Contracts};
+    use tournament::ls15_components::interfaces::{WorldTrait, WorldImpl};
+    use tournament::ls15_components::libs::store::{Store, StoreTrait};
 
     use openzeppelin_introspection::src5::SRC5Component;
     use openzeppelin_token::erc721::{
@@ -221,6 +96,7 @@ mod loot_survivor_component {
     impl LootSurvivor<
         TContractState,
         +HasComponent<TContractState>,
+        +IWorldProvider<TContractState>,
         +SRC5Component::HasComponent<TContractState>,
         +ERC721Component::ERC721HooksTrait<TContractState>,
         impl ERC721: ERC721Component::HasComponent<TContractState>,
@@ -229,13 +105,15 @@ mod loot_survivor_component {
         fn get_adventurer(
             self: @ComponentState<TContractState>, adventurer_id: felt252
         ) -> Adventurer {
-            self.get_adventurer_internal(adventurer_id)
+            let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @"tournament");
+            let mut store: Store = StoreTrait::new(world);
+            store.get_adventurer(adventurer_id).adventurer
         }
 
         // fn get_adventurer_meta(
         //     self: @ComponentState<TContractState>, adventurer_id: felt252
         // ) -> AdventurerMetadata {
-        //     self.get_adventurer_meta_internal(adventurer_id)
+        //     store.get_adventurer_meta(adventurer_id).adventurer_meta
         // }
 
         // fn get_bag(self: @ComponentState<TContractState>, adventurer_id: felt252) -> Bag {
@@ -352,6 +230,7 @@ mod loot_survivor_component {
     impl InternalImpl<
         TContractState,
         +HasComponent<TContractState>,
+        +IWorldProvider<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
         fn initialize(
@@ -360,13 +239,15 @@ mod loot_survivor_component {
             lords_address: ContractAddress,
             pragma_address: ContractAddress
         ) {
-            let mut world = self.world(@"tournament");
-            world.write_model(@Contracts {
+            let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @"tournament");
+            let mut store: Store = StoreTrait::new(world);
+            let contracts = Contracts{
                 contract: get_contract_address(),
                 eth: eth_address,
                 lords: lords_address,
                 oracle: pragma_address
-            });
+            };
+            store.set_contracts(@contracts);
         }
 
         // fn get_contracts(self: @ComponentState<TContractState>) -> Contracts {
@@ -376,13 +257,6 @@ mod loot_survivor_component {
         // fn get_game_count(self: @ComponentState<TContractState>) -> u128 {
         //     get!(self.get_contract().world(), (get_contract_address()), (GameCountModel)).game_count
         // }
-
-        fn get_adventurer_internal(
-            self: @ComponentState<TContractState>, adventurer_id: felt252
-        ) -> Adventurer {
-            let mut world = self.world(@"tournament");
-            world.read_model(adventurer_id);
-        }
 
         // fn get_adventurer_meta_internal(
         //     self: @ComponentState<TContractState>, adventurer_id: felt252
