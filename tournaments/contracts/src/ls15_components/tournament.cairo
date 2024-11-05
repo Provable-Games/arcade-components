@@ -215,7 +215,9 @@ pub mod tournament_component {
             store.get_tournament_scores(tournament_id).top_score_ids
         }
 
-        fn is_token_registered(self: @ComponentState<TContractState>, token: ContractAddress) -> bool {
+        fn is_token_registered(
+            self: @ComponentState<TContractState>, token: ContractAddress
+        ) -> bool {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @"tournament"
             );
@@ -268,7 +270,9 @@ pub mod tournament_component {
                 )
         }
         fn register_tokens(ref self: ComponentState<TContractState>, tokens: Array<Token>) {
-            let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @"tournament");
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), @"tournament"
+            );
             let mut store: Store = StoreTrait::new(world);
             self._register_tokens(ref store, tokens);
         }
@@ -554,10 +558,7 @@ pub mod tournament_component {
                         game_index
                     );
 
-                self
-                    .set_submitted_score(
-                        ref store, tournament_id, game_id, adventurer.xp
-                    );
+                self.set_submitted_score(ref store, tournament_id, game_id, adventurer.xp);
                 game_index += 1;
             };
             store
@@ -581,10 +582,7 @@ pub mod tournament_component {
             // assert tournament has not started
             self._assert_tournament_not_started(tournament.start_time, tournament_id);
 
-            self
-                ._deposit_prize(
-                    ref store, tournament_id, token, token_data_type, position
-                );
+            self._deposit_prize(ref store, tournament_id, token, token_data_type, position);
         }
 
         fn distribute_prizes(
@@ -1225,9 +1223,7 @@ pub mod tournament_component {
             new_tournament_id
         }
         fn _register_tokens(
-            ref self: ComponentState<TContractState>,
-            ref store: Store,
-            tokens: Array<Token>
+            ref self: ComponentState<TContractState>, ref store: Store, tokens: Array<Token>
         ) {
             let num_tokens = tokens.len();
             let mut token_index = 0;
@@ -1317,9 +1313,7 @@ pub mod tournament_component {
         }
 
         fn _format_premium_config_into_prize_keys(
-            ref self: ComponentState<TContractState>,
-            ref store: Store,
-            tournament_id: u64
+            ref self: ComponentState<TContractState>, ref store: Store, tournament_id: u64
         ) {
             let tournament = store.get_tournament(tournament_id);
             match tournament.entry_premium {

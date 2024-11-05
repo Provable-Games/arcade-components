@@ -15,11 +15,11 @@ use tournament::ls15_components::models::{
         m_AdventurerModel, m_AdventurerMetaModel, m_BagModel, m_GameCountModel, m_Contracts
     },
     tournament::{
-        m_TournamentModel, m_TournamentEntryModel, m_TournamentEntryAddressesModel, m_TournamentEntriesAddressModel,
-        m_TournamentStartIdsModel, m_TournamentEntriesModel, m_TournamentScoresModel,
-        m_TournamentTotalsModel, m_TournamentPrizeKeysModel, m_PrizesModel, m_TokenModel,
-        m_TournamentContracts, ERC20Data, ERC721Data, Token, Premium, GatedToken, EntryCriteria,
-        TokenDataType, GatedType, GatedEntryType, GatedSubmissionType
+        m_TournamentModel, m_TournamentEntryModel, m_TournamentEntryAddressesModel,
+        m_TournamentEntriesAddressModel, m_TournamentStartIdsModel, m_TournamentEntriesModel,
+        m_TournamentScoresModel, m_TournamentTotalsModel, m_TournamentPrizeKeysModel, m_PrizesModel,
+        m_TokenModel, m_TournamentContracts, ERC20Data, ERC721Data, Token, Premium, GatedToken,
+        EntryCriteria, TokenDataType, GatedType, GatedEntryType, GatedSubmissionType
     }
 };
 
@@ -107,7 +107,9 @@ fn setup_uninitialized() -> (WorldStorage, IERC20MockDispatcher, IERC20MockDispa
             // tournament models
             TestResource::Model(m_TournamentModel::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TournamentEntryModel::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_TournamentEntriesAddressModel::TEST_CLASS_HASH.try_into().unwrap()),
+            TestResource::Model(
+                m_TournamentEntriesAddressModel::TEST_CLASS_HASH.try_into().unwrap()
+            ),
             TestResource::Model(
                 m_TournamentEntryAddressesModel::TEST_CLASS_HASH.try_into().unwrap()
             ),
@@ -156,7 +158,7 @@ fn setup_uninitialized() -> (WorldStorage, IERC20MockDispatcher, IERC20MockDispa
     (world, eth, lords)
 }
 
-fn setup() -> (
+pub fn setup() -> (
     WorldStorage,
     ITournamentMockDispatcher,
     ILootSurvivorMockDispatcher,
