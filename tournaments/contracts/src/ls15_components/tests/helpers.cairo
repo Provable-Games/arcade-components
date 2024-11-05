@@ -1,14 +1,7 @@
 use starknet::get_block_timestamp;
-use tournament::ls15_components::constants::{
-    MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, TokenType, TokenDataType, GatedType,
-    GatedEntryType, GatedSubmissionType
-};
+use tournament::ls15_components::constants::MIN_SUBMISSION_PERIOD;
 use tournament::tests::{
-    utils,
-    constants::{
-        OWNER, RECIPIENT, SPENDER, ZERO, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, TOURNAMENT_NAME,
-        TOURNAMENT_DESCRIPTION, STARTING_BALANCE, TEST_START_TIME, TEST_END_TIME
-    },
+    constants::{TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_START_TIME, TEST_END_TIME},
 };
 use tournament::ls15_components::tests::erc20_mock::{
     IERC20MockDispatcher, IERC20MockDispatcherTrait
@@ -19,17 +12,15 @@ use tournament::ls15_components::tests::erc721_mock::{
 use tournament::ls15_components::tests::tournament_mock::{
     ITournamentMockDispatcher, ITournamentMockDispatcherTrait
 };
-use adventurer::{adventurer::Adventurer, bag::Bag, equipment::Equipment, item::Item, stats::Stats};
-use tournament::ls15_components::loot_survivor::AdventurerMetadata;
-use tournament::ls15_components::interfaces::{
-    ERC20Data, ERC721Data, ERC1155Data, Token, Premium, GatedToken, EntryCriteria
-};
+use adventurer::{adventurer::Adventurer, equipment::Equipment, item::Item, stats::Stats};
+use tournament::ls15_components::models::loot_survivor::AdventurerMetadata;
+use tournament::ls15_components::models::tournament::{ERC20Data, ERC721Data, Token, TokenDataType};
 
 //
 // Test Helpers
 //
 
-fn create_basic_tournament(tournament: ITournamentMockDispatcher) -> u64 {
+pub fn create_basic_tournament(tournament: ITournamentMockDispatcher) -> u64 {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
@@ -43,7 +34,7 @@ fn create_basic_tournament(tournament: ITournamentMockDispatcher) -> u64 {
         )
 }
 
-fn approve_game_costs(
+pub fn approve_game_costs(
     eth: IERC20MockDispatcher,
     lords: IERC20MockDispatcher,
     tournament: ITournamentMockDispatcher,
@@ -53,7 +44,7 @@ fn approve_game_costs(
     eth.approve(tournament.contract_address, entries * 200000000000000);
 }
 
-fn create_dead_adventurer_with_xp(xp: u16) -> Adventurer {
+pub fn create_dead_adventurer_with_xp(xp: u16) -> Adventurer {
     Adventurer {
         health: 0,
         xp,
@@ -79,7 +70,7 @@ fn create_dead_adventurer_with_xp(xp: u16) -> Adventurer {
     }
 }
 
-fn create_adventurer_metadata_with_death_date(death_date: u64) -> AdventurerMetadata {
+pub fn create_adventurer_metadata_with_death_date(death_date: u64) -> AdventurerMetadata {
     AdventurerMetadata {
         birth_date: get_block_timestamp().into(),
         death_date: death_date,
@@ -91,7 +82,7 @@ fn create_adventurer_metadata_with_death_date(death_date: u64) -> AdventurerMeta
     }
 }
 
-fn register_tokens_for_test(
+pub fn register_tokens_for_test(
     tournament: ITournamentMockDispatcher,
     erc20: IERC20MockDispatcher,
     erc721: IERC721MockDispatcher,

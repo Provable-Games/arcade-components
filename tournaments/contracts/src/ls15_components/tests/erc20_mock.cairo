@@ -4,7 +4,7 @@ use dojo::world::IWorldDispatcher;
 #[starknet::interface]
 pub trait IERC20Mock<TState> {
     // IWorldProvider
-    fn world(self: @TState,) -> IWorldDispatcher;
+    fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
     // IERC20
     fn total_supply(self: @TState) -> u256;
@@ -38,9 +38,7 @@ pub trait IERC20MockPublic<TState> {
 
 #[dojo::contract]
 pub mod erc20_mock {
-    // use debug::PrintTrait;
-    use core::byte_array::ByteArrayTrait;
-    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
+    use starknet::ContractAddress;
 
     //-----------------------------------
     // OpenZeppelin start

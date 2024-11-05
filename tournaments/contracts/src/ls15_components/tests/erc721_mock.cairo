@@ -4,7 +4,7 @@ use dojo::world::IWorldDispatcher;
 #[starknet::interface]
 pub trait IERC721Mock<TState> {
     // IWorldProvider
-    fn world(self: @TState,) -> IWorldDispatcher;
+    fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
     // ISRC5
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
@@ -57,9 +57,7 @@ pub trait IERC721MockPublic<TState> {
 
 #[dojo::contract]
 pub mod erc721_mock {
-    // use debug::PrintTrait;
-    use core::byte_array::ByteArrayTrait;
-    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
+    use starknet::ContractAddress;
 
     //-----------------------------------
     // OpenZeppelin start

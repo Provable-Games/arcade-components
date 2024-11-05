@@ -1,80 +1,81 @@
-use starknet::ContractAddress;
-use starknet::contract_address_const;
+use starknet::{ContractAddress, contract_address_const};
 
 use tournament::ls15_components::constants::{MIN_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH};
 
-fn ADMIN() -> ContractAddress {
+pub fn ADMIN() -> ContractAddress {
     contract_address_const::<'ADMIN'>()
 }
 
-fn AUTHORIZED() -> ContractAddress {
+pub fn AUTHORIZED() -> ContractAddress {
     contract_address_const::<'AUTHORIZED'>()
 }
 
-fn ZERO() -> ContractAddress {
+pub fn ZERO() -> ContractAddress {
     contract_address_const::<0>()
 }
 
-fn CALLER() -> ContractAddress {
+pub fn CALLER() -> ContractAddress {
     contract_address_const::<'CALLER'>()
 }
 
-fn OWNER() -> ContractAddress {
+pub fn OWNER() -> ContractAddress {
     contract_address_const::<'OWNER'>()
 }
 
-fn NEW_OWNER() -> ContractAddress {
+pub fn NEW_OWNER() -> ContractAddress {
     contract_address_const::<'NEW_OWNER'>()
 }
 
-fn OTHER() -> ContractAddress {
+pub fn OTHER() -> ContractAddress {
     contract_address_const::<'OTHER'>()
 }
 
-fn OTHER_ADMIN() -> ContractAddress {
+pub fn OTHER_ADMIN() -> ContractAddress {
     contract_address_const::<'OTHER_ADMIN'>()
 }
 
-fn SPENDER() -> ContractAddress {
+pub fn SPENDER() -> ContractAddress {
     contract_address_const::<'SPENDER'>()
 }
 
-fn RECIPIENT() -> ContractAddress {
+pub fn RECIPIENT() -> ContractAddress {
     contract_address_const::<'RECIPIENT'>()
 }
 
-fn OPERATOR() -> ContractAddress {
+pub fn OPERATOR() -> ContractAddress {
     contract_address_const::<'OPERATOR'>()
 }
 
-fn BRIDGE() -> ContractAddress {
+pub fn BRIDGE() -> ContractAddress {
     contract_address_const::<'BRIDGE'>()
 }
 
-fn TOKEN_NAME() -> ByteArray {
+pub fn TOKEN_NAME() -> ByteArray {
     ("Loot Survivor")
 }
-fn TOKEN_SYMBOL() -> ByteArray {
+
+pub fn TOKEN_SYMBOL() -> ByteArray {
     ("LSVR")
 }
-fn BASE_URI() -> ByteArray {
+
+pub fn BASE_URI() -> ByteArray {
     ("https://lootsurvivor.io")
 }
 
-fn TOURNAMENT_NAME() -> felt252 {
+pub fn TOURNAMENT_NAME() -> felt252 {
     ('Genesis Tournament')
 }
 
-fn TOURNAMENT_DESCRIPTION() -> ByteArray {
+pub fn TOURNAMENT_DESCRIPTION() -> ByteArray {
     ("Genesis Tournament")
 }
 
-const STARTING_BALANCE: u256 = 1000000000000000000000;
+pub const STARTING_BALANCE: u256 = 1000000000000000000000;
 
-fn TEST_START_TIME() -> u32 {
+pub fn TEST_START_TIME() -> u32 {
     2 + MIN_REGISTRATION_PERIOD
 }
 
-fn TEST_END_TIME() -> u32 {
+pub fn TEST_END_TIME() -> u32 {
     TEST_START_TIME() + MIN_TOURNAMENT_LENGTH
 }

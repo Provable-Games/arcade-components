@@ -1,4 +1,3 @@
-use starknet::{ContractAddress};
 use dojo::world::IWorldDispatcher;
 use tournament::ls15_components::interfaces::{DataType, PragmaPricesResponse};
 
@@ -19,10 +18,6 @@ pub trait IPragmaMockPublic<TState> {
 
 #[dojo::contract]
 pub mod pragma_mock {
-    // use debug::PrintTrait;
-    use core::byte_array::ByteArrayTrait;
-    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
-
     use tournament::ls15_components::interfaces::{DataType, PragmaPricesResponse};
 
     #[storage]
