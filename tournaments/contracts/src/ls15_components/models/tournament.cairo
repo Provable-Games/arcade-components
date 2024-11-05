@@ -48,11 +48,11 @@ pub struct Premium {
     pub creator_fee: u8,
 }
 
-// TODO: add account addresses
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum GatedType {
     token: GatedToken,
     tournament: Span<u64>,
+    address: Span<ContractAddress>,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]

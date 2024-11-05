@@ -7,10 +7,18 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "create-components": "GAME_PATH=\"./src/games/$npm_config_game\" && echo create-components:[$GAME_PATH] && npx @dojoengine/core $GAME_PATH/manifests/manifest_$npm_config_profile.json $GAME_PATH/generated/contractComponents.ts",
+    "create-constants": "GAME_PATH=\"./src/games/$npm_config_game\" && echo create-constants:[$GAME_PATH] && ./src/lib/bin/generateConstants.cjs ../dojo/src $GAME_PATH/generated/constants.ts"
   },
   "dependencies": {
     "@cartridge/connector": "^0.3.44",
+    "@dojoengine/core": "1.0.0-alpha.28",
+    "@dojoengine/create-burner": "1.0.0-alpha.28",
+    "@dojoengine/sdk": "1.0.0-alpha.28",
+    "@dojoengine/torii-client": "1.0.0-alpha.28",
+    "@dojoengine/torii-wasm": "1.0.0-alpha.28",
+    "@dojoengine/utils": "1.0.0-alpha.28",
     "@fontsource/vt323": "^5.1.0",
     "@radix-ui/react-popover": "^1.1.2",
     "@radix-ui/react-select": "^2.1.2",

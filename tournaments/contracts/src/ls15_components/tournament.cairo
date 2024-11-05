@@ -130,6 +130,11 @@ pub mod tournament_component {
         //
         pub const TOURNAMENT_ALREADY_STARTED: felt252 = 'tournament already started';
         pub const TOURNAMENT_NOT_STARTED: felt252 = 'tournament not started';
+        pub const INVALID_GATED_SUBMISSION_TYPE: felt252 = 'invalid gated submission type';
+        pub const INVALID_SUBMITTED_GAMES_LENGTH: felt252 = 'invalid submitted games length';
+        pub const NOT_OWNER_OF_SUBMITTED_GAME_ID: felt252 = 'not owner of submitted game';
+        pub const SUBMITTED_GAME_NOT_TOP_SCORE: felt252 = 'submitted game not top score';
+        pub const CALLER_DOES_NOT_QUALIFY: felt252 = 'caller does not qualify';
         //
         // Start Tournament
         //
@@ -148,10 +153,6 @@ pub mod tournament_component {
         pub const GAME_NOT_STARTED: felt252 = 'game not started';
         pub const INVALID_SCORES_SUBMISSION: felt252 = 'invalid scores submission';
         pub const INVALID_SCORE: felt252 = 'invalid score';
-        pub const INVALID_GATED_SUBMISSION_TYPE: felt252 = 'invalid gated submission type';
-        pub const INVALID_SUBMITTED_GAMES_LENGTH: felt252 = 'invalid submitted games length';
-        pub const NOT_OWNER_OF_SUBMITTED_GAME_ID: felt252 = 'not owner of submitted game';
-        pub const SUBMITTED_GAME_NOT_TOP_SCORE: felt252 = 'submitted game not top score';
         //
         // Add Prize
         //
@@ -1024,6 +1025,7 @@ pub mod tournament_component {
                                 loop_index += 1;
                             }
                         },
+                        GatedType::address(_) => {},
                     }
                 },
                 Option::None => {},
@@ -1087,6 +1089,9 @@ pub mod tournament_component {
                         ._assert_has_qualified_in_tournaments(
                             ref store, tournament_ids, gated_submission_type, address
                         );
+                },
+                GatedType::address(qualifying_addresses) => {
+                    self._assert_qualifying_address(ref store, address, qualifying_addresses);
                 },
             }
         }
@@ -1181,6 +1186,25 @@ pub mod tournament_component {
                 },
                 Option::None => { assert(false, Errors::INVALID_GATED_SUBMISSION_TYPE); }
             }
+        }
+
+        fn _assert_qualifying_address(
+            self: @ComponentState<TContractState>, ref store: Store, address: ContractAddress, qualifying_addresses: Span<ContractAddress>
+        ) {
+            let mut found = false;
+            let mut loop_index = 0;
+            loop {
+                if loop_index == qualifying_addresses.len() {
+                    break;
+                }
+                let qualifying_address = *qualifying_addresses.at(loop_index);
+                if qualifying_address == address {
+                    found = true;
+                    break;
+                }
+                loop_index += 1;
+            };
+            assert(found, Errors::CALLER_DOES_NOT_QUALIFY);
         }
 
         //
