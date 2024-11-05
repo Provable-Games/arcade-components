@@ -4,80 +4,80 @@ use starknet::ContractAddress;
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Stats { // 30 bits total
-    strength: u8,
-    dexterity: u8,
-    vitality: u8, // 5 bits per stat
-    intelligence: u8,
-    wisdom: u8,
-    charisma: u8,
-    luck: u8, // dynamically generated, not stored.
+    pub strength: u8,
+    pub dexterity: u8,
+    pub vitality: u8, // 5 bits per stat
+    pub intelligence: u8,
+    pub wisdom: u8,
+    pub charisma: u8,
+    pub luck: u8, // dynamically generated, not stored.
 }
 
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Equipment { // 128 bits
-    weapon: Item,
-    chest: Item,
-    head: Item,
-    waist: Item, // 16 bits per item
-    foot: Item,
-    hand: Item,
-    neck: Item,
-    ring: Item,
+    pub weapon: Item,
+    pub chest: Item,
+    pub head: Item,
+    pub waist: Item, // 16 bits per item
+    pub foot: Item,
+    pub hand: Item,
+    pub neck: Item,
+    pub ring: Item,
 }
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Adventurer {
-    health: u16, // 10 bits
-    xp: u16, // 15 bits
-    gold: u16, // 9 bits
-    beast_health: u16, // 10 bits
-    stat_upgrades_available: u8, // 4 bits
-    stats: Stats, // 30 bits
-    equipment: Equipment, // 128 bits
-    battle_action_count: u8, // 8 bits
-    mutated: bool, // not packed
-    awaiting_item_specials: bool, // not packed
+    pub health: u16, // 10 bits
+    pub xp: u16, // 15 bits
+    pub gold: u16, // 9 bits
+    pub beast_health: u16, // 10 bits
+    pub stat_upgrades_available: u8, // 4 bits
+    pub stats: Stats, // 30 bits
+    pub equipment: Equipment, // 128 bits
+    pub battle_action_count: u8, // 8 bits
+    pub mutated: bool, // not packed
+    pub awaiting_item_specials: bool, // not packed
 }
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct AdventurerMetadata {
-    birth_date: u64, // 64 bits in storage
-    death_date: u64, // 64 bits in storage
-    level_seed: u64, // 64 bits in storage
-    item_specials_seed: u16, // 16 bits in storage
-    rank_at_death: u8, // 2 bits in storage
-    delay_stat_reveal: bool, // 1 bit in storage
-    golden_token_id: u8, // 8 bits in storage
+    pub birth_date: u64, // 64 bits in storage
+    pub death_date: u64, // 64 bits in storage
+    pub level_seed: u64, // 64 bits in storage
+    pub item_specials_seed: u16, // 16 bits in storage
+    pub rank_at_death: u8, // 2 bits in storage
+    pub delay_stat_reveal: bool, // 1 bit in storage
+    pub golden_token_id: u8, // 8 bits in storage
     // launch_tournament_winner_token_id: u128, // 32 bits in storage
 }
 
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Item { // 21 storage bits
-    id: u8, // 7 bits
-    xp: u16, // 9 bits
+    pub id: u8, // 7 bits
+    pub xp: u16, // 9 bits
 }
 
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Bag { // 240 bits
-    item_1: Item, // 16 bits each
-    item_2: Item,
-    item_3: Item,
-    item_4: Item,
-    item_5: Item,
-    item_6: Item,
-    item_7: Item,
-    item_8: Item,
-    item_9: Item,
-    item_10: Item,
-    item_11: Item,
-    item_12: Item,
-    item_13: Item,
-    item_14: Item,
-    item_15: Item,
-    mutated: bool,
+    pub item_1: Item, // 16 bits each
+    pub item_2: Item,
+    pub item_3: Item,
+    pub item_4: Item,
+    pub item_5: Item,
+    pub item_6: Item,
+    pub item_7: Item,
+    pub item_8: Item,
+    pub item_9: Item,
+    pub item_10: Item,
+    pub item_11: Item,
+    pub item_12: Item,
+    pub item_13: Item,
+    pub item_14: Item,
+    pub item_15: Item,
+    pub mutated: bool,
 }
 
 ///

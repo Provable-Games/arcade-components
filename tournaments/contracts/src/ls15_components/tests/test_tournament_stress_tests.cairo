@@ -277,7 +277,8 @@ fn test_submit_multiple_scores_stress_test() {
     lords.approve(tournament.contract_address, 100 * 50000000000000000000);
     eth.approve(tournament.contract_address, 100 * 200000000000000);
 
-    // Approve game costs and start tournament for all players (the default will start all games for the address)
+    // Approve game costs and start tournament for all players (the default will start all games for
+    // the address)
     tournament.start_tournament(tournament_id, false, Option::None);
 
     testing::set_block_timestamp(TEST_END_TIME().into());
@@ -304,16 +305,15 @@ fn test_submit_multiple_scores_stress_test() {
         i += 1;
     };
     tournament.submit_scores(tournament_id, score_ids);
-
     // // Verify scores
-    // let scores = tournament.top_scores(tournament_id);
-    // assert(scores.len() == 100, 'Invalid scores length');
-    // let mut i: u64 = 0;
-    // loop {
-    //     if i == 100 {
-    //         break;
-    //     }
-    //     assert(*scores.at(i.try_into().unwrap()) == (100 - i).into(), 'Invalid score');
-    //     i += 1;
-    // };
+// let scores = tournament.top_scores(tournament_id);
+// assert(scores.len() == 100, 'Invalid scores length');
+// let mut i: u64 = 0;
+// loop {
+//     if i == 100 {
+//         break;
+//     }
+//     assert(*scores.at(i.try_into().unwrap()) == (100 - i).into(), 'Invalid score');
+//     i += 1;
+// };
 }

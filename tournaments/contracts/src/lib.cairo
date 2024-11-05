@@ -4,11 +4,13 @@ mod ls15_components {
     mod loot_survivor;
     mod libs {
         pub mod store;
+        pub mod utils;
     }
     mod models {
         pub mod loot_survivor;
+        pub mod tournament;
     }
-    // mod tournament;
+    mod tournament;
     mod tests {
         // mod erc20_mock;
         // mod erc721_mock;
@@ -21,10 +23,9 @@ mod ls15_components {
         #[cfg(test)]
         mod test_tournament;
         // #[cfg(test)]
-        // mod test_tournament_stress_tests;
+    // mod test_tournament_stress_tests;
     }
 }
-
 // mod presets {
 //     mod ls_tournament;
 // }
@@ -34,3 +35,5 @@ mod ls15_components {
 //     mod constants;
 //     mod utils;
 // }
+
+

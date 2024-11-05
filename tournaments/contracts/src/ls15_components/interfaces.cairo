@@ -1,54 +1,9 @@
 use starknet::ContractAddress;
 use adventurer::{adventurer::Adventurer, bag::Bag};
-use tournament::ls15_components::constants::{
-    TokenDataType, GatedEntryType
-};
+// use tournament::ls15_components::constants::{TokenDataType, GatedEntryType};
 use tournament::ls15_components::models::loot_survivor::AdventurerMetadata;
 
 use dojo::world::{WorldStorage, WorldStorageTrait, IWorldDispatcher};
-
-#[derive(Drop, Copy, Serde, Introspect)]
-pub struct Token {
-    token: ContractAddress,
-    token_data_type: TokenDataType,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct EntryCriteria {
-    token_id: u128,
-    entry_count: u64,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct GatedToken {
-    token: ContractAddress,
-    entry_type: GatedEntryType,
-}
-
-// enum config ERC20, ERC721, ERC1155
-#[derive(Copy, Drop, Serde, Introspect)]
-pub struct ERC20Data {
-    token_amount: u128,
-}
-
-#[derive(Copy, Drop, Serde, Introspect)]
-pub struct ERC721Data {
-    token_id: u128,
-}
-
-#[derive(Copy, Drop, Serde, Introspect)]
-pub struct ERC1155Data {
-    token_id: u128,
-    token_amount: u128,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct Premium {
-    token: ContractAddress,
-    token_amount: u128,
-    token_distribution: Span<u8>,
-    creator_fee: u8,
-}
 
 #[derive(Drop, Copy, Serde)]
 pub enum DataType {
@@ -66,11 +21,11 @@ pub enum AggregationMode {
 
 #[derive(Serde, Drop, Copy)]
 pub struct PragmaPricesResponse {
-    price: u128,
-    decimals: u32,
-    last_updated_timestamp: u64,
-    num_sources_aggregated: u32,
-    expiration_timestamp: Option<u64>,
+    pub price: u128,
+    pub decimals: u32,
+    pub last_updated_timestamp: u64,
+    pub num_sources_aggregated: u32,
+    pub expiration_timestamp: Option<u64>,
 }
 
 #[starknet::interface]

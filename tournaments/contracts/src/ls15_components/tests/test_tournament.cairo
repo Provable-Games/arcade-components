@@ -1727,7 +1727,9 @@ fn test_distribute_prizes_with_gated_tournaments() {
 
     tournament.start_tournament(tournament_id, false, Option::None);
 
-    testing::set_block_timestamp(current_time + 1 + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into());
+    testing::set_block_timestamp(
+        current_time + 1 + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into()
+    );
 
     // this is now adventurer 2
     // set data to a dead adventurer with 1 xp
@@ -2146,9 +2148,7 @@ fn test_tournament_with_no_submissions() {
     // Verify first caller gets all prizes
     // creator also gets the prize balance back (STARTING BALANCE)
     assert(
-        erc20.balance_of(OWNER()) == creator_initial
-            + 300
-            + STARTING_BALANCE,
+        erc20.balance_of(OWNER()) == creator_initial + 300 + STARTING_BALANCE,
         'Invalid owner refund'
     );
     assert(erc20.balance_of(player2) == 0, 'Invalid player2 refund');
@@ -2254,9 +2254,7 @@ fn test_tournament_with_no_starts() {
     // Verify first caller gets all prizes
     // creator also gets the prize balance back (STARTING BALANCE)
     assert(
-        erc20.balance_of(OWNER()) == creator_initial
-            + 300
-            + STARTING_BALANCE,
+        erc20.balance_of(OWNER()) == creator_initial + 300 + STARTING_BALANCE,
         'Invalid owner refund'
     );
     assert(erc20.balance_of(player2) == 0, 'Invalid player2 refund');
