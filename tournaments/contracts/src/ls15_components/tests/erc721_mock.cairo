@@ -4,7 +4,7 @@ use dojo::world::IWorldDispatcher;
 #[starknet::interface]
 pub trait IERC721Mock<TState> {
     // IWorldProvider
-    fn world(self: @TState,) -> IWorldDispatcher;
+    fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
     // ISRC5
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;

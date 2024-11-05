@@ -9,6 +9,9 @@ use dojo::world::IWorldDispatcher;
 
 #[starknet::interface]
 pub trait ILootSurvivorMock<TState> {
+    // IWorldProvider
+    fn world_dispatcher(self: @TState) -> IWorldDispatcher;
+    
     // ISRC5
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     // IERC721
@@ -70,9 +73,6 @@ pub trait ILootSurvivorMock<TState> {
         self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
     );
     fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
-
-    // IWorldProvider
-    fn world(self: @TState) -> IWorldDispatcher;
 
     fn initializer(
         ref self: TState,

@@ -4,7 +4,7 @@ use dojo::world::IWorldDispatcher;
 #[starknet::interface]
 pub trait IERC20Mock<TState> {
     // IWorldProvider
-    fn world(self: @TState,) -> IWorldDispatcher;
+    fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
     // IERC20
     fn total_supply(self: @TState) -> u256;
