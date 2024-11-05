@@ -48,7 +48,7 @@ trait ITournament<TState> {
 ///
 
 #[starknet::component]
-mod tournament_component {
+pub mod tournament_component {
     use super::ITournament;
 
     use core::num::traits::Zero;
@@ -95,7 +95,7 @@ mod tournament_component {
     use adventurer::{adventurer::Adventurer};
 
     #[storage]
-    struct Storage {}
+    pub struct Storage {}
 
     #[derive(Copy, Drop, Serde)]
     #[dojo::event]
@@ -608,7 +608,10 @@ mod tournament_component {
                         game_index
                     );
 
-                self.set_submitted_score(ref world, ref store, tournament_id, game_id, adventurer.xp);
+                self
+                    .set_submitted_score(
+                        ref world, ref store, tournament_id, game_id, adventurer.xp
+                    );
                 game_index += 1;
             };
             store
@@ -678,7 +681,7 @@ mod tournament_component {
 
 
     #[generate_trait]
-    impl InternalImpl<
+    pub impl InternalImpl<
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
@@ -837,7 +840,9 @@ mod tournament_component {
         }
 
         fn set_tournament_distribute_called(
-            self: @ComponentState<TContractState>, ref store: Store, ref total_entries: TournamentEntriesModel
+            self: @ComponentState<TContractState>,
+            ref store: Store,
+            ref total_entries: TournamentEntriesModel
         ) {
             total_entries.distribute_called = true;
             store.set_total_entries(@total_entries);
@@ -906,7 +911,10 @@ mod tournament_component {
         }
 
         fn _assert_premium_token_registered_and_distribution_valid(
-            self: @ComponentState<TContractState>, ref store: Store, premium: Option<Premium>, winners_count: u8
+            self: @ComponentState<TContractState>,
+            ref store: Store,
+            premium: Option<Premium>,
+            winners_count: u8
         ) {
             match premium {
                 Option::Some(token) => {
@@ -1001,7 +1009,9 @@ mod tournament_component {
         }
 
         fn _assert_scores_count_valid(
-            self: @ComponentState<TContractState>, ref tournament: TournamentModel, scores_count: u32
+            self: @ComponentState<TContractState>,
+            ref tournament: TournamentModel,
+            scores_count: u32
         ) {
             assert(
                 scores_count <= tournament.winners_count.into(), Errors::INVALID_SCORES_SUBMISSION
@@ -1290,7 +1300,10 @@ mod tournament_component {
                 }
                 let token = *tokens.at(token_index);
 
-                assert(!self._is_token_registered(ref store, token.token), Errors::TOKEN_ALREADY_REGISTERED);
+                assert(
+                    !self._is_token_registered(ref store, token.token),
+                    Errors::TOKEN_ALREADY_REGISTERED
+                );
 
                 let mut name = "";
                 let mut symbol = "";

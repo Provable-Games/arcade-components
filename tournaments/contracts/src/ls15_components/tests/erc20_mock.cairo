@@ -38,9 +38,7 @@ pub trait IERC20MockPublic<TState> {
 
 #[dojo::contract]
 pub mod erc20_mock {
-    // use debug::PrintTrait;
-    use core::byte_array::ByteArrayTrait;
-    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
+    use starknet::ContractAddress;
 
     //-----------------------------------
     // OpenZeppelin start

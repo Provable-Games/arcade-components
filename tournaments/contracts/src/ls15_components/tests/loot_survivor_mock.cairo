@@ -3,12 +3,12 @@
 use adventurer::{
     adventurer::{Adventurer, ImplAdventurer}, adventurer_meta::{ImplAdventurerMetadata}, bag::Bag
 };
-use tournament::ls15_components::loot_survivor::AdventurerMetadata;
+use tournament::ls15_components::models::loot_survivor::AdventurerMetadata;
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 
 #[starknet::interface]
-trait ILootSurvivorMock<TState> {
+pub trait ILootSurvivorMock<TState> {
     // ISRC5
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     // IERC721
@@ -100,12 +100,8 @@ trait ILootSurvivorMockInit<TState> {
 
 #[dojo::contract]
 mod loot_survivor_mock {
-    use adventurer::{
-        adventurer::{Adventurer, ImplAdventurer}, adventurer_meta::{ImplAdventurerMetadata},
-        bag::Bag
-    };
-    use tournament::ls15_components::loot_survivor::AdventurerMetadata;
-    use starknet::{ContractAddress, get_caller_address};
+    use adventurer::{adventurer::ImplAdventurer, adventurer_meta::{ImplAdventurerMetadata}};
+    use starknet::ContractAddress;
 
     use tournament::ls15_components::loot_survivor::loot_survivor_component;
     use openzeppelin_introspection::src5::SRC5Component;
@@ -145,10 +141,6 @@ mod loot_survivor_mock {
         ERC721Event: ERC721Component::Event,
     }
 
-    mod Errors {
-        const CALLER_IS_NOT_OWNER: felt252 = 'ERC721: caller is not owner';
-    }
-
     //*******************************
     fn TOKEN_NAME() -> ByteArray {
         ("Loot Survivor")
@@ -172,11 +164,6 @@ mod loot_survivor_mock {
             lords_address: ContractAddress,
             pragma_address: ContractAddress
         ) {
-            assert(
-                self.world().is_owner(self.selector(), get_caller_address()),
-                Errors::CALLER_IS_NOT_OWNER
-            );
-
             self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI(),);
             self.loot_survivor.initialize(eth_address, lords_address, pragma_address);
         }

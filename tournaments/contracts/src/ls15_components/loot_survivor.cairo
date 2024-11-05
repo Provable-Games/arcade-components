@@ -29,7 +29,7 @@ trait ILootSurvivor<TState> {
 /// Loot Survivor Component
 ///
 #[starknet::component]
-mod loot_survivor_component {
+pub mod loot_survivor_component {
     use super::ILootSurvivor;
 
     use core::num::traits::Zero;
@@ -57,11 +57,11 @@ mod loot_survivor_component {
     };
 
     #[storage]
-    struct Storage {}
+    pub struct Storage {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {}
+    pub enum Event {}
 
     mod Errors {
         const CALLER_IS_NOT_OWNER: felt252 = 'ERC721: caller is not owner';
@@ -242,7 +242,7 @@ mod loot_survivor_component {
     }
 
     #[generate_trait]
-    impl InternalImpl<
+    pub impl InternalImpl<
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,

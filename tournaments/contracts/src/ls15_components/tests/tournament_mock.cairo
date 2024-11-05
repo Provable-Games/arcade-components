@@ -1,15 +1,14 @@
-use starknet::{ContractAddress, ClassHash};
+use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
-use tournament::ls15_components::tournament::{TournamentModel};
-use tournament::ls15_components::interfaces::{
-    LootRequirement, Token, StatRequirement, GatedToken, Premium
-};
-use tournament::ls15_components::constants::{
-    TokenType, TokenDataType, GatedType, GatedSubmissionType
+use tournament::ls15_components::models::tournament::{
+    TournamentModel, Token, Premium, TokenDataType, GatedType, GatedSubmissionType
 };
 
 #[starknet::interface]
-trait ITournamentMock<TState> {
+pub trait ITournamentMock<TState> {
+    // IWorldProvider
+    fn world_dispatcher(self: @TState) -> IWorldDispatcher;
+
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
@@ -45,9 +44,6 @@ trait ITournamentMock<TState> {
     );
     fn distribute_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
 
-    // IWorldProvider
-    fn world(self: @TState,) -> IWorldDispatcher;
-
     fn initializer(
         ref self: TState,
         eth_address: ContractAddress,
@@ -69,8 +65,8 @@ trait ITournamentMockInit<TState> {
 }
 
 #[dojo::contract]
-mod tournament_mock {
-    use starknet::{ContractAddress, get_caller_address};
+pub mod tournament_mock {
+    use starknet::ContractAddress;
     use tournament::ls15_components::tournament::tournament_component;
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
@@ -92,10 +88,6 @@ mod tournament_mock {
         TournamentEvent: tournament_component::Event,
     }
 
-    mod Errors {
-        const CALLER_IS_NOT_OWNER: felt252 = 'Tournament: caller is not owner';
-    }
-
     #[abi(embed_v0)]
     impl TournamentInitializerImpl of super::ITournamentMockInit<ContractState> {
         fn initializer(
@@ -105,10 +97,6 @@ mod tournament_mock {
             loot_survivor_address: ContractAddress,
             oracle_address: ContractAddress
         ) {
-            assert(
-                self.world().is_owner(self.selector(), get_caller_address()),
-                Errors::CALLER_IS_NOT_OWNER
-            );
             self
                 .tournament
                 .initialize(eth_address, lords_address, loot_survivor_address, oracle_address);
