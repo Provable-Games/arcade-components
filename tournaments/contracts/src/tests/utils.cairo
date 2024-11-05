@@ -1,7 +1,5 @@
 use core::result::ResultTrait;
-use starknet::{
-    class_hash::Felt252TryIntoClassHash, ContractAddress, syscalls::deploy_syscall, testing
-};
+use starknet::{ContractAddress, syscalls::deploy_syscall, testing};
 
 pub fn impersonate(address: ContractAddress) {
     testing::set_contract_address(address);
@@ -36,16 +34,16 @@ pub fn assert_no_events_left(address: ContractAddress) {
 
 pub fn drop_event(address: ContractAddress) {
     match testing::pop_log_raw(address) {
-        option::Option::Some(_) => {},
-        option::Option::None => {},
+        Option::Some(_) => {},
+        Option::None => {},
     };
 }
 
 pub fn drop_all_events(address: ContractAddress) {
     loop {
         match testing::pop_log_raw(address) {
-            option::Option::Some(_) => {},
-            option::Option::None => { break; },
+            Option::Some(_) => {},
+            Option::None => { break; },
         };
     }
 }

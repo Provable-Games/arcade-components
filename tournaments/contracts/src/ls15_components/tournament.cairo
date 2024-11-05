@@ -14,6 +14,7 @@ trait ITournament<TState> {
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn tournament_prize_keys(self: @TState, tournament_id: u64) -> Array<u64>;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
+    fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     fn create_tournament(
         ref self: TState,
         name: felt252,
@@ -74,8 +75,6 @@ pub mod tournament_component {
     use tournament::ls15_components::libs::utils::{pow};
 
     use dojo::contract::components::world_provider::{IWorldProvider};
-    use dojo::event::EventStorage;
-    use dojo::world::{WorldStorage};
 
 
     use starknet::{
@@ -97,68 +96,9 @@ pub mod tournament_component {
     #[storage]
     pub struct Storage {}
 
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    struct CreateTournament {
-        #[key]
-        creator: ContractAddress,
-        tournament_id: u64,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    struct EnterTournament {
-        #[key]
-        account: ContractAddress,
-        tournament_id: u64,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    struct StartTournament {
-        #[key]
-        account: ContractAddress,
-        tournament_id: u64,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    struct SubmitScore {
-        #[key]
-        tournament_id: u64,
-        #[key]
-        game_id: felt252,
-        score: u16,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    struct NewHighScore {
-        #[key]
-        tournament_id: u64,
-        #[key]
-        game_id: felt252,
-        score: u16,
-        rank: u8,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    struct AddNewPrize {
-        #[key]
-        tournament_id: u64,
-        token: ContractAddress,
-        token_data_type: TokenDataType,
-        payout_position: u8,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    struct RegisterToken {
-        #[key]
-        token: ContractAddress,
-        token_data_type: TokenDataType,
-    }
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {}
 
     mod Errors {
         //
@@ -275,6 +215,14 @@ pub mod tournament_component {
             store.get_tournament_scores(tournament_id).top_score_ids
         }
 
+        fn is_token_registered(self: @ComponentState<TContractState>, token: ContractAddress) -> bool {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), @"tournament"
+            );
+            let mut store: Store = StoreTrait::new(world);
+            self._is_token_registered(ref store, token)
+        }
+
         fn create_tournament(
             ref self: ComponentState<TContractState>,
             name: felt252,
@@ -307,7 +255,6 @@ pub mod tournament_component {
             // create a new tournament
             self
                 ._create_tournament(
-                    ref world,
                     ref store,
                     name,
                     description,
@@ -321,9 +268,9 @@ pub mod tournament_component {
                 )
         }
         fn register_tokens(ref self: ComponentState<TContractState>, tokens: Array<Token>) {
-            let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @"token");
+            let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @"tournament");
             let mut store: Store = StoreTrait::new(world);
-            self._register_tokens(ref world, ref store, tokens);
+            self._register_tokens(ref store, tokens);
         }
 
         // gated token entries must play using all entry allowances
@@ -402,7 +349,7 @@ pub mod tournament_component {
 
             // handle formatiing of premium config into prize keys
             if (!total_entries.premiums_formatted) {
-                self._format_premium_config_into_prize_keys(ref world, ref store, tournament_id);
+                self._format_premium_config_into_prize_keys(ref store, tournament_id);
             }
 
             let mut entries = 0;
@@ -598,7 +545,6 @@ pub mod tournament_component {
 
                 self
                     ._update_tournament_scores(
-                        ref world,
                         ref store,
                         tournament_id,
                         game_id,
@@ -610,7 +556,7 @@ pub mod tournament_component {
 
                 self
                     .set_submitted_score(
-                        ref world, ref store, tournament_id, game_id, adventurer.xp
+                        ref store, tournament_id, game_id, adventurer.xp
                     );
                 game_index += 1;
             };
@@ -637,7 +583,7 @@ pub mod tournament_component {
 
             self
                 ._deposit_prize(
-                    ref world, ref store, tournament_id, token, token_data_type, position
+                    ref store, tournament_id, token, token_data_type, position
                 );
         }
 
@@ -657,7 +603,7 @@ pub mod tournament_component {
             // if noone has started the tournament already, then we need to create the prize keys
             // (this should already be taken into account in the provided list)
             if (!total_entries.premiums_formatted) {
-                self._format_premium_config_into_prize_keys(ref world, ref store, tournament_id);
+                self._format_premium_config_into_prize_keys(ref store, tournament_id);
             }
 
             let top_score_ids = store.get_tournament_scores(tournament_id).top_score_ids;
@@ -819,7 +765,6 @@ pub mod tournament_component {
 
         fn set_submitted_score(
             ref self: ComponentState<TContractState>,
-            ref world: WorldStorage,
             ref store: Store,
             tournament_id: u64,
             game_id: felt252,
@@ -835,8 +780,6 @@ pub mod tournament_component {
                         status: EntryStatus::Submitted
                     }
                 );
-            let submit_score_event = SubmitScore { tournament_id, game_id, score };
-            world.emit_event(@submit_score_event);
         }
 
         fn set_tournament_distribute_called(
@@ -1248,7 +1191,6 @@ pub mod tournament_component {
 
         fn _create_tournament(
             ref self: ComponentState<TContractState>,
-            ref world: WorldStorage,
             ref store: Store,
             name: felt252,
             description: ByteArray,
@@ -1277,10 +1219,6 @@ pub mod tournament_component {
                         entry_premium,
                     }
                 );
-            let create_tournament_event = CreateTournament {
-                creator, tournament_id: new_tournament_id
-            };
-            world.emit_event(@create_tournament_event);
 
             tournament_totals.total_tournaments = new_tournament_id;
             store.set_tournament_totals(@tournament_totals);
@@ -1288,7 +1226,6 @@ pub mod tournament_component {
         }
         fn _register_tokens(
             ref self: ComponentState<TContractState>,
-            ref world: WorldStorage,
             ref store: Store,
             tokens: Array<Token>
         ) {
@@ -1375,17 +1312,12 @@ pub mod tournament_component {
                     is_registered: true
                 };
                 store.set_token(@token_model);
-                let register_token_event = RegisterToken {
-                    token: token.token, token_data_type: token.token_data_type
-                };
-                world.emit_event(@register_token_event);
                 token_index += 1;
             }
         }
 
         fn _format_premium_config_into_prize_keys(
             ref self: ComponentState<TContractState>,
-            ref world: WorldStorage,
             ref store: Store,
             tournament_id: u64
         ) {
@@ -1447,15 +1379,6 @@ pub mod tournament_component {
                                     tournament_id, prize_keys: tournament_prizes
                                 }
                             );
-                        let add_new_prize_event = AddNewPrize {
-                            tournament_id,
-                            token: premium.token,
-                            token_data_type: TokenDataType::erc20(
-                                ERC20Data { token_amount: distribution_amount }
-                            ),
-                            payout_position: (distribution_index + 1).try_into().unwrap()
-                        };
-                        world.emit_event(@add_new_prize_event);
                         distribution_index += 1;
                     };
                     // set premiums formatted true
@@ -1472,7 +1395,6 @@ pub mod tournament_component {
         }
         fn _update_tournament_scores(
             ref self: ComponentState<TContractState>,
-            ref world: WorldStorage,
             ref store: Store,
             tournament_id: u64,
             game_id: felt252,
@@ -1521,10 +1443,6 @@ pub mod tournament_component {
                 }
             }
             new_score_ids.append(new_score_id);
-            let new_high_score_event = NewHighScore {
-                tournament_id, game_id, score: new_score, rank: (game_index + 1).try_into().unwrap()
-            };
-            world.emit_event(@new_high_score_event);
         }
 
         fn _convert_usd_to_wei(
@@ -1543,7 +1461,6 @@ pub mod tournament_component {
 
         fn _deposit_prize(
             ref self: ComponentState<TContractState>,
-            ref world: WorldStorage,
             ref store: Store,
             tournament_id: u64,
             token: ContractAddress,
@@ -1591,13 +1508,6 @@ pub mod tournament_component {
                 .set_prize_keys(
                     @TournamentPrizeKeysModel { tournament_id, prize_keys: tournament_prizes }
                 );
-            let add_new_prize_event = AddNewPrize {
-                tournament_id,
-                token: token,
-                token_data_type: token_data_type,
-                payout_position: position
-            };
-            world.emit_event(@add_new_prize_event);
         }
 
         fn _distribute_prizes_to_address(

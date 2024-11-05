@@ -1,5 +1,4 @@
-use starknet::ContractAddress;
-use starknet::contract_address_const;
+use starknet::{ContractAddress, contract_address_const};
 
 use tournament::ls15_components::constants::{MIN_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH};
 

@@ -1,5 +1,5 @@
 mod ls15_components {
-    mod constants;
+    pub mod constants;
     mod interfaces;
     mod loot_survivor;
     mod libs {
@@ -12,13 +12,13 @@ mod ls15_components {
     }
     mod tournament;
     mod tests {
-        mod erc20_mock;
-        mod erc721_mock;
+        pub mod erc20_mock;
+        pub mod erc721_mock;
         #[cfg(test)]
         mod helpers;
-        mod loot_survivor_mock;
-        mod pragma_mock;
-        mod tournament_mock;
+        pub mod loot_survivor_mock;
+        pub mod pragma_mock;
+        pub mod tournament_mock;
         #[cfg(test)]
         mod test_tournament;
         // #[cfg(test)]

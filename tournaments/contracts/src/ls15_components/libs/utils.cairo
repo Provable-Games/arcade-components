@@ -1,3 +1,5 @@
+use starknet::{ContractAddress, contract_address_const};
+
 /// Raise a number to a power.
 /// O(log n) time complexity.
 /// * `base` - The number to raise.
@@ -16,4 +18,9 @@ pub fn pow<T, +Sub<T>, +Mul<T>, +Div<T>, +Rem<T>, +PartialEq<T>, +Into<u8, T>, +
     } else {
         base * pow(base * base, exp / 2_u8.into())
     }
+}
+
+#[inline(always)]
+pub fn ZERO() -> ContractAddress {
+    (contract_address_const::<0x0>())
 }

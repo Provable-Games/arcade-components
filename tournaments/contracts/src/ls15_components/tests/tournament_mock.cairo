@@ -14,7 +14,6 @@ pub trait ITournamentMock<TState> {
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn tournament_prize_keys(self: @TState, tournament_id: u64) -> Array<u64>;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
-    fn is_tournament_active(self: @TState, tournament_id: u64) -> bool;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     fn create_tournament(
         ref self: TState,
