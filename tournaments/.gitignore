@@ -1,4 +1,4 @@
 contracts/target
 contracts/manifests
 
-scripts/deploy_mainnet.sh
+contracts/scripts/deploy_mainnet.sh
