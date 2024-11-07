@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DayPicker } from "react-day-picker";
-import { isBefore } from "@/lib/utils";
 
 // ---------- utils start ----------
 /**
@@ -254,9 +253,8 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   yearRange = 50,
-  customDisabled,
   ...props
-}: CalendarProps & { yearRange?: number; customDisabled: boolean }) {
+}: CalendarProps & { yearRange?: number }) {
   const MONTHS = React.useMemo(() => {
     let locale: Pick<Locale, "options" | "localize" | "formatLong"> = enUS;
     const { options, localize, formatLong } = props.locale || {};
@@ -296,10 +294,7 @@ function Calendar({
         weekday:
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
         week: "flex w-full mt-2",
-        day: cn(
-          "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1 text-terminal-green hover:bg-terminal-green hover:text-terminal-black",
-          customDisabled && "text-muted-foreground opacity-50 hover:none"
-        ),
+        day: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1",
         day_button: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-l-md rounded-r-md"
@@ -317,20 +312,24 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-        IconRight: () => <ChevronRight className="h-4 w-4" />,
-        Caption: ({ displayMonth }) => {
+        Chevron: ({ ...props }) =>
+          props.orientation === "left" ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          ),
+        MonthCaption: ({ calendarMonth }) => {
           return (
             <div className="inline-flex gap-2">
               <Select
-                defaultValue={displayMonth.getMonth().toString()}
+                defaultValue={calendarMonth.date.getMonth().toString()}
                 onValueChange={(value) => {
-                  const newDate = new Date(displayMonth);
+                  const newDate = new Date(calendarMonth.date);
                   newDate.setMonth(Number.parseInt(value, 10));
                   props.onMonthChange?.(newDate);
                 }}
               >
-                <SelectTrigger className="w-fit gap-1 border-none p-0 focus:bg-accent focus:text-accent-foreground bg-terminal-black border border-terminal-green">
+                <SelectTrigger className="w-fit gap-1 border-none p-0 focus:bg-accent focus:text-accent-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -345,14 +344,14 @@ function Calendar({
                 </SelectContent>
               </Select>
               <Select
-                defaultValue={displayMonth.getFullYear().toString()}
+                defaultValue={calendarMonth.date.getFullYear().toString()}
                 onValueChange={(value) => {
-                  const newDate = new Date(displayMonth);
+                  const newDate = new Date(calendarMonth.date);
                   newDate.setFullYear(Number.parseInt(value, 10));
                   props.onMonthChange?.(newDate);
                 }}
               >
-                <SelectTrigger className="w-fit gap-1 border-none p-0 focus:bg-accent focus:text-accent-foreground bg-terminal-black">
+                <SelectTrigger className="w-fit gap-1 border-none p-0 focus:bg-accent focus:text-accent-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,7 +536,7 @@ const TimePickerInput = React.forwardRef<
         id={id || picker}
         name={name || picker}
         className={cn(
-          "w-[48px] text-center font-mono text-base tabular-nums caret-transparent bg-terminal-black border border-terminal-green [&::-webkit-inner-spin-button]:appearance-none",
+          "w-[48px] text-center font-mono text-base tabular-nums caret-transparent focus:bg-accent focus:text-accent-foreground [&::-webkit-inner-spin-button]:appearance-none",
           className
         )}
         value={value || calculatedValue}
@@ -598,7 +597,7 @@ const TimePicker = React.forwardRef<TimePickerRef, TimePickerProps>(
     );
 
     return (
-      <div className="flex items-center justify-center gap-2 bg-terminal-black text-terminal-green">
+      <div className="flex items-center justify-center gap-2">
         <label htmlFor="datetime-picker-hour-input" className="cursor-pointer">
           <Clock className="mr-2 h-4 w-4" />
         </label>
@@ -689,7 +688,6 @@ type DateTimePickerProps = {
    **/
   granularity?: Granularity;
   className?: string;
-  startTime?: Date;
 } & Pick<
   CalendarProps,
   "locale" | "weekStartsOn" | "showWeekNumber" | "showOutsideDays"
@@ -715,7 +713,6 @@ const DateTimePicker = React.forwardRef<
       granularity = "second",
       placeholder = "Pick a date",
       className,
-      startTime,
       ...props
     },
     ref
@@ -768,7 +765,6 @@ const DateTimePicker = React.forwardRef<
         formatLong,
       };
     }
-    const now = new Date();
 
     return (
       <Popover>
@@ -807,17 +803,10 @@ const DateTimePicker = React.forwardRef<
             onMonthChange={handleSelect}
             yearRange={yearRange}
             locale={locale}
-            customDisabled={() => {
-              if (startTime && value) {
-                return isBefore(value, now) || isBefore(value, startTime);
-              }
-              isBefore(value, now);
-            }}
             {...props}
-            className="bg-terminal-black text-terminal-green border border-terminal-green"
           />
           {granularity !== "day" && (
-            <div className="border-t border-border p-3 bg-terminal-black border-terminal-green">
+            <div className="border-t border-border p-3">
               <TimePicker
                 onChange={onChange}
                 date={value}

@@ -278,6 +278,7 @@ pub mod tournament_component {
             self._register_tokens(ref store, tokens);
         }
 
+        // TODO: check the safety of setting a large length array of entry criteria for gated tokens
         // gated token entries must play using all entry allowances
         fn enter_tournament(
             ref self: ComponentState<TContractState>,

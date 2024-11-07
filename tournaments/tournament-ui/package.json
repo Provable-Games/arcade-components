@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "create-components": "GAME_PATH=\"./src/games/$npm_config_game\" && echo create-components:[$GAME_PATH] && npx @dojoengine/core $GAME_PATH/manifests/manifest_$npm_config_profile.json $GAME_PATH/generated/contractComponents.ts",
-    "create-constants": "GAME_PATH=\"./src/games/$npm_config_game\" && echo create-constants:[$GAME_PATH] && ./src/lib/bin/generateConstants.cjs ../dojo/src $GAME_PATH/generated/constants.ts"
+    "create-components": "npx @dojoengine/core ./src/manifests/manifest_dev.json ./src/generated/contractComponents.ts http://localhost:5050/ 0x043b149fadbe95e3946fa124a9a6bd64ec5374b8765f2bb753289d520bd8546d",
+    "create-constants": "./src/lib/bin/generateConstants.cjs ../contracts/src ./src/generated/constants.ts"
   },
   "dependencies": {
     "@cartridge/connector": "^0.3.44",
@@ -35,6 +35,8 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "use-sound": "^4.0.1",
+    "uuid": "^11.0.2",
+    "vite-plugin-wasm": "^3.3.0",
     "zustand": "^4.3.7"
   },
   "devDependencies": {

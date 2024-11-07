@@ -1,7 +1,20 @@
+import { useState } from "react";
 import { Button } from "@/components/buttons/Button";
 import { PlusIcon } from "@/components/Icons";
+import useUIStore from "@/hooks/useUIStore";
+import {
+  GatedType,
+  GatedEntryType,
+  GatedTypeValue,
+  GatedEntryTypeValue,
+} from "@/generated/models.gen";
+import { Option, OptionValue } from "@/generated/constants";
+import { GatedToken } from "@/lib/types";
+import { CallData } from "starknet";
 
-const GatedToken = () => {
+const GatedTokenDialog = () => {
+  // const [selectedToken, setSelectedToken] = useState<GatedToken | null>(null);
+  // const { formData, setFormData } = useUIStore();
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="flex flex-row w-full items-center bg-terminal-green text-terminal-black h-10 px-5 justify-between">
@@ -17,8 +30,24 @@ const GatedToken = () => {
         </div>
       </div>
       <div className="h-28 px-10 w-full flex flex-row items-center gap-5">
-        <Button variant="token">Blobert</Button>
-        <Button variant="token">Survivor</Button>
+        <Button
+          variant="token"
+          onClick={
+            () => {}
+            // setSelectedToken({
+            //   ...selectedToken,
+            //   token: "Blobert",
+            // })
+          }
+        >
+          Blobert
+        </Button>
+        <Button
+          variant="token"
+          // onClick={() => setSelectedToken(GatedToken.Survivor)}
+        >
+          Survivor
+        </Button>
       </div>
       <div className="flex flex-row w-full items-center bg-terminal-green text-terminal-black h-10 px-5 justify-between">
         <p className="text-2xl uppercase">Entry Type</p>
@@ -59,11 +88,36 @@ const GatedToken = () => {
           </span>
         </Button>
       </div>
-      <Button variant="token" size="lg">
+      <Button
+        variant="token"
+        size="lg"
+        onClick={() => {
+          let someGatedType: OptionValue<
+            GatedTypeValue<GatedToken<GatedEntryTypeValue<number>>>
+          > = {
+            kind: Option.Some,
+            value: {
+              kind: GatedType.token,
+              value: {
+                token: "token",
+                entry_type: {
+                  kind: GatedEntryType.uniform,
+                  value: 1,
+                },
+              },
+            },
+          };
+          console.log(CallData.compile([someGatedType]));
+          // setFormData({
+          //   ...formData,
+          //   gatedType: someGatedType,
+          // });
+        }}
+      >
         Add Entry Criteria
       </Button>
     </div>
   );
 };
 
-export default GatedToken;
+export default GatedTokenDialog;

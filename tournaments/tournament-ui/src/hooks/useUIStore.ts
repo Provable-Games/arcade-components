@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { FormData } from "../lib/types";
+import { Option } from "@/generated/constants";
 
 export type ScreenPage =
   | "overview"
@@ -22,6 +24,8 @@ type State = {
   setScreen: (value: ScreenPage) => void;
   inputDialog: InputDialog | null;
   setInputDialog: (value: InputDialog | null) => void;
+  formData: FormData;
+  setFormData: (value: FormData) => void;
 };
 
 const useUIStore = create<State>((set) => ({
@@ -33,6 +37,18 @@ const useUIStore = create<State>((set) => ({
   setScreen: (value: ScreenPage) => set({ screen: value }),
   inputDialog: null,
   setInputDialog: (value: InputDialog | null) => set({ inputDialog: value }),
+  formData: {
+    tournamentName: "",
+    tournamentDescription: "",
+    startTime: undefined,
+    endTime: undefined,
+    submissionPeriod: 0,
+    scoreboardSize: 0,
+    gatedType: { kind: Option.None },
+    entryFree: { kind: Option.None },
+    prizes: [],
+  },
+  setFormData: (value: FormData) => set({ formData: value }),
 }));
 
 export default useUIStore;

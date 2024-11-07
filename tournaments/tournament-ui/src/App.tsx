@@ -1,11 +1,5 @@
-import { useMemo } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useNavigate,
-} from "react-router-dom";
-import { StarknetProvider } from "./context/starknet";
+import { useMemo, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import ScreenMenu from "./components/ScreenMenu";
 import useUIStore, { ScreenPage } from "./hooks/useUIStore";
@@ -15,10 +9,80 @@ import Create from "./containers/Create";
 import RegisterToken from "./containers/RegisterToken";
 import Tournament from "./containers/Tournament";
 import InputDialog from "./components/dialogs/inputs/InputDialog";
+import { useDojo } from "./DojoContext";
+import { SDK, createDojoStore } from "@dojoengine/sdk";
+import { Models, TournamentSchemaType } from "./generated/models.gen";
+import { getEntityIdFromKeys } from "@dojoengine/utils";
+import { useSystemCalls } from "./useSystemCalls";
+import useModel from "./useModel";
+import { dojoConfig } from "../dojoConfig.ts";
 
-function App() {
-  const navigate = useNavigate();
-  const { screen, setScreen, inputDialog } = useUIStore();
+export const useDojoStore = createDojoStore<TournamentSchemaType>();
+
+function App({ sdk }: { sdk: SDK<TournamentSchemaType> }) {
+  const {
+    account,
+    setup: { client },
+  } = useDojo();
+  const state = useDojoStore((state) => state);
+  const entities = useDojoStore((state) => state.entities);
+
+  const { createTournament } = useSystemCalls();
+
+  const entityId = useMemo(
+    () => getEntityIdFromKeys([BigInt(account?.account.address)]),
+    [account?.account.address]
+  );
+
+  const tournament = useModel(entityId, Models.TournamentModel);
+
+  const { inputDialog } = useUIStore();
+
+  useEffect(() => {
+    const fetchEntities = async () => {
+      try {
+        await sdk.getEntities(
+          {
+            tournament: {
+              TournamentModel: {
+                $: {
+                  where: {
+                    tournament_id: {
+                      $eq: 1,
+                    },
+                  },
+                },
+              },
+              TournamentTotalsModel: {
+                $: {
+                  where: {
+                    contract: {
+                      $eq: dojoConfig.manifest.world.address,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          (resp) => {
+            if (resp.error) {
+              console.error("resp.error.message:", resp.error.message);
+              return;
+            }
+            if (resp.data) {
+              state.setEntities(resp.data);
+            }
+          }
+        );
+      } catch (error) {
+        console.error("Error querying entities:", error);
+      }
+    };
+
+    fetchEntities();
+  }, [sdk]);
+
+  console.log(entities);
 
   const menuItems: Menu[] = useMemo(
     () => [
@@ -77,30 +141,19 @@ function App() {
       <div
         className={`min-h-screen container mx-auto flex flex-col sm:pt-8 sm:p-8 lg:p-10 2xl:p-20 `}
       >
-        <StarknetProvider>
-          <Header ethBalance={0n} lordsBalance={0n} />
-          <div className="w-full h-1 sm:h-6 sm:my-2 bg-terminal-green text-terminal-black px-4" />
-          <ScreenMenu buttonsData={menuItems} disabled={menuDisabled} />
-          <Routes>
-            <Route path="/" element={<Overview />} />
-            <Route path="/create" element={<Create />} />
-            <Route path="/register-token" element={<RegisterToken />} />
-            {/* Add route for dynamic tournament page */}
-            <Route path="/tournament/:id" element={<Tournament />} />
-            {/* Add other routes as needed */}
-          </Routes>
-          {inputDialog && <InputDialog />}
-        </StarknetProvider>
+        <Header ethBalance={0n} lordsBalance={0n} />
+        <div className="w-full h-1 sm:h-6 sm:my-2 bg-terminal-green text-terminal-black px-4" />
+        <ScreenMenu buttonsData={menuItems} disabled={menuDisabled} />
+        <Routes>
+          <Route path="/" element={<Overview />} />
+          <Route path="/create" element={<Create />} />
+          <Route path="/register-token" element={<RegisterToken />} />
+          <Route path="/tournament/:id" element={<Tournament />} />
+        </Routes>
+        {inputDialog && <InputDialog />}
       </div>
     </div>
   );
 }
 
-// Wrap the export with Router
-export default function AppWrapper() {
-  return (
-    <Router>
-      <App />
-    </Router>
-  );
-}
+export default App;

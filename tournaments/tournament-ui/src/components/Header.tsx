@@ -1,14 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "./buttons/Button";
-import { CartIcon, CartridgeIcon, GithubIcon, ETH, LORDS, LOGO } from "./Icons";
+import { CartridgeIcon, ETH, LORDS, LOGO } from "./Icons";
 // import TransactionCart from "@/app/components/navigation/TransactionCart";
 // import useTransactionCartStore from "@/app/hooks/useTransactionCartStore";
 import useUIStore from "../hooks/useUIStore";
-import { soundSelector, useUiSounds } from "../hooks/useUiSound";
 import { checkCartridgeConnector } from "../lib/connectors";
 import { config } from "../lib/config";
 import { displayAddress, formatNumber, indexAddress } from "@/lib/utils";
 import { useAccount, useConnect } from "@starknet-react/core";
+import { cartridge } from "../lib/connectors";
 
 export interface HeaderProps {
   ethBalance: bigint;
@@ -17,7 +17,7 @@ export interface HeaderProps {
 
 export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
   const { account } = useAccount();
-  const { connector } = useConnect();
+  const { connect, connector } = useConnect();
   const username = useUIStore((state: any) => state.username);
 
   // const displayCart = useUIStore((state) => state.displayCart);
@@ -81,57 +81,17 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
             </span>
           </Button>
         </div>
-        {/* {account && (
-          <>
-            <span className="sm:hidden w-5 h-5 mx-2">
-              <Button
-                variant={"outline"}
-                size={"fill"}
-                ref={displayCartButtonRef}
-                onClick={() => {
-                  // setDisplayCart(!displayCart);
-                  clickPlay();
-                }}
-                className={`xl:px-5 w-5 h-5 fill-current ${
-                  txInCart ? "animate-pulse" : ""
-                }`}
-              >
-                <CartIcon />
-              </Button>
-            </span>
-            <Button
-              variant={"outline"}
-              size={"xs"}
-              ref={displayCartButtonRef}
-              onClick={() => {
-                // setDisplayCart(!displayCart);
-                clickPlay();
-              }}
-              className={`hidden sm:block xl:px-5 w-5 h-5 fill-current ${
-                txInCart
-                  ? "animate-pulse bg-terminal-green-50 text-terminal-black"
-                  : ""
-              }`}
-            >
-              <CartIcon />
-            </Button>
-          </>
-        )} */}
-        {/* {displayCart && (
-          <TransactionCart
-            buttonRef={displayCartButtonRef}
-            handleSubmitMulticall={handleSubmitMulticall}
-            handleAddUpgradeTx={handleAddUpgradeTx}
-            handleResetCalls={handleResetCalls}
-          />
-        )} */}
         <span className="sm:hidden flex flex-row gap-2 items-center">
           <div className="relative">
             <Button
               variant={"outline"}
               size={"sm"}
               onClick={() => {
-                setShowProfile(true);
+                if (account) {
+                  setShowProfile(true);
+                } else {
+                  connect({ connector: cartridge });
+                }
               }}
               className="xl:px-5 p-0 hover:bg-terminal-green hover:text-terminal-black"
             >
@@ -155,7 +115,11 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
               variant={"outline"}
               size={"sm"}
               onClick={() => {
-                setShowProfile(true);
+                if (account) {
+                  setShowProfile(true);
+                } else {
+                  connect({ connector: cartridge });
+                }
               }}
               className="xl:px-5 hover:bg-terminal-green hover:text-terminal-black"
             >
@@ -177,15 +141,6 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
               </div>
             )}
           </div>
-
-          {/* <Button
-            variant={"outline"}
-            size={"sm"}
-            href="https://github.com/BibliothecaDAO/loot-survivor"
-            className="xl:px-5 w-6 fill-current"
-          >
-            <GithubIcon />
-          </Button> */}
         </div>
       </div>
     </div>

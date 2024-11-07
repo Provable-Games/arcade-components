@@ -34,6 +34,7 @@ const Overview = () => {
       timeLeft: "10 days",
     },
   ];
+
   return (
     <div className="flex flex-row gap-5 w-full py-4 uppercase">
       <div className="w-3/5 flex flex-col items-center gap-5">
