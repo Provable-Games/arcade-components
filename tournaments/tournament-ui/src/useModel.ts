@@ -1,4 +1,4 @@
-import { useDojoStore } from "./App";
+import { useDojoStore } from "./hooks/useDojoStore";
 import { TournamentSchemaType } from "./generated/models.gen";
 
 /**

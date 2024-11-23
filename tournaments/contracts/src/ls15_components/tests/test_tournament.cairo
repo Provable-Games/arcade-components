@@ -646,6 +646,61 @@ fn test_create_tournament_gated_by_multiple_tournaments() {
     assert(entries == 1, 'Invalid entry count');
 }
 
+#[test]
+fn test_create_tournament_gated_accounts() {
+    let (_world, mut tournament, _loot_survivor, _pragma, mut eth, mut lords, _erc20, _erc721,) = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create array of allowed accounts
+    let allowed_player = starknet::contract_address_const::<0x456>();
+    let disallowed_player = starknet::contract_address_const::<0x789>();
+    let allowed_accounts = array![OWNER(), allowed_player].span();
+
+    // Create tournament gated by account list
+    let gated_type = GatedType::address(allowed_accounts);
+    
+    let tournament_id = tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::Some(gated_type), // gate by accounts
+            Option::None, // no entry premium
+        );
+
+    // Verify tournament was created with correct gating
+    let tournament_data = tournament.tournament(tournament_id);
+    assert(tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gate type');
+
+    // Allowed account (owner) can enter
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    // Allowed player can enter
+    utils::impersonate(allowed_player);
+    eth.mint(allowed_player, STARTING_BALANCE);
+    lords.mint(allowed_player, STARTING_BALANCE);
+    tournament.enter_tournament(tournament_id, Option::None);
+
+    // Start tournament entries
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    utils::impersonate(OWNER());
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(tournament_id, false, Option::None);
+
+    utils::impersonate(allowed_player);
+    approve_game_costs(eth, lords, tournament, 1);
+    tournament.start_tournament(tournament_id, false, Option::None);
+
+    // Verify entries were successful
+    let entries = tournament.tournament_entries(tournament_id);
+    assert(entries == 2, 'Invalid entry count');
+}
+
 //
 // Test registering tokens
 //

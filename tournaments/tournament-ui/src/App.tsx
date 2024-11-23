@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import ScreenMenu from "./components/ScreenMenu";
@@ -10,24 +10,15 @@ import RegisterToken from "./containers/RegisterToken";
 import Tournament from "./containers/Tournament";
 import InputDialog from "./components/dialogs/inputs/InputDialog";
 import { useDojo } from "./DojoContext";
-import { SDK, createDojoStore } from "@dojoengine/sdk";
-import { Models, TournamentSchemaType } from "./generated/models.gen";
+import { Models } from "./generated/models.gen";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
-import { useSystemCalls } from "./useSystemCalls";
 import useModel from "./useModel";
-import { dojoConfig } from "../dojoConfig.ts";
 
-export const useDojoStore = createDojoStore<TournamentSchemaType>();
-
-function App({ sdk }: { sdk: SDK<TournamentSchemaType> }) {
+function App() {
   const {
     account,
     setup: { client },
   } = useDojo();
-  const state = useDojoStore((state) => state);
-  const entities = useDojoStore((state) => state.entities);
-
-  const { createTournament } = useSystemCalls();
 
   const entityId = useMemo(
     () => getEntityIdFromKeys([BigInt(account?.account.address)]),
@@ -37,52 +28,6 @@ function App({ sdk }: { sdk: SDK<TournamentSchemaType> }) {
   const tournament = useModel(entityId, Models.TournamentModel);
 
   const { inputDialog } = useUIStore();
-
-  useEffect(() => {
-    const fetchEntities = async () => {
-      try {
-        await sdk.getEntities(
-          {
-            tournament: {
-              TournamentModel: {
-                $: {
-                  where: {
-                    tournament_id: {
-                      $eq: 1,
-                    },
-                  },
-                },
-              },
-              TournamentTotalsModel: {
-                $: {
-                  where: {
-                    contract: {
-                      $eq: dojoConfig.manifest.world.address,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          (resp) => {
-            if (resp.error) {
-              console.error("resp.error.message:", resp.error.message);
-              return;
-            }
-            if (resp.data) {
-              state.setEntities(resp.data);
-            }
-          }
-        );
-      } catch (error) {
-        console.error("Error querying entities:", error);
-      }
-    };
-
-    fetchEntities();
-  }, [sdk]);
-
-  console.log(entities);
 
   const menuItems: Menu[] = useMemo(
     () => [

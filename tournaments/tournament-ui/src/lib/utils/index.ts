@@ -28,6 +28,12 @@ export function displayAddress(string: string) {
 export const stringToFelt = (v: string): BigNumberish =>
   v ? shortString.encodeShortString(v) : "0x0";
 
+export const bigintToHex = (v: BigNumberish): `0x${string}` =>
+  !v ? "0x0" : `0x${BigInt(v).toString(16)}`;
+
+export const feltToString = (v: BigNumberish): string =>
+  BigInt(v) > 0n ? shortString.decodeShortString(bigintToHex(v)) : "";
+
 export function byteArrayFromString(targetString: string): ByteArray {
   const shortStrings: string[] = shortString.splitLongString(targetString);
   const remainder: string = shortStrings[shortStrings.length - 1];

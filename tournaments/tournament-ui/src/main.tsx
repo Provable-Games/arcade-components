@@ -7,6 +7,7 @@ import { TournamentSchemaType, schema } from "./generated/models.gen";
 import { dojoConfig } from "../dojoConfig.ts";
 import { StarknetProvider } from "./context/starknet";
 import { DojoContextProvider } from "./DojoContext";
+import { SDKProvider } from "./context/sdk";
 import { setupBurnerManager } from "@dojoengine/create-burner";
 import { BrowserRouter as Router } from "react-router-dom";
 
@@ -35,9 +36,11 @@ async function main() {
         <DojoContextProvider
           burnerManager={await setupBurnerManager(dojoConfig)}
         >
-          <Router>
-            <App sdk={sdk} />
-          </Router>
+          <SDKProvider value={sdk}>
+            <Router>
+              <App />
+            </Router>
+          </SDKProvider>
         </DojoContextProvider>
       </StarknetProvider>
     </StrictMode>

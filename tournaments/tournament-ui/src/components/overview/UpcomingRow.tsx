@@ -1,17 +1,19 @@
-import { Token } from "../../lib/types";
+import { Premium, Prize } from "../../lib/types";
 import { Button } from "../buttons/Button";
 import { useNavigate } from "react-router-dom";
+import { CairoOption } from "starknet";
+import { feltToString } from "../../lib/utils";
 
 // First, define the props interface
 interface UpcomingRowProps {
-  id: string;
-  name: string;
+  id: bigint;
+  name: bigint;
   entries: number;
   start: string;
-  duration: string;
-  entryFee: Token;
+  duration: number;
+  entryFee: CairoOption<Premium> | string;
   creatorFee: number;
-  prizes: Token[];
+  prizes: Prize[];
 }
 
 const UpcomingRow = ({
@@ -24,14 +26,15 @@ const UpcomingRow = ({
   creatorFee,
   prizes,
 }: UpcomingRowProps) => {
+  console.log(id);
   const navigate = useNavigate();
   return (
     <tr className="h-10">
-      <td className="px-2">{name}</td>
+      <td className="px-2">{feltToString(name)}</td>
       <td>{entries}</td>
       <td>{start}</td>
       <td>{duration}</td>
-      <td>{entryFee.amount}</td>
+      <td>{(entryFee as CairoOption<Premium>).Some?.token_amount}</td>
       <td>{creatorFee}</td>
       <td>
         <div className="flex flex-col gap-2">

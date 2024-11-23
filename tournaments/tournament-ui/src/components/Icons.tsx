@@ -128,12 +128,13 @@ export const CloseIcon: React.FC = () => (
 );
 
 export const TrophyIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 16">
-    <g>
-      <g>
-        <path d="M3 3V2h2V0h7v2h2v1h-1v2h-1v2h-2v1H7V7H5V5H4V3zm4 0v1h1v2h2V1H9v1H8v1zM3 2H1v2h1v1h1v1h1v1h1v2h1v2H5v1H3v-1h2V9H4V8H3V7H2V6H1V5H0V2h1V1h2zm11 10h-2v-1h2zm-2-1h-1V9h1zm1-3v1h-1V7h1V6h1V5h1V4h1V2h1v3h-1v1h-1v1h-1v1zm3-7v1h-2V1zm-5 10v2H6v-2h1V9h3v2zm1 3v2H5v-2z" />
-      </g>
-    </g>
+  <svg viewBox="0 0 28 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="M5.99997 1.99995H0V9.99996H1.99995V12H5.99997V14H8.00003V16H9.99998V18H12V20H9.99998V22H8.00003V24.0001H5.99997V26H22V24.0001H20.0001V22H18V20H16.0001V18H18V16H20.0001V14H22V12H26V9.99996H28V1.99995H22V0H5.99997V1.99995ZM2.44101 4.21873V7.77431H4.21874V4.21873H2.44101ZM23.7744 7.77431V4.21873H25.5521V7.77431H23.7744Z"
+      fill="currentColor"
+    />
   </svg>
 );
 
@@ -173,6 +174,29 @@ export const ThirdIcon: React.FC = () => (
       d="M0 0V140H234V0H215.91V17.6423H197.82V35.2846H180.314V52.9268H162.224V35.2846H144.135V17.6423H126.045V0H107.955V17.6423H89.8653V35.2846H72.3591V52.3577H53.6858V35.2846H36.1796V17.6423H18.0898V0H0Z"
       fill="#A97142"
     />
+  </svg>
+);
+
+export const InfoIcon: React.FC = () => (
+  <svg
+    viewBox="0 0 28 28"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M8 26V28H20V26H8Z" />
+    <path d="M4 24V26H8V24H4Z" />
+    <path d="M4 20H2V24H4V20Z" />
+    <path d="M0 20H2V8H0V20Z" />
+    <path d="M2 8H4V4H2V8Z" />
+    <path d="M4 2V4H8V2H4Z" />
+    <path d="M8 0V2H20V0H8Z" />
+    <path d="M24 4V2H20V4H24Z" />
+    <path d="M24 8H26V4H24V8Z" />
+    <path d="M26 20H28V8H26V20Z" />
+    <path d="M26 20H24V24H26V20Z" />
+    <path d="M24 26V24H20V26H24Z" />
+    <path d="M13 8H15V16H13V8Z" />
+    <path d="M13 18H15V20H13V18Z" />
   </svg>
 );
 

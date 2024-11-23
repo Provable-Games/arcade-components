@@ -104,7 +104,7 @@ const Tournament = () => {
         adventurer that at one point has come in the top 3 scores on the
         leaderboard.
       </p>
-      <div className="flex flex-row">
+      <div className="flex flex-row gap-5">
         <div className="w-1/2 flex flex-col">
           <h2 className="text-4xl text-center">Scores</h2>
           <table className="w-full border border-terminal-green">
@@ -127,12 +127,13 @@ const Tournament = () => {
           </table>
         </div>
         <div className="w-1/2 flex flex-col">
-          <div className="flex flex-row">
-            <p>Entry Requirements</p>
-            <p>
-              To qualify for the tournament you must hold an adventurer that at
-              one point has come in the top 3 scores on the leaderboard.
-            </p>
+          <div className="flex flex-row justify-between text-2xl">
+            <p className="whitespace-nowrap">Entry Requirements</p>
+            <p>SRVR</p>
+          </div>
+          <div className="flex flex-row justify-between text-2xl">
+            <p className="whitespace-nowrap">Entry Fee</p>
+            <p>100 LORDS</p>
           </div>
         </div>
       </div>

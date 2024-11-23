@@ -1,9 +1,32 @@
 {
   "world": {
-    "class_hash": "0x139239a99d627697b19b9856beaef7896fc75375caf3d750dd76982a7afeb78",
-    "address": "0x43b149fadbe95e3946fa124a9a6bd64ec5374b8765f2bb753289d520bd8546d",
+    "class_hash": "0x79d9ce84b97bcc2a631996c3100d57966fc2f5b061fb1ec4dfd0040976bcac6",
+    "address": "0x2461f272f1a89027f85a30512fd5280ef8e45375051f2a36a04fcb621d65aa2",
     "seed": "tournament",
     "name": "Dojo starter",
+    "entrypoints": [
+      "uuid",
+      "set_metadata",
+      "register_namespace",
+      "register_event",
+      "register_model",
+      "register_contract",
+      "init_contract",
+      "upgrade_event",
+      "upgrade_model",
+      "upgrade_contract",
+      "emit_event",
+      "emit_events",
+      "set_entity",
+      "set_entities",
+      "delete_entity",
+      "delete_entities",
+      "grant_owner",
+      "revoke_owner",
+      "grant_writer",
+      "revoke_writer",
+      "upgrade"
+    ],
     "abi": [
       {
         "type": "impl",
@@ -83,16 +106,12 @@
         ]
       },
       {
-        "type": "enum",
-        "name": "core::bool",
-        "variants": [
+        "type": "struct",
+        "name": "core::array::Span::<core::array::Span::<core::felt252>>",
+        "members": [
           {
-            "name": "False",
-            "type": "()"
-          },
-          {
-            "name": "True",
-            "type": "()"
+            "name": "snapshot",
+            "type": "@core::array::Array::<core::array::Span::<core::felt252>>"
           }
         ]
       },
@@ -185,6 +204,30 @@
           {
             "name": "Enum",
             "type": "core::array::Span::<dojo::meta::layout::FieldLayout>"
+          }
+        ]
+      },
+      {
+        "type": "struct",
+        "name": "core::array::Span::<dojo::model::definition::ModelIndex>",
+        "members": [
+          {
+            "name": "snapshot",
+            "type": "@core::array::Array::<dojo::model::definition::ModelIndex>"
+          }
+        ]
+      },
+      {
+        "type": "enum",
+        "name": "core::bool",
+        "variants": [
+          {
+            "name": "False",
+            "type": "()"
+          },
+          {
+            "name": "True",
+            "type": "()"
           }
         ]
       },
@@ -398,10 +441,26 @@
               {
                 "name": "values",
                 "type": "core::array::Span::<core::felt252>"
+              }
+            ],
+            "outputs": [],
+            "state_mutability": "external"
+          },
+          {
+            "type": "function",
+            "name": "emit_events",
+            "inputs": [
+              {
+                "name": "event_selector",
+                "type": "core::felt252"
               },
               {
-                "name": "historical",
-                "type": "core::bool"
+                "name": "keys",
+                "type": "core::array::Span::<core::array::Span::<core::felt252>>"
+              },
+              {
+                "name": "values",
+                "type": "core::array::Span::<core::array::Span::<core::felt252>>"
               }
             ],
             "outputs": [],
@@ -433,6 +492,30 @@
           },
           {
             "type": "function",
+            "name": "entities",
+            "inputs": [
+              {
+                "name": "model_selector",
+                "type": "core::felt252"
+              },
+              {
+                "name": "indexes",
+                "type": "core::array::Span::<dojo::model::definition::ModelIndex>"
+              },
+              {
+                "name": "layout",
+                "type": "dojo::meta::layout::Layout"
+              }
+            ],
+            "outputs": [
+              {
+                "type": "core::array::Span::<core::array::Span::<core::felt252>>"
+              }
+            ],
+            "state_mutability": "view"
+          },
+          {
+            "type": "function",
             "name": "set_entity",
             "inputs": [
               {
@@ -457,6 +540,30 @@
           },
           {
             "type": "function",
+            "name": "set_entities",
+            "inputs": [
+              {
+                "name": "model_selector",
+                "type": "core::felt252"
+              },
+              {
+                "name": "indexes",
+                "type": "core::array::Span::<dojo::model::definition::ModelIndex>"
+              },
+              {
+                "name": "values",
+                "type": "core::array::Span::<core::array::Span::<core::felt252>>"
+              },
+              {
+                "name": "layout",
+                "type": "dojo::meta::layout::Layout"
+              }
+            ],
+            "outputs": [],
+            "state_mutability": "external"
+          },
+          {
+            "type": "function",
             "name": "delete_entity",
             "inputs": [
               {
@@ -466,6 +573,26 @@
               {
                 "name": "index",
                 "type": "dojo::model::definition::ModelIndex"
+              },
+              {
+                "name": "layout",
+                "type": "dojo::meta::layout::Layout"
+              }
+            ],
+            "outputs": [],
+            "state_mutability": "external"
+          },
+          {
+            "type": "function",
+            "name": "delete_entities",
+            "inputs": [
+              {
+                "name": "model_selector",
+                "type": "core::felt252"
+              },
+              {
+                "name": "indexes",
+                "type": "core::array::Span::<dojo::model::definition::ModelIndex>"
               },
               {
                 "name": "layout",
@@ -850,11 +977,6 @@
             "kind": "key"
           },
           {
-            "name": "historical",
-            "type": "core::bool",
-            "kind": "key"
-          },
-          {
             "name": "keys",
             "type": "core::array::Span::<core::felt252>",
             "kind": "data"
@@ -1121,13 +1243,23 @@
   },
   "contracts": [
     {
-      "address": "0xdca86ff779965417bb89fb39f1786922369409b8bf825fc76362a02b252dde",
-      "class_hash": "0x505c8d444a367adabe59c3e3611e789b0c07a08750fd9acaedc6f2b1bbcfde9",
+      "address": "0x1003374b58688c6249605233d33153643815f02fb187439e26180b34501cbc0",
+      "class_hash": "0x2e166f678f8f86d4bd535353ce6691fae3a8c38c8cd9c3e050149c4504e3d80",
       "abi": [
         {
           "type": "impl",
           "name": "erc20_mock__ContractImpl",
           "interface_name": "dojo::contract::interface::IContract"
+        },
+        {
+          "type": "interface",
+          "name": "dojo::contract::interface::IContract",
+          "items": []
+        },
+        {
+          "type": "impl",
+          "name": "erc20_mock__DeployedContractImpl",
+          "interface_name": "dojo::meta::interface::IDeployedResource"
         },
         {
           "type": "struct",
@@ -1149,7 +1281,7 @@
         },
         {
           "type": "interface",
-          "name": "dojo::contract::interface::IContract",
+          "name": "dojo::meta::interface::IDeployedResource",
           "items": [
             {
               "type": "function",
@@ -1608,16 +1740,35 @@
       ],
       "init_calldata": [],
       "tag": "tournament-erc20_mock",
-      "systems": []
+      "selector": "0x756fcb77859671412731f8871fd1f969696a29e6f8279a2cd20555b7f521026",
+      "systems": [
+        "dojo_init",
+        "mint",
+        "upgrade",
+        "transfer",
+        "transfer_from",
+        "approve",
+        "transferFrom"
+      ]
     },
     {
-      "address": "0xca8b9c4ba4d01c4a04e17ca2700e6ea8e274a270952c735468966f06708872",
-      "class_hash": "0x4528a67a0c57d3f56548a4fa2311e1d1889979e1e1cd6a84bc1a1c046b736d3",
+      "address": "0x4995e8173c80ce198540b9c29f7104c43c56a4650ab73cad63c0df83632fecc",
+      "class_hash": "0x38f8afac7c8f5ae585271492af78c2072945659d577f64d3359eb8a63332ed0",
       "abi": [
         {
           "type": "impl",
           "name": "erc721_mock__ContractImpl",
           "interface_name": "dojo::contract::interface::IContract"
+        },
+        {
+          "type": "interface",
+          "name": "dojo::contract::interface::IContract",
+          "items": []
+        },
+        {
+          "type": "impl",
+          "name": "erc721_mock__DeployedContractImpl",
+          "interface_name": "dojo::meta::interface::IDeployedResource"
         },
         {
           "type": "struct",
@@ -1639,7 +1790,7 @@
         },
         {
           "type": "interface",
-          "name": "dojo::contract::interface::IContract",
+          "name": "dojo::meta::interface::IDeployedResource",
           "items": [
             {
               "type": "function",
@@ -2293,16 +2444,38 @@
       ],
       "init_calldata": [],
       "tag": "tournament-erc721_mock",
-      "systems": []
+      "selector": "0x6e688b17e251a4229f4a75b5906ce73720ab5c04e45893a2026e3bf63e85be1",
+      "systems": [
+        "dojo_init",
+        "mint",
+        "upgrade",
+        "safe_transfer_from",
+        "transfer_from",
+        "approve",
+        "set_approval_for_all",
+        "safeTransferFrom",
+        "transferFrom",
+        "setApprovalForAll"
+      ]
     },
     {
-      "address": "0x716ffaa970970c2d43f80575100e2c56b0fe5f655d791d93f85928a99e342e",
-      "class_hash": "0x487a6ac08a195c004986ab91a986cc16129db64f8d2bf56012085733792dfdc",
+      "address": "0xa96f90dc693e771fe9c113abc7443f03d52eae3768a5661d8836152ba12eaa",
+      "class_hash": "0x7c331362fbb55c45e8ab50ae3b3874e82d2ec3426e0786af8981104a8906df2",
       "abi": [
         {
           "type": "impl",
           "name": "loot_survivor_mock__ContractImpl",
           "interface_name": "dojo::contract::interface::IContract"
+        },
+        {
+          "type": "interface",
+          "name": "dojo::contract::interface::IContract",
+          "items": []
+        },
+        {
+          "type": "impl",
+          "name": "loot_survivor_mock__DeployedContractImpl",
+          "interface_name": "dojo::meta::interface::IDeployedResource"
         },
         {
           "type": "struct",
@@ -2324,7 +2497,7 @@
         },
         {
           "type": "interface",
-          "name": "dojo::contract::interface::IContract",
+          "name": "dojo::meta::interface::IDeployedResource",
           "items": [
             {
               "type": "function",
@@ -3403,16 +3576,38 @@
       ],
       "init_calldata": [],
       "tag": "tournament-loot_survivor_mock",
-      "systems": []
+      "selector": "0x33ee7e608e20d0a832a2e0ee2182425a32b2cc41e601d943f830b759bbb302b",
+      "systems": [
+        "initializer",
+        "upgrade",
+        "new_game",
+        "safe_transfer_from",
+        "transfer_from",
+        "approve",
+        "set_approval_for_all",
+        "safeTransferFrom",
+        "transferFrom",
+        "setApprovalForAll"
+      ]
     },
     {
-      "address": "0x2d978ffe087b088b4c9ca6ce724feed29d9bb596a536d9a104f44d4b3830e45",
-      "class_hash": "0x2c9591059b43b8986baea83ca6741620a5d0fe78a1144cb3da3a1832e73180a",
+      "address": "0x140f14a812b4e79fc5a7ae0b5462229f35255e4fb7f1570fbbc9aeb25d4ae5c",
+      "class_hash": "0x279b739098f4e05d46cdc19eb252434c7cc84619d8bd5c61f187c2b4f890b3f",
       "abi": [
         {
           "type": "impl",
           "name": "pragma_mock__ContractImpl",
           "interface_name": "dojo::contract::interface::IContract"
+        },
+        {
+          "type": "interface",
+          "name": "dojo::contract::interface::IContract",
+          "items": []
+        },
+        {
+          "type": "impl",
+          "name": "pragma_mock__DeployedContractImpl",
+          "interface_name": "dojo::meta::interface::IDeployedResource"
         },
         {
           "type": "struct",
@@ -3434,7 +3629,7 @@
         },
         {
           "type": "interface",
-          "name": "dojo::contract::interface::IContract",
+          "name": "dojo::meta::interface::IDeployedResource",
           "items": [
             {
               "type": "function",
@@ -3651,16 +3846,30 @@
       ],
       "init_calldata": [],
       "tag": "tournament-pragma_mock",
-      "systems": []
+      "selector": "0x5890442e1ac39199c9c6027d63817dc2d279d2b72ebf6fe970fc9ab9be209aa",
+      "systems": [
+        "get_data_median",
+        "upgrade"
+      ]
     },
     {
-      "address": "0x1eea7635bbe188dbeeb6ecf4dcce8380a6c25a5b60c9165706f3ceb70878f79",
-      "class_hash": "0x5762f5d420e24432a326d90e65d0f8658821959fb0542134806e152b231262f",
+      "address": "0x159f200ed279eb6c9bcc03df075b71eea5eefb2d307e19298d935f8532176f5",
+      "class_hash": "0xb94ee9174ddce9f416d36aa684cb827c7f25d3d81e6171f39771b7cf7b6b79",
       "abi": [
         {
           "type": "impl",
           "name": "tournament_mock__ContractImpl",
           "interface_name": "dojo::contract::interface::IContract"
+        },
+        {
+          "type": "interface",
+          "name": "dojo::contract::interface::IContract",
+          "items": []
+        },
+        {
+          "type": "impl",
+          "name": "tournament_mock__DeployedContractImpl",
+          "interface_name": "dojo::meta::interface::IDeployedResource"
         },
         {
           "type": "struct",
@@ -3682,7 +3891,7 @@
         },
         {
           "type": "interface",
-          "name": "dojo::contract::interface::IContract",
+          "name": "dojo::meta::interface::IDeployedResource",
           "items": [
             {
               "type": "function",
@@ -4434,94 +4643,122 @@
       ],
       "init_calldata": [],
       "tag": "tournament-tournament_mock",
-      "systems": []
+      "selector": "0x5d8d96cfbe6d785feec03f32db906e0fb7d064c28eec4b15142ba81f5721eb9",
+      "systems": [
+        "initializer",
+        "upgrade",
+        "create_tournament",
+        "register_tokens",
+        "enter_tournament",
+        "start_tournament",
+        "submit_scores",
+        "add_prize",
+        "distribute_prizes"
+      ]
     }
   ],
   "models": [
     {
       "members": [],
-      "class_hash": "0x7da192bee08bb0439ed30933e444efe6f645d9e419f030bda2f62a7e8ffe744",
-      "tag": "AdventurerMetaModel"
+      "class_hash": "0x61f19ad26a2436c70b989673bc151f27bc424d6008df9f1cbf7d115a10a04ba",
+      "tag": "tournament-AdventurerMetaModel",
+      "selector": "0x18ffc54ee4c182c9b51d3fa88072802008c993e755f5f381978ef2b3c6b510c"
     },
     {
       "members": [],
-      "class_hash": "0x1a9bf2bcc26adafe3097c8ddc73f1b70079895d29e57e816d1ccf78fadff2a8",
-      "tag": "AdventurerModel"
+      "class_hash": "0x14e6c492f667a7d14f3e9af180932feb1739a8cb11d3b0df552e4af38b2fa91",
+      "tag": "tournament-AdventurerModel",
+      "selector": "0x2be0b0a38d6773001f0e7adbcb5e8c2ccd50eeb860d4864fac7bce0e8c67736"
     },
     {
       "members": [],
-      "class_hash": "0x5738e8fc2aea3c6bb4d1274f4fd85e8ca110678a926c43f8b5ae34e0360b437",
-      "tag": "BagModel"
+      "class_hash": "0xf94af21a1c1b22756a4bf2006bc0074d0a3b8c916993283156da99660cbdc5",
+      "tag": "tournament-BagModel",
+      "selector": "0x4ecead3a06386af5a2e423587a2e630a4b601a288282b958f007c9827963869"
     },
     {
       "members": [],
-      "class_hash": "0x5d75522fba9a0fe860fe6b65b2895a9ff5f82b6d9da89addafbaf7fb01744b8",
-      "tag": "Contracts"
+      "class_hash": "0x703a57e0e265bb55723cd48eaa5537b2cc76d9f86b91db2d0a651e74ba02307",
+      "tag": "tournament-Contracts",
+      "selector": "0x2d9303acb9101422f51b713137c4616f4b9a056ebd5db0e2340927dee540175"
     },
     {
       "members": [],
-      "class_hash": "0x1826ebd2e1292c3b72d6eca172eb965d70e4e30daa0d4e347a4d4e7757a19f1",
-      "tag": "GameCountModel"
+      "class_hash": "0x65c2aaf54e11a19b9c9e46efe30e5dad4f04ef9cf583ab8b6c3553b796a4b07",
+      "tag": "tournament-GameCountModel",
+      "selector": "0x1ec0ade9ff7d7e365331d18dcd34b018ed1455c2df73b3bff7f8a1e95f73252"
     },
     {
       "members": [],
-      "class_hash": "0x6f446c09c02337bfdb54bc5a551a7fdbfe3950894de68cec7d609ef48612102",
-      "tag": "PrizesModel"
+      "class_hash": "0x4766e2104ae737cac443b65f07e78a2de54a19e0df4c0a11be9cedb54818c3",
+      "tag": "tournament-PrizesModel",
+      "selector": "0x1a9358131792728720a66362cf2ddca41d488d4a8c13eaaa2d8730f224449df"
     },
     {
       "members": [],
-      "class_hash": "0x89d4cc3fdfcd5727874d8d70f9e14bf56ac7c3c1a9b0bdae8a0e262a1c7954",
-      "tag": "TokenModel"
+      "class_hash": "0x79a9e0d86ffe7819e5d3737c204ba8ba285a475dc483177febb8874c588610d",
+      "tag": "tournament-TokenModel",
+      "selector": "0x7f2b49a07370ee5a1e6b35e73bedf96c756ccb2cf65a00a95b83065cfffa782"
     },
     {
       "members": [],
-      "class_hash": "0x116c65225d63a670c781a29b4b89f654aec7f07bf7828176a0cf1c6df3127e8",
-      "tag": "TournamentContracts"
+      "class_hash": "0x16a468fd4641d3ab475b80066a7cdba58aba94f6f51955171cb3cc836729ff7",
+      "tag": "tournament-TournamentContracts",
+      "selector": "0x3cef2d4443bcdf6ba4141194170ec796fc3501b6f34ae30abc600c1ffb16ec4"
     },
     {
       "members": [],
-      "class_hash": "0x18126a36c058c89f485c18fd8aea247c08bab2d4a82a6fd0feea5eb8f4ac1e3",
-      "tag": "TournamentEntriesAddressModel"
+      "class_hash": "0x15045c99caf1ba662af17e0ba29b9725f47fd3f95207b57d2a2ef2387ae09cb",
+      "tag": "tournament-TournamentEntriesAddressModel",
+      "selector": "0x71659e89e02c8054a9ee89b6ef3b04f97025504bfa64f6a44a2c1dbaad60711"
     },
     {
       "members": [],
-      "class_hash": "0x782c55a21e16ef80b7bfce07e0b2c9999a3f40a2d401ce51525ff55889f903",
-      "tag": "TournamentEntriesModel"
+      "class_hash": "0x66f62f2e8782f15fa4f14ebd3213704f711913bf8852f8a12c0930aa7ba384a",
+      "tag": "tournament-TournamentEntriesModel",
+      "selector": "0x787b519928439e6de14689473e9eeb5223091838eed32dace6640ef63e2ac56"
     },
     {
       "members": [],
-      "class_hash": "0x2e008e632523e114b660e08f2bcde81e559e30f0c770e9986327f66dc3a6140",
-      "tag": "TournamentEntryAddressesModel"
+      "class_hash": "0x2e9e1ce1f4afe90bb74e5f90d7f11296d98db41e81a9d2b07bf8f4cbcc94b04",
+      "tag": "tournament-TournamentEntryAddressesModel",
+      "selector": "0x175b45ad6db343cfcff5174d95bc2549b4e8cf525c7907497e29714fd9ea884"
     },
     {
       "members": [],
-      "class_hash": "0x8b1063e8b7952750c193d92644f553d14e3f8f09e596e73f8cc486b01f154",
-      "tag": "TournamentEntryModel"
+      "class_hash": "0x16c70df78d47128ca8f6ed62ccdc8d9bcf854b010e432d941e253377558627",
+      "tag": "tournament-TournamentEntryModel",
+      "selector": "0x278948ec91251163232b9ec5804e96c179a87bf2564579eee09110878c960b3"
     },
     {
       "members": [],
-      "class_hash": "0x19e7ae26079462bbcd97085f1ef4dba6b543020f3d6dfc0296050cd0813f4e2",
-      "tag": "TournamentModel"
+      "class_hash": "0x5321591258855c98a0237e65b77ab37caeac8165c9dfe057cf924b00808ca5a",
+      "tag": "tournament-TournamentModel",
+      "selector": "0x452449132e96ffddd83f75e1471014c0f4752fb593b27aafb0f425e9836c504"
     },
     {
       "members": [],
-      "class_hash": "0x32252169f8d0fde0847ea93eb3353c7d0bf58aceee8eea3eab0934cc3191a56",
-      "tag": "TournamentPrizeKeysModel"
+      "class_hash": "0x4b1f1c062766f1b787287d21b9de38d818dbeee7d37c4262d0856364cc7a569",
+      "tag": "tournament-TournamentPrizeKeysModel",
+      "selector": "0x10b3843f17a028b62ea3d6db5833c6bea22d61140b0b994e5a69e16bf2bcdc5"
     },
     {
       "members": [],
-      "class_hash": "0x61a8801a78a59c872c1846adc5cadb1862c48dee32dbc45359c99e7e264b7cb",
-      "tag": "TournamentScoresModel"
+      "class_hash": "0x6ea2fb94513d419182e01e6575746f75eff98eb0f39690038e8a495c04f4e08",
+      "tag": "tournament-TournamentScoresModel",
+      "selector": "0x39b0a2c2f4017e26ed1130316f14fcfec08d95641ed83c6feaef21f1bd88f08"
     },
     {
       "members": [],
-      "class_hash": "0x36550a197947ec825a56510db99c137e09254e7a54d7ce1a6cc4ba7554db2b2",
-      "tag": "TournamentStartIdsModel"
+      "class_hash": "0x5386af0a072f5b2c4421d03d202b255450f0df747da6c6a8c8b111e96462d05",
+      "tag": "tournament-TournamentStartIdsModel",
+      "selector": "0x719510df98fc502f639f308423cf7bbade37f1aec860bdaf5a808fa98ac9bb5"
     },
     {
       "members": [],
-      "class_hash": "0x167dac708748b0e262022d70ffefdfda96733bcef7445d43579f7f86a8491e8",
-      "tag": "TournamentTotalsModel"
+      "class_hash": "0x19df61623fab0c370d90f46bec4b961e7f5108dcaa2f39d3f337485db382804",
+      "tag": "tournament-TournamentTotalsModel",
+      "selector": "0x5635b69aebcc262c6c518af7c6454723ddf084e47a8db84c4030cd590ae24ba"
     }
   ],
   "events": []

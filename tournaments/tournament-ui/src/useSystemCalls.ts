@@ -1,9 +1,8 @@
 import { getEntityIdFromKeys } from "@dojoengine/utils";
-import { useDojoStore } from "./App";
+import { useDojoStore } from "./hooks/useDojoStore";
 import { useDojo } from "./DojoContext";
 import { v4 as uuidv4 } from "uuid";
-import { Token } from "./generated/models.gen";
-import { Tournament, Prize } from "./lib/types";
+import { Token, Tournament, Prize } from "./lib/types";
 
 export const useSystemCalls = () => {
   const state = useDojoStore((state) => state);
@@ -99,6 +98,7 @@ export const useSystemCalls = () => {
       state.confirmTransaction(transactionId);
     }
   };
+
   const addPrize = async (prize: Prize) => {
     // Generate a unique entity ID
     const entityId = generateEntityId();
@@ -141,9 +141,39 @@ export const useSystemCalls = () => {
     }
   };
 
+  const mintErc20 = async (
+    recipient: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.erc20_mock.mint(
+      account,
+      recipient,
+      amount_high,
+      amount_low
+    );
+  };
+
+  const approveErc20 = async (
+    spender: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.erc20_mock.approve(
+      account,
+      spender,
+      amount_high,
+      amount_low
+    );
+  };
+
   return {
     createTournament,
     registerTokens,
     addPrize,
+    mintErc20,
+    approveErc20,
   };
 };

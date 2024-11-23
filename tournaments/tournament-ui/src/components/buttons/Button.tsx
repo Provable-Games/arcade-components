@@ -22,6 +22,7 @@ const buttonVariants = cva(
           "bg-black/70 text-terminal-green hover:bg-black/80 hover:animate-pulse text-center disabled:text-slate-300",
         token:
           "bg-terminal-black border-terminal-green hover:bg-terminal-green/20 hover:animate-pulse text-terminal-green",
+        disabled: "bg-terminal-black border-gray-500 text-gray-500",
       },
       size: {
         default: "sm:h-10 px-2 py-1 sm:py-2 sm:px-4 text-xs sm:text-sm",

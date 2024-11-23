@@ -4,6 +4,7 @@ import EntryFee from "./EntryFee";
 import Prize from "./Prize";
 import useUIStore from "../../../hooks/useUIStore";
 import { CloseIcon } from "@/components/Icons";
+import GatedAddresses from "./GatedAddresses";
 
 const InputDialog = () => {
   const { inputDialog, setInputDialog } = useUIStore();
@@ -24,6 +25,7 @@ const InputDialog = () => {
         </div>
         {inputDialog === "gated token" && <GatedToken />}
         {inputDialog === "gated tournaments" && <GatedTournament />}
+        {inputDialog === "gated addresses" && <GatedAddresses />}
         {inputDialog === "entry fee" && <EntryFee />}
         {inputDialog === "prize" && <Prize />}
       </div>

@@ -16,13 +16,19 @@ export default {
   			'terminal-yellow-75': 'rgba(255, 176, 0, 0.75)',
   			'terminal-yellow-50': 'rgba(255, 176, 0, 0.5)',
   			'terminal-yellow-25': 'rgba(255, 176, 0, 0.25)',
-  			'terminal-black': 'rgba(21, 21, 21, 1)'
+  			'terminal-black': 'rgba(21, 21, 21, 1)',
+			'terminal-gold': 'rgba(211, 175, 55, 1)',
+			'terminal-silver': 'rgba(170, 169, 173, 1)',
+			'terminal-bronze': 'rgba(169, 113, 66, 1)',
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+		textShadow: {
+			'none': 'none',
+		},
   	}
   },
   plugins: [require("tailwindcss-animate")],

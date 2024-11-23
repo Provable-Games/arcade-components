@@ -2,26 +2,45 @@ import { useState, ChangeEvent } from "react";
 import { Button } from "../components/buttons/Button";
 import { useSystemCalls } from "../useSystemCalls";
 import { TokenDataType } from "@/generated/models.gen";
+import { CairoCustomEnum } from "starknet";
+import { useDojo } from "../DojoContext";
+import { dojoConfig } from "../../dojoConfig.ts";
 
 const RegisterToken = () => {
+  const { account } = useDojo();
   const [tokenType, setTokenType] = useState<TokenDataType | null>(null);
   const [tokenAddress, setTokenAddress] = useState("");
   const [tokenId, setTokenId] = useState("");
 
-  const { registerTokens } = useSystemCalls();
+  const { registerTokens, mintErc20, approveErc20 } = useSystemCalls();
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setTokenAddress(value.slice(0, 31));
+    setTokenAddress(value);
   };
 
   const handleChangeTokenId = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setTokenId(value.slice(0, 31));
+    setTokenId(value);
   };
+
+  console.log(tokenType, tokenAddress, tokenId);
 
   return (
     <div className="flex flex-col gap-10 w-full p-4">
+      <div className="flex flex-row justify-center">
+        <Button
+          onClick={async () => {
+            await mintErc20(
+              account.account.address,
+              1000000000000000000000000n,
+              0n
+            );
+          }}
+        >
+          Mint ERC20
+        </Button>
+      </div>
       <h1 className="2xl:text-5xl text-center uppercase">Register Token</h1>
       <p className="text-lg text-center">
         To register a token you must hold an amount of it. In the case of
@@ -74,20 +93,29 @@ const RegisterToken = () => {
           )}
           <Button
             onClick={async () => {
-              if (tokenType) {
+              if (tokenType !== null) {
+                await approveErc20(
+                  "0x1003374b58688c6249605233d33153643815f02fb187439e26180b34501cbc0",
+                  1n,
+                  0n
+                );
                 await registerTokens([
                   {
                     token: tokenAddress,
-                    token_data_type: TokenDataType.erc20,
-                    data: 1,
+                    tokenDataType: new CairoCustomEnum({
+                      erc20: {
+                        token_amount: 1,
+                      },
+                      erc721: undefined,
+                    }),
                   },
                 ]);
               }
             }}
             disabled={
               tokenAddress == "" ||
-              !tokenType ||
-              (tokenType == TokenDataType.erc721 && tokenId == "")
+              tokenType === null ||
+              (tokenType === TokenDataType.erc721 ? tokenId === "" : false)
             }
           >
             Register Token

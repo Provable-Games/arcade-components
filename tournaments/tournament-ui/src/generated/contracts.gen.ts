@@ -1,8 +1,8 @@
 import { DojoProvider } from "@dojoengine/core";
-import { Account, ByteArray } from "starknet";
+import { Account, ByteArray, CairoOption, CallData } from "starknet";
 import * as models from "./models.gen";
 import * as constants from "./constants";
-import { EntryCriteria } from "@/lib/types";
+import { GatedTypeEnum, Premium, Token, TokenDataTypeEnum } from "@/lib/types";
 
 export async function setupWorld(provider: DojoProvider) {
   const tournament_mock_initializer = async (
@@ -151,10 +151,8 @@ export async function setupWorld(provider: DojoProvider) {
     endTime: number,
     submissionPeriod: number,
     winnersCount: number,
-    gatedType: constants.OptionValue<
-      models.GatedTypeValue<models.GatedEntryTypeValue<EntryCriteria | number>>
-    >,
-    entryPremium: constants.OptionValue<models.Premium>
+    gatedType: CairoOption<GatedTypeEnum>,
+    entryPremium: CairoOption<Premium>
   ) => {
     try {
       return await provider.execute(
@@ -182,7 +180,7 @@ export async function setupWorld(provider: DojoProvider) {
 
   const tournament_mock_registerTokens = async (
     account: Account,
-    tokens: Array<models.Token>
+    tokens: Array<Token>
   ) => {
     try {
       return await provider.execute(
@@ -264,7 +262,7 @@ export async function setupWorld(provider: DojoProvider) {
     account: Account,
     tournamentId: number,
     token: string,
-    tokenDataType: models.TokenDataType,
+    tokenDataType: TokenDataTypeEnum,
     position: number
   ) => {
     try {
@@ -712,7 +710,8 @@ export async function setupWorld(provider: DojoProvider) {
   const erc20_mock_mint = async (
     account: Account,
     recipient: string,
-    amount: number
+    amount_high: bigint,
+    amount_low: bigint
   ) => {
     try {
       return await provider.execute(
@@ -720,7 +719,7 @@ export async function setupWorld(provider: DojoProvider) {
         {
           contractName: "erc20_mock",
           entrypoint: "mint",
-          calldata: [recipient, amount],
+          calldata: [recipient, amount_high, amount_low],
         },
         "tournament"
       );
@@ -825,7 +824,8 @@ export async function setupWorld(provider: DojoProvider) {
   const erc20_mock_approve = async (
     account: Account,
     spender: string,
-    amount: number
+    amount_high: bigint,
+    amount_low: bigint
   ) => {
     try {
       return await provider.execute(
@@ -833,7 +833,7 @@ export async function setupWorld(provider: DojoProvider) {
         {
           contractName: "erc20_mock",
           entrypoint: "approve",
-          calldata: [spender, amount],
+          calldata: [spender, amount_high, amount_low],
         },
         "tournament"
       );

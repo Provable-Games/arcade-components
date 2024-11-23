@@ -12,5 +12,4 @@ github = "https://github.com/Provable-Games"
 default = "tournament"
 
 [env]
-rpc_url = "http://localhost:5050/"
 # world_address = "0x043b149fadbe95e3946fa124a9a6bd64ec5374b8765f2bb753289d520bd8546d"  # Uncomment and update this line with your world address.

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { FormData } from "../lib/types";
-import { Option } from "@/generated/constants";
+import { CairoOption, CairoOptionVariant } from "starknet";
 
 export type ScreenPage =
   | "overview"
@@ -12,6 +12,7 @@ export type ScreenPage =
 export type InputDialog =
   | "gated token"
   | "gated tournaments"
+  | "gated addresses"
   | "entry fee"
   | "prize";
 
@@ -44,8 +45,8 @@ const useUIStore = create<State>((set) => ({
     endTime: undefined,
     submissionPeriod: 0,
     scoreboardSize: 0,
-    gatedType: { kind: Option.None },
-    entryFree: { kind: Option.None },
+    gatedType: new CairoOption(CairoOptionVariant.None),
+    entryFee: new CairoOption(CairoOptionVariant.None),
     prizes: [],
   },
   setFormData: (value: FormData) => set({ formData: value }),
