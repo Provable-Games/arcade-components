@@ -1,4 +1,11 @@
-import { createContext, ReactNode, useContext, useMemo } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import {
   BurnerAccount,
   BurnerManager,
@@ -7,10 +14,17 @@ import {
 import { DojoProvider } from "@dojoengine/core";
 import { Account } from "starknet";
 import { setupWorld } from "./generated/contracts.gen";
-import { dojoConfig } from "../dojoConfig";
+import { SDK, init } from "@dojoengine/sdk";
+import { TournamentSchemaType, schema } from "./generated/models.gen";
+import { DojoManifest } from "./hooks/useDojoSystem";
+import { DojoAppConfig, DojoChainConfig, dojoContextConfig } from "./config";
 
 interface DojoContextType {
   masterAccount: Account;
+  sdk: SDK<TournamentSchemaType>;
+  manifest: DojoManifest;
+  selectedChainConfig: DojoChainConfig;
+  nameSpace: string;
   client: ReturnType<typeof setupWorld>;
   account: BurnerAccount;
 }
@@ -20,23 +34,38 @@ export const DojoContext = createContext<DojoContextType | null>(null);
 export const DojoContextProvider = ({
   children,
   burnerManager,
+  appConfig,
 }: {
   children: ReactNode;
   burnerManager: BurnerManager;
+  appConfig: DojoAppConfig;
 }) => {
+  const [sdk, setSdk] = useState<SDK<TournamentSchemaType> | undefined>(
+    undefined
+  );
   const currentValue = useContext(DojoContext);
   if (currentValue) {
     throw new Error("DojoProvider can only be used once");
   }
 
-  const dojoProvider = new DojoProvider(dojoConfig.manifest, dojoConfig.rpcUrl);
+  const selectedChainConfig = dojoContextConfig[appConfig.initialChainId];
+
+  const chainId = useMemo(
+    () => selectedChainConfig.chainId,
+    [selectedChainConfig]
+  );
+
+  const dojoProvider = new DojoProvider(
+    appConfig.manifests[chainId],
+    selectedChainConfig.rpcUrl
+  );
 
   const masterAccount = useMemo(
     () =>
       new Account(
         dojoProvider.provider,
-        dojoConfig.masterAddress,
-        dojoConfig.masterPrivateKey,
+        selectedChainConfig.masterAddress!,
+        selectedChainConfig.masterPrivateKey!,
         "1"
       ),
     []
@@ -44,10 +73,40 @@ export const DojoContextProvider = ({
 
   const burnerManagerData = useBurnerManager({ burnerManager });
 
-  return (
+  useEffect(() => {
+    init<TournamentSchemaType>(
+      {
+        client: {
+          rpcUrl: selectedChainConfig.rpcUrl,
+          toriiUrl: selectedChainConfig.toriiUrl!,
+          relayUrl: selectedChainConfig.relayUrl!,
+          worldAddress: appConfig.manifests[chainId].world.address,
+        },
+        domain: {
+          name: "WORLD_NAME",
+          version: "1.0",
+          chainId: "KATANA",
+          revision: "1",
+        },
+      },
+      schema
+    ).then(setSdk);
+  }, []);
+
+  const isLoading = sdk === undefined;
+
+  const manifest = useMemo(() => {
+    return appConfig.manifests[chainId] ?? null;
+  }, [appConfig.manifests, chainId]);
+
+  return isLoading ? null : (
     <DojoContext.Provider
       value={{
         masterAccount,
+        sdk,
+        manifest,
+        selectedChainConfig,
+        nameSpace: appConfig.nameSpace,
         client: setupWorld(dojoProvider),
         account: {
           ...burnerManagerData,

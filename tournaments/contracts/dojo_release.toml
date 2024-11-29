@@ -13,3 +13,29 @@ default = "tournament"
 
 [env]
 # world_address = "0x043b149fadbe95e3946fa124a9a6bd64ec5374b8765f2bb753289d520bd8546d"  # Uncomment and update this line with your world address.
+
+[writers]
+"tournament-TournamentModel" = ["tournament-LSTournament"]
+"tournament-TournamentEntryModel" = ["tournament-LSTournament"]
+"tournament-TournamentEntryAddressesModel" = ["tournament-LSTournament"]
+"tournament-TournamentEntriesAddressModel" = ["tournament-LSTournament"]
+"tournament-TournamentStartIdsModel" = ["tournament-LSTournament"]
+"tournament-TournamentEntriesModel" = ["tournament-LSTournament"]
+"tournament-TournamentScoresModel" = ["tournament-LSTournament"]
+"tournament-TournamentTotalsModel" = ["tournament-LSTournament"]
+"tournament-TournamentPrizeKeysModel" = ["tournament-LSTournament"]
+"tournament-PrizesModel" = ["tournament-LSTournament"]
+"tournament-TokenModel" = ["tournament-LSTournament"]
+"tournament-TournamentContracts" = ["tournament-LSTournament"]
+
+[init_call_args]
+"tournament-LSTournament" = [
+    "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
+    "0x018108b32cea514a78ef1b0e4a0753e855cdf620bc0565202c02456f618c4dc4",
+    "0x2a85bd616f912537c50a49a4076db02c00b29b2cdc8a197ce92ed1837fa875b"
+]
+
+[migration]
+order_inits = []
+skip_contracts = []

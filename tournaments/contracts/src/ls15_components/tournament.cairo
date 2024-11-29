@@ -1190,7 +1190,10 @@ pub mod tournament_component {
         }
 
         fn _assert_qualifying_address(
-            self: @ComponentState<TContractState>, ref store: Store, address: ContractAddress, qualifying_addresses: Span<ContractAddress>
+            self: @ComponentState<TContractState>,
+            ref store: Store,
+            address: ContractAddress,
+            qualifying_addresses: Span<ContractAddress>
         ) {
             let mut found = false;
             let mut loop_index = 0;

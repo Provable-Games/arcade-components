@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/buttons/Button";
 import { PlusIcon } from "@/components/Icons";
-import { Distribution, Prize, Token } from "@/lib/types";
+import { Distribution, Prize } from "@/lib/types";
 import useUIStore from "@/hooks/useUIStore";
-import { TokenDataType, TokenDataTypeValue } from "@/generated/models.gen";
 import { CairoCustomEnum } from "starknet";
+import { useDojoStore } from "@/hooks/useDojoStore";
+import { displayAddress } from "@/lib/utils";
 
 const Prizes = () => {
   const { formData, setFormData, setInputDialog } = useUIStore();
-  const [prize, setPrize] = useState<Prize | null>(null);
+  const state = useDojoStore((state) => state);
+
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [distributions, setDistributions] = useState<Distribution[]>([
     { position: 0, percentage: 0 },
@@ -31,56 +33,21 @@ const Prizes = () => {
     setTotalAmount(parseInt(e.target.value));
   };
 
-  const tokens: Token[] = [
-    {
-      token: "Lords",
-      tokenDataType: new CairoCustomEnum({
-        erc20: {
-          token_amount: 1,
-        },
-        erc721: undefined,
-      }),
-    },
-    {
-      token: "Eth",
-      tokenDataType: new CairoCustomEnum({
-        erc20: {
-          token_amount: 1,
-        },
-        erc721: undefined,
-      }),
-    },
-    {
-      token: "Blobert",
-      tokenDataType: new CairoCustomEnum({
-        erc20: undefined,
-        erc721: {
-          token_id: 1,
-        },
-      }),
-    },
-  ];
+  const tokens = state.getEntitiesByModel("tournament", "TokenModel");
 
   const prizes: Prize[] = distributions
     .filter((dist) => dist.position !== 0 && dist.percentage !== 0)
     .map((dist) => {
-      const isERC20 =
-        tokens
-          .find((t) => t.token === selectedToken)
-          ?.tokenDataType.activeVariant() === "erc20";
-
       return {
         tournamentId: 1,
         token: selectedToken,
         position: dist.position,
-        tokenDataType: {
-          kind: isERC20 ? TokenDataType.erc20 : TokenDataType.erc721,
-          value: isERC20
-            ? {
-                token_amount: (totalAmount * dist.percentage) / 100,
-              }
-            : { token_id: totalAmount },
-        },
+        tokenDataType: new CairoCustomEnum({
+          erc20: {
+            token_amount: (totalAmount * dist.percentage) / 100,
+          },
+          erc721: undefined,
+        }),
       };
     });
 
@@ -93,7 +60,6 @@ const Prizes = () => {
       <div className="flex flex-row w-full items-center bg-terminal-green text-terminal-black h-10 px-5 justify-between">
         <div className="flex flex-row items-center gap-5">
           <p className="text-2xl uppercase">Select Token</p>
-          <p className="text-2xl uppercase font-bold">{selectedToken}</p>
         </div>
         <div className="flex flex-row items-center gap-5">
           <p>Token not displaying?</p>
@@ -103,17 +69,40 @@ const Prizes = () => {
         </div>
       </div>
       <div className="h-20 px-10 w-full flex flex-row items-center gap-5">
-        {tokens.map((token) => (
-          <Button
-            variant={selectedToken === token.token ? "default" : "token"}
-            onClick={() => setSelectedToken(token.token)}
-            className="relative"
-            size="md"
-          >
-            {token.token}
-            <span className="absolute bottom-0 text-xs">ERC20</span>
-          </Button>
-        ))}
+        {tokens.map((token) => {
+          const tokenModel = token.models.tournament.TokenModel;
+          return (
+            <Button
+              key={token.entityId}
+              variant={
+                selectedToken === tokenModel?.token ? "default" : "token"
+              }
+              onClick={() => setSelectedToken(tokenModel?.token!)}
+              className="relative"
+              size="md"
+            >
+              {tokenModel?.name}
+              <span
+                className={`absolute top-0 text-xs uppercase ${
+                  selectedToken === tokenModel?.token
+                    ? "default text-terminal-black"
+                    : "token text-terminal-green/75"
+                }`}
+              >
+                {tokenModel?.token_data_type}
+              </span>
+              <span
+                className={`absolute bottom-0 text-xs uppercase ${
+                  selectedToken === tokenModel?.token
+                    ? "default text-terminal-black"
+                    : "token text-terminal-green/75"
+                }`}
+              >
+                {displayAddress(tokenModel?.token!)}
+              </span>
+            </Button>
+          );
+        })}
       </div>
       <div className="flex flex-row w-full items-center bg-terminal-green text-terminal-black h-10 px-5 justify-between">
         <p className="text-2xl uppercase">Add Amount</p>

@@ -7,7 +7,7 @@ pub trait IERC20MockPublic<TState> {
 
 
 #[dojo::contract]
-pub mod erc20_mock {
+pub mod eth_mock {
     use starknet::ContractAddress;
 
     //-----------------------------------
@@ -36,10 +36,10 @@ pub mod erc20_mock {
 
     //*******************************
     fn TOKEN_NAME() -> ByteArray {
-        ("Test ERC20")
+        ("Ether")
     }
     fn TOKEN_SYMBOL() -> ByteArray {
-        ("T20")
+        ("ETH")
     }
     //*******************************
 

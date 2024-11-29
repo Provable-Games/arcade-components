@@ -1,6 +1,6 @@
 import type { SchemaType } from "@dojoengine/sdk";
 import * as constants from "./constants";
-import { CairoOption } from "starknet";
+import { CairoOption, CairoOptionVariant } from "starknet";
 
 // Type definition for `tournament::ls15_components::models::loot_survivor::AdventurerMetadata` struct
 export interface AdventurerMetadata {
@@ -256,7 +256,7 @@ export interface TournamentEntriesAddressModel {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentEntriesModel` struct
 export interface TournamentEntriesModel {
   fieldOrder: string[];
-  tournament_id: number;
+  tournament_id: string;
   entry_count: number;
   premiums_formatted: boolean;
   distribute_called: boolean;
@@ -325,12 +325,12 @@ export interface TournamentModelValue {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentModel` struct
 export interface TournamentModel {
   fieldOrder: string[];
-  tournament_id: bigint;
+  tournament_id: string;
   name: bigint;
   description: string;
   creator: string;
-  start_time: bigint;
-  end_time: bigint;
+  start_time: string;
+  end_time: string;
   submission_period: bigint;
   winners_count: number;
   gated_type: CairoOption<GatedType> | string;
@@ -360,7 +360,7 @@ export interface TournamentPrizeKeysModelValue {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentPrizeKeysModel` struct
 export interface TournamentPrizeKeysModel {
   fieldOrder: string[];
-  tournament_id: number;
+  tournament_id: string;
   prize_keys: Array<number>;
 }
 
@@ -1014,7 +1014,7 @@ export const schema: TournamentSchemaType = {
         "premiums_formatted",
         "distribute_called",
       ],
-      tournament_id: 0,
+      tournament_id: "0",
       entry_count: 0,
       premiums_formatted: false,
       distribute_called: false,
@@ -1093,16 +1093,16 @@ export const schema: TournamentSchemaType = {
         "gated_type",
         "entry_premium",
       ],
-      tournament_id: 0,
-      name: 0,
+      tournament_id: "0",
+      name: BigInt(0),
       description: "",
       creator: "",
-      start_time: 0,
-      end_time: 0,
-      submission_period: 0,
+      start_time: "0",
+      end_time: "0",
+      submission_period: BigInt(0),
       winners_count: 0,
-      gated_type: { kind: constants.Option.None },
-      entry_premium: { kind: constants.Option.None },
+      gated_type: new CairoOption(CairoOptionVariant.None),
+      entry_premium: new CairoOption(CairoOptionVariant.None),
     },
     EntryCriteria: {
       fieldOrder: ["token_id", "entry_count"],
@@ -1120,7 +1120,7 @@ export const schema: TournamentSchemaType = {
     },
     TournamentPrizeKeysModel: {
       fieldOrder: ["tournament_id", "prize_keys"],
-      tournament_id: 0,
+      tournament_id: "0",
       prize_keys: [0],
     },
     TournamentScoresModel: {

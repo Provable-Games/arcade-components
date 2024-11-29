@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { Button } from "./buttons/Button";
 import { CartridgeIcon, ETH, LORDS, LOGO } from "./Icons";
-// import TransactionCart from "@/app/components/navigation/TransactionCart";
-// import useTransactionCartStore from "@/app/hooks/useTransactionCartStore";
 import useUIStore from "../hooks/useUIStore";
-import { checkCartridgeConnector } from "../lib/connectors";
-import { config } from "../lib/config";
 import { displayAddress, formatNumber, indexAddress } from "@/lib/utils";
 import { useAccount, useConnect } from "@starknet-react/core";
-import { cartridge } from "../lib/connectors";
+import { checkCartridgeConnector } from "../lib/connectors";
+import { useDojo } from "../DojoContext";
 
 export interface HeaderProps {
   ethBalance: bigint;
@@ -19,6 +16,9 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
   const { account } = useAccount();
   const { connect, connector } = useConnect();
   const username = useUIStore((state: any) => state.username);
+  const {
+    setup: { selectedChainConfig },
+  } = useDojo();
 
   // const displayCart = useUIStore((state) => state.displayCart);
   // const setDisplayCart = useUIStore((state) => state.setDisplayCart);
@@ -58,9 +58,9 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
             className="self-center xl:px-5 hover:bg-terminal-green"
             onClick={async () => {
               const avnuLords = `https://app.avnu.fi/en?tokenFrom=${indexAddress(
-                config.ethAddress ?? ""
+                selectedChainConfig.ethAddress ?? ""
               )}&tokenTo=${indexAddress(
-                config.lordsAddress ?? ""
+                selectedChainConfig.lordsAddress ?? ""
               )}&amount=0.001`;
               window.open(avnuLords, "_blank");
             }}

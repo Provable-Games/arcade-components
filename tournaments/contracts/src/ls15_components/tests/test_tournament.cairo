@@ -648,7 +648,8 @@ fn test_create_tournament_gated_by_multiple_tournaments() {
 
 #[test]
 fn test_create_tournament_gated_accounts() {
-    let (_world, mut tournament, _loot_survivor, _pragma, mut eth, mut lords, _erc20, _erc721,) = setup();
+    let (_world, mut tournament, _loot_survivor, _pragma, mut eth, mut lords, _erc20, _erc721,) =
+        setup();
 
     utils::impersonate(OWNER());
 
@@ -659,7 +660,7 @@ fn test_create_tournament_gated_accounts() {
 
     // Create tournament gated by account list
     let gated_type = GatedType::address(allowed_accounts);
-    
+
     let tournament_id = tournament
         .create_tournament(
             TOURNAMENT_NAME(),

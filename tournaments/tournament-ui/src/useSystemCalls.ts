@@ -99,7 +99,7 @@ export const useSystemCalls = () => {
     }
   };
 
-  const addPrize = async (prize: Prize) => {
+  const addPrize = async (tournamentId: bigint, prize: Prize) => {
     // Generate a unique entity ID
     const entityId = generateEntityId();
 
@@ -120,7 +120,7 @@ export const useSystemCalls = () => {
       // Execute the spawn action from the client
       await resolvedClient.tournament_mock.addPrize(
         account,
-        prize.tournamentId,
+        Number(tournamentId),
         prize.token,
         prize.tokenDataType,
         prize.position
@@ -169,11 +169,143 @@ export const useSystemCalls = () => {
     );
   };
 
+  const getERC20Balance = async (address: string) => {
+    const resolvedClient = await client;
+    return await resolvedClient.erc20_mock.balance_of(account, address);
+  };
+
+  const getERC20Allowance = async (owner: string, spender: string) => {
+    const resolvedClient = await client;
+    return await resolvedClient.erc20_mock.allowance(owner, spender);
+  };
+
+  const mintEth = async (
+    recipient: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.eth_mock.mint(
+      account,
+      recipient,
+      amount_high,
+      amount_low
+    );
+  };
+
+  const approveEth = async (
+    spender: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.eth_mock.approve(
+      account,
+      spender,
+      amount_high,
+      amount_low
+    );
+  };
+
+  const getEthBalance = async (address: string) => {
+    const resolvedClient = await client;
+    return await resolvedClient.eth_mock.balance_of(account, address);
+  };
+
+  const getEthAllowance = async (owner: string, spender: string) => {
+    const resolvedClient = await client;
+    return await resolvedClient.eth_mock.allowance(owner, spender);
+  };
+
+  const mintLords = async (
+    recipient: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.lords_mock.mint(
+      account,
+      recipient,
+      amount_high,
+      amount_low
+    );
+  };
+
+  const approveLords = async (
+    spender: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.lords_mock.approve(
+      account,
+      spender,
+      amount_high,
+      amount_low
+    );
+  };
+
+  const getLordsBalance = async (address: string) => {
+    const resolvedClient = await client;
+    return await resolvedClient.lords_mock.balance_of(address);
+  };
+
+  const getLordsAllowance = async (owner: string, spender: string) => {
+    const resolvedClient = await client;
+    return await resolvedClient.lords_mock.allowance(owner, spender);
+  };
+
+  const mintErc721 = async (
+    recipient: string,
+    tokenId_low: bigint,
+    tokenId_high: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.erc721_mock.mint(
+      account,
+      recipient,
+      tokenId_low,
+      tokenId_high
+    );
+  };
+
+  const approveErc721 = async (
+    spender: string,
+    tokenId_low: bigint,
+    tokenId_high: bigint
+  ) => {
+    const resolvedClient = await client;
+    await resolvedClient.erc721_mock.approve(
+      account,
+      spender,
+      tokenId_low,
+      tokenId_high
+    );
+  };
+
+  const getErc721Balance = async (address: string) => {
+    const resolvedClient = await client;
+    return await resolvedClient.erc721_mock.balance_of(address);
+  };
+
   return {
     createTournament,
     registerTokens,
     addPrize,
     mintErc20,
     approveErc20,
+    getERC20Balance,
+    getERC20Allowance,
+    getEthAllowance,
+    getLordsAllowance,
+    mintEth,
+    approveEth,
+    getEthBalance,
+    mintLords,
+    approveLords,
+    getLordsBalance,
+    mintErc721,
+    approveErc721,
+    getErc721Balance,
   };
 };

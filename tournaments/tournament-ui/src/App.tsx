@@ -8,24 +8,28 @@ import Overview from "./containers/Overview";
 import Create from "./containers/Create";
 import RegisterToken from "./containers/RegisterToken";
 import Tournament from "./containers/Tournament";
+import Guide from "./containers/Guide";
+import LootSurvivor from "./containers/LootSurvivor";
 import InputDialog from "./components/dialogs/inputs/InputDialog";
 import { useDojo } from "./DojoContext";
-import { Models } from "./generated/models.gen";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
-import useModel from "./useModel";
+import {
+  useGetTournamentCountsQuery,
+  useGetTokensQuery,
+} from "@/hooks/useSdkQueries";
+import { useDojoSystem } from "@/hooks/useDojoSystem";
 
 function App() {
-  const {
-    account,
-    setup: { client },
-  } = useDojo();
+  const { account } = useDojo();
+  const tournament_mock = useDojoSystem("tournament_mock");
 
   const entityId = useMemo(
     () => getEntityIdFromKeys([BigInt(account?.account.address)]),
     [account?.account.address]
   );
 
-  const tournament = useModel(entityId, Models.TournamentModel);
+  useGetTournamentCountsQuery(tournament_mock.contractAddress);
+  useGetTokensQuery();
 
   const { inputDialog } = useUIStore();
 
@@ -66,6 +70,13 @@ function App() {
         path: "/guide",
         disabled: false,
       },
+      {
+        id: 6,
+        label: "Loot Survivor",
+        screen: "loot survivor" as ScreenPage,
+        path: "/loot-survivor",
+        disabled: false,
+      },
     ],
     []
   );
@@ -94,6 +105,8 @@ function App() {
           <Route path="/create" element={<Create />} />
           <Route path="/register-token" element={<RegisterToken />} />
           <Route path="/tournament/:id" element={<Tournament />} />
+          <Route path="/guide" element={<Guide />} />
+          <Route path="/loot-survivor" element={<LootSurvivor />} />
         </Routes>
         {inputDialog && <InputDialog />}
       </div>

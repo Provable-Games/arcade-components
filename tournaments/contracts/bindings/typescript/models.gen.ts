@@ -330,7 +330,7 @@ export interface EntryCriteria {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentModel` struct
 export interface TournamentModel {
   fieldOrder: string[];
-  tournament_id: bigint;
+  tournament_id: number;
   name: number;
   description: string;
   creator: string;

@@ -1,11 +1,5 @@
 use starknet::ContractAddress;
 
-// #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-// pub enum TokenType {
-//     ERC20,
-//     ERC721,
-// }
-
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum GatedEntryType {
     criteria: Span<EntryCriteria>,

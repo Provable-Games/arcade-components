@@ -8,14 +8,16 @@ import { useSystemCalls } from "@/useSystemCalls";
 import { stringToFelt, byteArrayFromString, formatTime } from "../lib/utils";
 import EntryCriteriaDialog from "../components/dialogs/EntryCriteria";
 import EntryFeeBox from "../components/create/EntryFeeBox";
-import PrizeBox from "../components/create/PrizeBox";
+import PrizeBoxes from "@/components/create/PrizeBoxes";
 import { CairoOption, CairoOptionVariant } from "starknet";
+import { useDojoStore } from "@/hooks/useDojoStore";
 
 const Create = () => {
   const { formData, setFormData, setInputDialog } = useUIStore();
   const [showEntryCriteria, setShowEntryCriteria] = useState(false);
 
-  const { createTournament } = useSystemCalls();
+  const state = useDojoStore((state) => state);
+  const { createTournament, addPrize } = useSystemCalls();
 
   const [isMaxLength, setIsMaxLength] = useState(false);
   const [overMaxSubmission, setOverMaxSubmission] = useState(false);
@@ -63,22 +65,41 @@ const Create = () => {
     });
   };
 
-  const handleCreateTournament = () => {
+  const handleCreateTournament = async () => {
     const tournament: Tournament = {
       name: parseInt(stringToFelt(formData.tournamentName).toString()),
       description: byteArrayFromString(formData.tournamentDescription),
       start_time: formData.startTime
-        ? Math.floor(new Date(formData.startTime).getTime() / 1000)
+        ? Math.floor(
+            formData.startTime.getTime() / 1000 -
+              formData.startTime.getTimezoneOffset() * 60
+          )
         : 0,
       end_time: formData.endTime
-        ? Math.floor(new Date(formData.endTime).getTime() / 1000)
+        ? Math.floor(
+            formData.endTime.getTime() / 1000 -
+              formData.endTime.getTimezoneOffset() * 60
+          )
         : 0,
       submission_period: formData.submissionPeriod,
       winners_count: formData.scoreboardSize,
       gated_type: formData.gatedType,
       entry_premium: formData.entryFee,
     };
-    createTournament(tournament);
+    await createTournament(tournament);
+    const tournamentCountModel = state.getEntitiesByModel(
+      "tournament",
+      "TournamentTotalsModel"
+    );
+    const tournamentCount = BigInt(
+      tournamentCountModel[0]?.models?.tournament?.TournamentTotalsModel
+        ?.total_tournaments!
+    );
+    console.log(tournamentCount);
+    // Add prizes sequentially
+    for (const prize of formData.prizes) {
+      await addPrize(tournamentCount, prize);
+    }
   };
 
   const renderGatedTokenValue = () => {
@@ -112,8 +133,6 @@ const Create = () => {
       </span>
     );
   };
-
-  console.log(formData);
 
   return (
     <div className="flex flex-col gap-5 w-full p-4 uppercase text-terminal-green/75 no-text-shadow">
@@ -392,7 +411,7 @@ const Create = () => {
           <div className="flex flex-col gap-2">
             <p className="2xl:text-4xl">Prizes</p>
             <div className="flex flex-row gap-2">
-              <PrizeBox prizes={formData.prizes} />
+              <PrizeBoxes prizes={formData.prizes} />
               <Button variant="token" onClick={() => setInputDialog("prize")}>
                 <span className="w-4 h-4">
                   <PlusIcon />
@@ -403,19 +422,7 @@ const Create = () => {
         </div>
       </div>
       <div className="hidden sm:flex items-center justify-center">
-        <Button
-          size={"lg"}
-          // disabled={
-          //   !formData.tournamentName ||
-          //   formData.tournamentName === "" ||
-          //   formData.tournamentDescription === "" ||
-          //   formData.startTime === undefined ||
-          //   formData.endTime === undefined ||
-          //   formData.submissionPeriod === 0 ||
-          //   formData.scoreboardSize === 0
-          // }
-          onClick={() => handleCreateTournament()}
-        >
+        <Button size={"lg"} onClick={() => handleCreateTournament()}>
           Create
         </Button>
       </div>

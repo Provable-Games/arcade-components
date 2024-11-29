@@ -1,21 +1,19 @@
-use starknet::{ContractAddress, ClassHash};
+use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
-use tournament::ls15_components::tournament::{TournamentModel};
-use tournament::ls15_components::interfaces::{
-    LootRequirement, Token, StatRequirement, GatedToken, Premium
-};
-use tournament::ls15_components::constants::{
-    TokenType, TokenDataType, GatedType, GatedSubmissionType
+use tournament::ls15_components::models::tournament::{
+    TournamentModel, Token, Premium, TokenDataType, GatedType, GatedSubmissionType
 };
 
 #[starknet::interface]
-trait ILSTournament<TState> {
+pub trait ILSTournament<TState> {
+    // IWorldProvider
+    fn world_dispatcher(self: @TState) -> IWorldDispatcher;
+
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn tournament_prize_keys(self: @TState, tournament_id: u64) -> Array<u64>;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
-    fn is_tournament_active(self: @TState, tournament_id: u64) -> bool;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     fn create_tournament(
         ref self: TState,
@@ -44,33 +42,11 @@ trait ILSTournament<TState> {
         position: u8
     );
     fn distribute_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
-
-    // IWorldProvider
-    fn world(self: @TState,) -> IWorldDispatcher;
-
-    fn initializer(
-        ref self: TState,
-        eth_address: ContractAddress,
-        lords_address: ContractAddress,
-        loot_survivor_address: ContractAddress,
-        oracle_address: ContractAddress
-    );
-}
-
-#[starknet::interface]
-trait ILSTournamentInit<TState> {
-    fn initializer(
-        ref self: TState,
-        eth_address: ContractAddress,
-        lords_address: ContractAddress,
-        loot_survivor_address: ContractAddress,
-        oracle_address: ContractAddress
-    );
 }
 
 #[dojo::contract]
-mod LSTournament {
-    use starknet::{ContractAddress, get_caller_address};
+pub mod LSTournament {
+    use starknet::ContractAddress;
     use tournament::ls15_components::tournament::tournament_component;
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
@@ -92,26 +68,15 @@ mod LSTournament {
         TournamentEvent: tournament_component::Event,
     }
 
-    mod Errors {
-        const CALLER_IS_NOT_OWNER: felt252 = 'Tournament: caller is not owner';
-    }
-
-    #[abi(embed_v0)]
-    impl LSTournamentInitializerImpl of super::ILSTournamentInit<ContractState> {
-        fn initializer(
-            ref self: ContractState,
-            eth_address: ContractAddress,
-            lords_address: ContractAddress,
-            loot_survivor_address: ContractAddress,
-            oracle_address: ContractAddress
-        ) {
-            assert(
-                self.world().is_owner(self.selector(), get_caller_address()),
-                Errors::CALLER_IS_NOT_OWNER
-            );
-            self
-                .tournament
-                .initialize(eth_address, lords_address, loot_survivor_address, oracle_address);
-        }
+    fn dojo_init(
+        ref self: ContractState,
+        eth_address: ContractAddress,
+        lords_address: ContractAddress,
+        loot_survivor_address: ContractAddress,
+        oracle_address: ContractAddress
+    ) {
+        self
+            .tournament
+            .initialize(eth_address, lords_address, loot_survivor_address, oracle_address);
     }
 }

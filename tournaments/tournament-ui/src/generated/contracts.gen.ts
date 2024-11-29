@@ -1,5 +1,5 @@
 import { DojoProvider } from "@dojoengine/core";
-import { Account, ByteArray, CairoOption, CallData } from "starknet";
+import { Account, ByteArray, CairoOption } from "starknet";
 import * as models from "./models.gen";
 import * as constants from "./constants";
 import { GatedTypeEnum, Premium, Token, TokenDataTypeEnum } from "@/lib/types";
@@ -300,17 +300,13 @@ export async function setupWorld(provider: DojoProvider) {
     }
   };
 
-  const erc721_mock_balance_of = async (account: Account, address: string) => {
+  const erc721_mock_balance_of = async (address: string) => {
     try {
-      return await provider.execute(
-        account,
-        {
-          contractName: "erc721_mock",
-          entrypoint: "balance_of",
-          calldata: [address],
-        },
-        "tournament"
-      );
+      return await provider.call("tournament", {
+        contractName: "erc721_mock",
+        entrypoint: "balance_of",
+        calldata: [address],
+      });
     } catch (error) {
       console.error(error);
     }
@@ -378,7 +374,8 @@ export async function setupWorld(provider: DojoProvider) {
   const erc721_mock_approve = async (
     account: Account,
     to: string,
-    tokenId: number
+    tokenId_low: bigint,
+    tokenId_high: bigint
   ) => {
     try {
       return await provider.execute(
@@ -386,7 +383,7 @@ export async function setupWorld(provider: DojoProvider) {
         {
           contractName: "erc721_mock",
           entrypoint: "approve",
-          calldata: [to, tokenId],
+          calldata: [to, tokenId_low, tokenId_high],
         },
         "tournament"
       );
@@ -671,7 +668,8 @@ export async function setupWorld(provider: DojoProvider) {
   const erc721_mock_mint = async (
     account: Account,
     recipient: string,
-    tokenId: number
+    tokenId_low: bigint,
+    tokenId_high: bigint
   ) => {
     try {
       return await provider.execute(
@@ -679,7 +677,7 @@ export async function setupWorld(provider: DojoProvider) {
         {
           contractName: "erc721_mock",
           entrypoint: "mint",
-          calldata: [recipient, tokenId],
+          calldata: [recipient, tokenId_low, tokenId_high],
         },
         "tournament"
       );
@@ -728,6 +726,48 @@ export async function setupWorld(provider: DojoProvider) {
     }
   };
 
+  const eth_mock_mint = async (
+    account: Account,
+    recipient: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    try {
+      return await provider.execute(
+        account,
+        {
+          contractName: "eth_mock",
+          entrypoint: "mint",
+          calldata: [recipient, amount_high, amount_low],
+        },
+        "tournament"
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const lords_mock_mint = async (
+    account: Account,
+    recipient: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    try {
+      return await provider.execute(
+        account,
+        {
+          contractName: "lords_mock",
+          entrypoint: "mint",
+          calldata: [recipient, amount_high, amount_low],
+        },
+        "tournament"
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const erc20_mock_total_supply = async (account: Account) => {
     try {
       return await provider.execute(
@@ -746,35 +786,71 @@ export async function setupWorld(provider: DojoProvider) {
 
   const erc20_mock_balance_of = async (account: Account, address: string) => {
     try {
-      return await provider.execute(
-        account,
-        {
-          contractName: "erc20_mock",
-          entrypoint: "balance_of",
-          calldata: [address],
-        },
-        "tournament"
-      );
+      return await provider.call("tournament", {
+        contractName: "erc20_mock",
+        entrypoint: "balance_of",
+        calldata: [address],
+      });
     } catch (error) {
       console.error(error);
     }
   };
 
-  const erc20_mock_allowance = async (
-    account: Account,
-    owner: string,
-    spender: string
-  ) => {
+  const eth_mock_balance_of = async (account: Account, address: string) => {
     try {
-      return await provider.execute(
-        account,
-        {
-          contractName: "erc20_mock",
-          entrypoint: "allowance",
-          calldata: [owner, spender],
-        },
-        "tournament"
-      );
+      return await provider.call("tournament", {
+        contractName: "eth_mock",
+        entrypoint: "balance_of",
+        calldata: [address],
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const lords_mock_balance_of = async (address: string) => {
+    try {
+      return await provider.call("tournament", {
+        contractName: "lords_mock",
+        entrypoint: "balance_of",
+        calldata: [address],
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const erc20_mock_allowance = async (owner: string, spender: string) => {
+    try {
+      return await provider.call("tournament", {
+        contractName: "erc20_mock",
+        entrypoint: "allowance",
+        calldata: [owner, spender],
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const eth_mock_allowance = async (owner: string, spender: string) => {
+    try {
+      return await provider.call("tournament", {
+        contractName: "eth_mock",
+        entrypoint: "allowance",
+        calldata: [owner, spender],
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const lords_mock_allowance = async (owner: string, spender: string) => {
+    try {
+      return await provider.call("tournament", {
+        contractName: "lords_mock",
+        entrypoint: "allowance",
+        calldata: [owner, spender],
+      });
     } catch (error) {
       console.error(error);
     }
@@ -832,6 +908,48 @@ export async function setupWorld(provider: DojoProvider) {
         account,
         {
           contractName: "erc20_mock",
+          entrypoint: "approve",
+          calldata: [spender, amount_high, amount_low],
+        },
+        "tournament"
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const eth_mock_approve = async (
+    account: Account,
+    spender: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    try {
+      return await provider.execute(
+        account,
+        {
+          contractName: "eth_mock",
+          entrypoint: "approve",
+          calldata: [spender, amount_high, amount_low],
+        },
+        "tournament"
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const lords_mock_approve = async (
+    account: Account,
+    spender: string,
+    amount_high: bigint,
+    amount_low: bigint
+  ) => {
+    try {
+      return await provider.execute(
+        account,
+        {
+          contractName: "lords_mock",
           entrypoint: "approve",
           calldata: [spender, amount_high, amount_low],
         },
@@ -1587,6 +1705,18 @@ export async function setupWorld(provider: DojoProvider) {
       totalSupply: erc20_mock_totalSupply,
       balanceOf: erc20_mock_balanceOf,
       transferFrom: erc20_mock_transferFrom,
+    },
+    eth_mock: {
+      mint: eth_mock_mint,
+      balance_of: eth_mock_balance_of,
+      approve: eth_mock_approve,
+      allowance: eth_mock_allowance,
+    },
+    lords_mock: {
+      mint: lords_mock_mint,
+      balance_of: lords_mock_balance_of,
+      approve: lords_mock_approve,
+      allowance: lords_mock_allowance,
     },
     loot_survivor_mock: {
       initializer: loot_survivor_mock_initializer,

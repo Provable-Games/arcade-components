@@ -4,11 +4,10 @@ use tournament::ls15_components::models::loot_survivor::AdventurerMetadata;
 
 use dojo::world::{WorldStorage, WorldStorageTrait, IWorldDispatcher};
 
-use tournament::ls15_components::tests::erc20_mock::IERC20MockDispatcher;
-use tournament::ls15_components::tests::erc721_mock::IERC721MockDispatcher;
-use tournament::ls15_components::tests::tournament_mock::ITournamentMockDispatcher;
-use tournament::ls15_components::tests::loot_survivor_mock::ILootSurvivorMockDispatcher;
-use tournament::ls15_components::tests::pragma_mock::IPragmaMockDispatcher;
+use tournament::ls15_components::tests::interfaces::{
+    IERC20MockDispatcher, IERC721MockDispatcher, ITournamentMockDispatcher,
+    ILootSurvivorMockDispatcher, IPragmaMockDispatcher
+};
 
 use tournament::ls15_components::libs::utils::ZERO;
 
@@ -59,6 +58,7 @@ pub trait ILootSurvivor<TState> {
 pub trait IPragmaABI<TContractState> {
     fn get_data_median(self: @TContractState, data_type: DataType) -> PragmaPricesResponse;
 }
+
 
 #[generate_trait]
 pub impl WorldImpl of WorldTrait {

@@ -20,6 +20,21 @@ export function indexAddress(address: string) {
   return address.replace(/^0x0+/, "0x");
 }
 
+export function padAddress(address: string) {
+  if (address && address !== "") {
+    const length = address.length;
+    const neededLength = 66 - length;
+    let zeros = "";
+    for (var i = 0; i < neededLength; i++) {
+      zeros += "0";
+    }
+    const newHex = address.substring(0, 2) + zeros + address.substring(2);
+    return newHex;
+  } else {
+    return "";
+  }
+}
+
 export function displayAddress(string: string) {
   if (string === undefined) return "unknown";
   return string.substring(0, 6) + "..." + string.substring(string.length - 4);
@@ -28,11 +43,21 @@ export function displayAddress(string: string) {
 export const stringToFelt = (v: string): BigNumberish =>
   v ? shortString.encodeShortString(v) : "0x0";
 
+export const feltToString = (v: BigNumberish): string => {
+  console.log(bigintToHex(v));
+  return BigInt(v) > 0n ? shortString.decodeShortString(bigintToHex(v)) : "";
+};
+
 export const bigintToHex = (v: BigNumberish): `0x${string}` =>
   !v ? "0x0" : `0x${BigInt(v).toString(16)}`;
 
-export const feltToString = (v: BigNumberish): string =>
-  BigInt(v) > 0n ? shortString.decodeShortString(bigintToHex(v)) : "";
+export const isPositiveBigint = (v: BigNumberish | null): boolean => {
+  try {
+    return v != null && BigInt(v) > 0n;
+  } catch {
+    return false;
+  }
+};
 
 export function byteArrayFromString(targetString: string): ByteArray {
   const shortStrings: string[] = shortString.splitLongString(targetString);
@@ -73,3 +98,15 @@ export const formatTime = (seconds: number): string => {
 export function isBefore(date1: Date, date2: Date) {
   return date1.getTime() < date2.getTime();
 }
+
+export function formatBalance(num: BigNumberish): number {
+  return Number(num) / 10 ** 18;
+}
+
+export const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    console.error("Failed to copy text: ", err);
+  }
+};

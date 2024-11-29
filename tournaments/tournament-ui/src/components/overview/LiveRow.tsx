@@ -1,30 +1,31 @@
-// First, define the props interface
+import { feltToString } from "@/lib/utils";
+import { useGetTournamentDetailsQuery } from "@/hooks/useSdkQueries";
+
 interface LiveRowProps {
-  id: string;
-  name: string;
-  gamesPlayed: number;
-  entries: number;
-  topScores: number;
-  prizes: number;
-  timeLeft: string;
+  tournament_id?: any;
+  name?: any;
+  start_time?: any;
+  end_time?: any;
+  entry_premium?: any;
 }
 
 const LiveRow = ({
-  id,
+  tournament_id,
   name,
-  gamesPlayed,
-  entries,
-  topScores,
-  prizes,
-  timeLeft,
+  start_time,
+  end_time,
+  entry_premium,
 }: LiveRowProps) => {
+  const { entities: tournamentDetails } =
+    useGetTournamentDetailsQuery(tournament_id);
+  console.log(tournamentDetails);
   return (
     <tr className="h-10">
-      <td className="px-2">{name}</td>
-      <td>{`${gamesPlayed} / ${entries}`}</td>
+      <td className="px-2">{feltToString(BigInt(name!))}</td>
+      {/* <td>{`${gamesPlayed} / ${entries}`}</td>
       <td>{topScores}</td>
       <td>{prizes}</td>
-      <td>{timeLeft}</td>
+      <td>{timeLeft}</td> */}
     </tr>
   );
 };
