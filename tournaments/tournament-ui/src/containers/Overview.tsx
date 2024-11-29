@@ -1,6 +1,7 @@
 import UpcomingTable from "@/components/overview/UpcomingTable";
 import LiveTable from "@/components/overview/LiveTable";
 import { useDojoStore } from "@/hooks/useDojoStore";
+import { useGetAllTournamentsQuery } from "@/hooks/useSdkQueries";
 
 const Overview = () => {
   const state = useDojoStore((state) => state);
@@ -9,9 +10,10 @@ const Overview = () => {
     "TournamentTotalsModel"
   );
   const tournamentCount =
-    tournamentTotals[0].models.tournament.TournamentTotalsModel
+    tournamentTotals[0]?.models?.tournament?.TournamentTotalsModel
       ?.total_tournaments;
-  console.log(tournamentCount);
+  console.log(state);
+  useGetAllTournamentsQuery();
   return (
     <div className="flex flex-col">
       <div className="flex flex-row justify-center">

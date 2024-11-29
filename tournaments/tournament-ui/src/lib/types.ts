@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 import { ScreenPage } from "../hooks/useUIStore";
-import { TokenDataTypeValue } from "@/generated/models.gen";
+import { Premium } from "@/generated/models.gen";
 import { ByteArray, CairoOption, CairoCustomEnum } from "starknet";
 
 export type Menu = {
@@ -92,12 +92,12 @@ export type GatedTypeEnum = TypedCairoEnum<GatedType>;
 export type EntryTypeEnum = TypedCairoEnum<EntryType>;
 export type TokenDataTypeEnum = TypedCairoEnum<TokenDataType>;
 
-export type Premium = {
-  token: string;
-  token_amount: number;
-  token_distribution: Array<number>;
-  creator_fee: number;
-};
+// export type Premium = {
+//   token: string;
+//   token_amount: number;
+//   token_distribution: Array<number>;
+//   creator_fee: number;
+// };
 
 export type ERC20Data = {
   token_amount: number;

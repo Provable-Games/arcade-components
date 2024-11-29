@@ -1,8 +1,8 @@
 import { DojoProvider } from "@dojoengine/core";
-import { Account, ByteArray, CairoOption } from "starknet";
+import { Account, ByteArray, CairoOption, BigNumberish } from "starknet";
 import * as models from "./models.gen";
 import * as constants from "./constants";
-import { GatedTypeEnum, Premium, Token, TokenDataTypeEnum } from "@/lib/types";
+import { GatedTypeEnum, Token, TokenDataTypeEnum } from "@/lib/types";
 
 export async function setupWorld(provider: DojoProvider) {
   const tournament_mock_initializer = async (
@@ -145,14 +145,14 @@ export async function setupWorld(provider: DojoProvider) {
 
   const tournament_mock_createTournament = async (
     account: Account,
-    name: number,
-    description: ByteArray,
-    startTime: number,
-    endTime: number,
-    submissionPeriod: number,
-    winnersCount: number,
+    name: BigNumberish,
+    description: string,
+    startTime: BigNumberish,
+    endTime: BigNumberish,
+    submissionPeriod: BigNumberish,
+    winnersCount: BigNumberish,
     gatedType: CairoOption<GatedTypeEnum>,
-    entryPremium: CairoOption<Premium>
+    entryPremium: CairoOption<models.Premium>
   ) => {
     try {
       return await provider.execute(

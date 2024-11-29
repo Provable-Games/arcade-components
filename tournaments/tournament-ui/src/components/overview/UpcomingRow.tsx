@@ -24,8 +24,9 @@ const UpcomingRow = ({
   end_time,
   entry_premium,
 }: UpcomingRowProps) => {
-  const { entities: tournamentDetails } =
-    useGetTournamentDetailsQuery(tournament_id);
+  const { entities: tournamentDetails } = useGetTournamentDetailsQuery(
+    tournament_id?.toString(16)!
+  );
   const navigate = useNavigate();
   const startTimestamp = Number(start_time) * 1000;
   const startDate = new Intl.DateTimeFormat(undefined, {
@@ -34,6 +35,7 @@ const UpcomingRow = ({
   }).format(new Date(startTimestamp));
   const tournamentEntries = tournamentDetails?.[0]?.TournamentEntriesModel;
   const tournamentPrizeKeys = tournamentDetails?.[0]?.TournamentPrizeKeysModel;
+  console.log(tournamentDetails);
   return (
     <tr className="h-10">
       <td className="px-2">{feltToString(BigInt(name!))}</td>

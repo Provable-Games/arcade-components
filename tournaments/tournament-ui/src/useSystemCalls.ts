@@ -2,7 +2,9 @@ import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useDojoStore } from "./hooks/useDojoStore";
 import { useDojo } from "./DojoContext";
 import { v4 as uuidv4 } from "uuid";
-import { Token, Tournament, Prize } from "./lib/types";
+import { Token, Tournament, Prize, GatedTypeEnum } from "./lib/types";
+import { TournamentModel, Premium } from "@/generated/models.gen";
+import { CairoOption } from "starknet";
 
 export const useSystemCalls = () => {
   const state = useDojoStore((state) => state);
@@ -12,13 +14,13 @@ export const useSystemCalls = () => {
     account: { account },
   } = useDojo();
 
-  const generateEntityId = () => {
-    return getEntityIdFromKeys([BigInt(account?.address)]);
-  };
-
-  const createTournament = async (tournament: Tournament) => {
+  const createTournament = async (
+    tournamentCount: bigint,
+    tournament: TournamentModel
+  ) => {
     // Generate a unique entity ID
-    const entityId = generateEntityId();
+    const entityId = getEntityIdFromKeys([tournamentCount + 1n]); // add 1 to the tournament count for the new id
+    console.log(entityId);
 
     // Generate a unique transaction ID
     const transactionId = uuidv4();
@@ -26,11 +28,24 @@ export const useSystemCalls = () => {
     // Apply an optimistic update to the state
     // this uses immer drafts to update the state
     state.applyOptimisticUpdate(transactionId, (draft) => {
-      if (draft.entities[entityId]?.models?.tournament_mock?.TournamentModel) {
+      console.log(draft);
+      // Initialize the path if it doesn't exist
+      if (!draft.entities[entityId]) {
+        draft.entities[entityId] = {
+          entityId,
+          models: {
+            tournament: {
+              TournamentModel: tournament,
+            },
+          },
+        };
+      } else {
         draft.entities[entityId].models.tournament_mock.TournamentModel =
-          tournament; // Create the model from provided data
+          tournament;
       }
     });
+
+    console.log(state);
 
     try {
       // Await the client promise to get the resolved object
@@ -38,15 +53,17 @@ export const useSystemCalls = () => {
       // Execute the spawn action from the client
       await resolvedClient.tournament_mock.createTournament(
         account,
-        tournament.name,
+        Number(tournament.name),
         tournament.description,
         tournament.start_time,
         tournament.end_time,
         tournament.submission_period,
         tournament.winners_count,
-        tournament.gated_type,
-        tournament.entry_premium
+        tournament.gated_type as CairoOption<GatedTypeEnum>,
+        tournament.entry_premium as CairoOption<Premium>
       );
+
+      console.log(entityId);
 
       // Wait for the entity to be updated with the new state
       await state.waitForEntityChange(entityId, (entity) => {
@@ -137,6 +154,7 @@ export const useSystemCalls = () => {
       throw error;
     } finally {
       // Confirm the transaction if successful
+      console.log("here");
       state.confirmTransaction(transactionId);
     }
   };

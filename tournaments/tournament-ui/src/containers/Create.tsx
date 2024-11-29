@@ -1,22 +1,31 @@
 import { useState, ChangeEvent } from "react";
 import { Button } from "../components/buttons/Button";
-import { Tournament } from "../lib/types";
+import { TournamentModel } from "../generated/models.gen";
 import { DateTimePicker } from "../components/ui/datetime-picker";
 import { PlusIcon, TrophyIcon, CloseIcon, InfoIcon } from "../components/Icons";
 import useUIStore from "../hooks/useUIStore";
 import { useSystemCalls } from "@/useSystemCalls";
-import { stringToFelt, byteArrayFromString, formatTime } from "../lib/utils";
+import { stringToFelt, formatTime } from "../lib/utils";
 import EntryCriteriaDialog from "../components/dialogs/EntryCriteria";
 import EntryFeeBox from "../components/create/EntryFeeBox";
 import PrizeBoxes from "@/components/create/PrizeBoxes";
-import { CairoOption, CairoOptionVariant } from "starknet";
+import { CairoOption, CairoOptionVariant, byteArray } from "starknet";
 import { useDojoStore } from "@/hooks/useDojoStore";
+import { useDojo } from "@/DojoContext";
 
 const Create = () => {
+  const { account } = useDojo();
   const { formData, setFormData, setInputDialog } = useUIStore();
   const [showEntryCriteria, setShowEntryCriteria] = useState(false);
 
   const state = useDojoStore((state) => state);
+  const tournamentTotals = state.getEntitiesByModel(
+    "tournament",
+    "TournamentTotalsModel"
+  );
+  const tournamentCount =
+    tournamentTotals[0]?.models?.tournament?.TournamentTotalsModel
+      ?.total_tournaments!;
   const { createTournament, addPrize } = useSystemCalls();
 
   const [isMaxLength, setIsMaxLength] = useState(false);
@@ -66,9 +75,24 @@ const Create = () => {
   };
 
   const handleCreateTournament = async () => {
-    const tournament: Tournament = {
+    const tournament: TournamentModel = {
+      fieldOrder: [
+        "name",
+        "description",
+        "start_time",
+        "end_time",
+        "submission_period",
+        "winners_count",
+        "gated_type",
+        "entry_premium",
+      ],
+      tournament_id: BigInt(tournamentCount),
+      creator: BigInt(account.account.address),
       name: parseInt(stringToFelt(formData.tournamentName).toString()),
-      description: byteArrayFromString(formData.tournamentDescription),
+      // description: byteArray.byteArrayFromString(
+      //   formData.tournamentDescription
+      // ),
+      description: formData.tournamentDescription,
       start_time: formData.startTime
         ? Math.floor(
             formData.startTime.getTime() / 1000 -
@@ -86,19 +110,10 @@ const Create = () => {
       gated_type: formData.gatedType,
       entry_premium: formData.entryFee,
     };
-    await createTournament(tournament);
-    const tournamentCountModel = state.getEntitiesByModel(
-      "tournament",
-      "TournamentTotalsModel"
-    );
-    const tournamentCount = BigInt(
-      tournamentCountModel[0]?.models?.tournament?.TournamentTotalsModel
-        ?.total_tournaments!
-    );
-    console.log(tournamentCount);
+    await createTournament(BigInt(tournamentCount), tournament);
     // Add prizes sequentially
     for (const prize of formData.prizes) {
-      await addPrize(tournamentCount, prize);
+      await addPrize(BigInt(tournamentCount) + 1n, prize);
     }
   };
 

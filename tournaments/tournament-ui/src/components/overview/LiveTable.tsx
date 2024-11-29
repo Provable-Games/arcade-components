@@ -1,12 +1,9 @@
 import { useGetLiveTournamentsQuery } from "@/hooks/useSdkQueries";
 import LiveRow from "@/components/overview/LiveRow";
-import { addAddressPadding } from "starknet";
 
 const LiveTable = () => {
   // const [currentPage, setCurrentPage] = useState<number>(1);
-  const hexTimestamp = addAddressPadding(
-    (BigInt(new Date().getTime()) / 1000n).toString(16)
-  );
+  const hexTimestamp = (BigInt(new Date().getTime()) / 1000n).toString(16);
   const { entities: tournaments, isLoading } =
     useGetLiveTournamentsQuery(hexTimestamp);
 

@@ -20,7 +20,7 @@ const PrizeBoxes = ({ prizes }: PrizeBoxesProps) => {
           }
           return acc;
         }, {} as Record<string, typeof prizes>)
-      ).map(([token, prizes]) => {
+      ).map(([token, prizes], index) => {
         const variant = prizes[0].tokenDataType.activeVariant() as
           | "erc20"
           | "erc721";
@@ -34,6 +34,7 @@ const PrizeBoxes = ({ prizes }: PrizeBoxesProps) => {
           : null; // Return null for ERC721 since we don't want to sum them
         return (
           <PrizeBox
+            key={index}
             token={token}
             variant={variant}
             prizes={prizes}

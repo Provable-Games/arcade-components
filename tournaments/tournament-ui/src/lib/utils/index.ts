@@ -59,25 +59,6 @@ export const isPositiveBigint = (v: BigNumberish | null): boolean => {
   }
 };
 
-export function byteArrayFromString(targetString: string): ByteArray {
-  const shortStrings: string[] = shortString.splitLongString(targetString);
-  const remainder: string = shortStrings[shortStrings.length - 1];
-  const shortStringsEncoded: BigNumberish[] = shortStrings.map(
-    shortString.encodeShortString
-  );
-
-  const [pendingWord, pendingWordLength] =
-    remainder === undefined || remainder.length === 31
-      ? ["0x00", 0]
-      : [shortStringsEncoded.pop()!, remainder.length];
-
-  return {
-    data: shortStringsEncoded.length === 0 ? [] : shortStringsEncoded,
-    pending_word: pendingWord,
-    pending_word_len: pendingWordLength,
-  };
-}
-
 export const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);

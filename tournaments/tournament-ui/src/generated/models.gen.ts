@@ -1,6 +1,12 @@
 import type { SchemaType } from "@dojoengine/sdk";
 import * as constants from "./constants";
-import { CairoOption, CairoOptionVariant } from "starknet";
+import {
+  BigNumberish,
+  CairoOption,
+  CairoOptionVariant,
+  ByteArray,
+} from "starknet";
+import { GatedTypeEnum } from "@/lib/types";
 
 // Type definition for `tournament::ls15_components::models::loot_survivor::AdventurerMetadata` struct
 export interface AdventurerMetadata {
@@ -311,7 +317,7 @@ export interface Premium {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentModelValue` struct
 export interface TournamentModelValue {
   fieldOrder: string[];
-  name: number;
+  name: BigNumberish;
   description: string;
   creator: string;
   start_time: number;
@@ -325,15 +331,15 @@ export interface TournamentModelValue {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentModel` struct
 export interface TournamentModel {
   fieldOrder: string[];
-  tournament_id: string;
-  name: bigint;
+  tournament_id: BigNumberish;
+  name: BigNumberish;
   description: string;
-  creator: string;
-  start_time: string;
-  end_time: string;
-  submission_period: bigint;
-  winners_count: number;
-  gated_type: CairoOption<GatedType> | string;
+  creator: BigNumberish;
+  start_time: BigNumberish;
+  end_time: BigNumberish;
+  submission_period: BigNumberish;
+  winners_count: BigNumberish;
+  gated_type: CairoOption<GatedTypeEnum> | string;
   entry_premium: CairoOption<Premium> | string;
 }
 

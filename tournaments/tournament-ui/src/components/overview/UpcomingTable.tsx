@@ -3,9 +3,9 @@ import UpcomingRow from "@/components/overview/UpcomingRow";
 
 const UpcomingTable = () => {
   // const [currentPage, setCurrentPage] = useState<number>(1);
-  const { entities: tournaments, isLoading } = useGetUpcomingTournamentsQuery(
-    BigInt(new Date().getTime()) / 1000n
-  );
+  const hexTimestamp = (BigInt(new Date().getTime()) / 1000n).toString(16);
+  const { entities: tournaments, isLoading } =
+    useGetUpcomingTournamentsQuery(hexTimestamp);
   return (
     <div className="flex flex-col gap-4">
       <table className="w-full border border-terminal-green">
@@ -23,7 +23,13 @@ const UpcomingTable = () => {
         <tbody>
           {tournaments && tournaments.length > 0 ? (
             tournaments.map((tournament) => {
-              return <UpcomingRow {...tournament} />;
+              const tournamentModel = tournament.TournamentModel;
+              return (
+                <UpcomingRow
+                  entityId={tournament.entityId}
+                  {...tournamentModel}
+                />
+              );
             })
           ) : isLoading ? (
             <p>Loading...</p>

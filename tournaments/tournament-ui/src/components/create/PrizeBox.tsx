@@ -49,7 +49,7 @@ export default function PrizeBox({
         <span className="flex flex-col">
           <span className="uppercase">Player Split</span>
           <div className="flex flex-row gap-2">
-            {prizes.map((prize) => {
+            {prizes.map((prize, index) => {
               const isERC20 = variant === "erc20";
               const tokenValue = Number(
                 isERC20
@@ -64,7 +64,7 @@ export default function PrizeBox({
               }
 
               return (
-                <span className="flex flex-row items-center gap-1">
+                <span key={index} className="flex flex-row items-center gap-1">
                   {prize.position <= 3 ? (
                     <span
                       className={`w-4 h-4 ${

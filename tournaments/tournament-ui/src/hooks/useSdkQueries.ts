@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import {
   useSdkGetEntities,
   TournamentGetQuery,
-  useSdkGetEntity,
 } from "@/lib/dojo/hooks/useSdkGet";
 import {
   useSdkSubscribeEntities,
@@ -55,7 +54,7 @@ export const useGetAllTournamentsQuery = () => {
   return { entities, isLoading, refetch };
 };
 
-export const useGetUpcomingTournamentsQuery = (currentTime: bigint) => {
+export const useGetUpcomingTournamentsQuery = (currentTime: string) => {
   const query = useMemo<TournamentGetQuery>(
     () =>
       new QueryBuilder<TournamentSchemaType>()
@@ -99,7 +98,7 @@ export const useGetLiveTournamentsQuery = (currentTime: string) => {
   return { entities, isLoading, refetch };
 };
 
-export const useGetTournamentDetailsQuery = (tournamentId: bigint) => {
+export const useGetTournamentDetailsQuery = (tournamentId: string) => {
   const query = useMemo<TournamentGetQuery>(
     () => ({
       tournament: {
