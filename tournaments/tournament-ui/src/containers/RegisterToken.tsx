@@ -1,9 +1,9 @@
 import { useState, ChangeEvent, useEffect } from "react";
+import { useAccount } from "@starknet-react/core";
 import { Button } from "../components/buttons/Button";
 import { useSystemCalls } from "../useSystemCalls";
 import { TokenDataType } from "@/generated/models.gen";
 import { CairoCustomEnum } from "starknet";
-import { useDojo } from "../DojoContext";
 import { useDojoStore } from "../hooks/useDojoStore";
 import {
   displayAddress,
@@ -16,7 +16,7 @@ import TokenBox from "@/components/registerToken/TokenBox";
 import { useSubscribeTokensQuery } from "@/hooks/useSdkQueries";
 
 const RegisterToken = () => {
-  const { account } = useDojo();
+  const { account } = useAccount();
   const tournament = useDojoSystem("tournament_mock");
   const eth_mock = useDojoSystem("eth_mock");
   const lords_mock = useDojoSystem("lords_mock");
@@ -29,51 +29,15 @@ const RegisterToken = () => {
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
 
   const state = useDojoStore((state) => state);
-  console.log(state);
   const tokens = state.getEntitiesByModel("tournament", "TokenModel");
 
   useSubscribeTokensQuery();
-
-  // useEffect(() => {
-  //   let unsubscribe: (() => void) | undefined;
-
-  //   const subscribe = async () => {
-  //     const subscription = await sdk.subscribeEntityQuery({
-  //       query: new QueryBuilder<TournamentSchemaType>()
-  //         .namespace("tournament", (n) =>
-  //           n.entity("TokenModel", (e) => e.neq("token", ""))
-  //         )
-  //         .build(),
-  //       callback: (response) => {
-  //         if (response.error) {
-  //           console.error("Error setting up entity sync:", response.error);
-  //         } else if (response.data && response.data[0].entityId !== "0x0") {
-  //           console.log("subscribed", response.data[0]);
-  //           state.updateEntity(response.data[0]);
-  //         }
-  //       },
-  //     });
-
-  //     unsubscribe = () => subscription.cancel();
-  //   };
-
-  //   subscribe();
-
-  //   return () => {
-  //     if (unsubscribe) {
-  //       unsubscribe();
-  //     }
-  //   };
-  // }, [sdk, account?.account.address]);
 
   const {
     registerTokens,
     mintErc20,
     mintErc721,
     getERC20Balance,
-    getERC20Allowance,
-    getEthAllowance,
-    getLordsAllowance,
     approveErc20,
     approveErc721,
     approveEth,
@@ -96,7 +60,7 @@ const RegisterToken = () => {
   };
 
   const getTestETHBalance = async () => {
-    const balance = await getEthBalance(account.account.address);
+    const balance = await getEthBalance(account?.address!);
     if (balance !== undefined) {
       setTokenBalance((prev) => ({
         ...prev,
@@ -106,7 +70,7 @@ const RegisterToken = () => {
   };
 
   const getTestLordsBalance = async () => {
-    const balance = await getLordsBalance(account.account.address);
+    const balance = await getLordsBalance(account?.address!);
     if (balance !== undefined) {
       setTokenBalance((prev) => ({
         ...prev,
@@ -116,7 +80,7 @@ const RegisterToken = () => {
   };
 
   const getTestERC20Balance = async () => {
-    const balance = await getERC20Balance(account.account.address);
+    const balance = await getERC20Balance(account?.address!);
     if (balance !== undefined) {
       setTokenBalance((prev) => ({
         ...prev,
@@ -126,7 +90,7 @@ const RegisterToken = () => {
   };
 
   const getTestERC721Balance = async () => {
-    const balance = await getErc721Balance(account.account.address);
+    const balance = await getErc721Balance(account?.address!);
     if (balance !== undefined) {
       setTokenBalance((prev) => ({
         ...prev,
@@ -135,23 +99,14 @@ const RegisterToken = () => {
     }
   };
 
-  const getTokenAllowance = async () => {
-    const allowance = await getLordsAllowance(
-      account.account.address,
-      tournament.contractAddress
-    );
-  };
-
   useEffect(() => {
-    getTestERC20Balance();
-    getTestERC721Balance();
-    getTestETHBalance();
-    getTestLordsBalance();
-  }, []);
-
-  useEffect(() => {
-    getTokenAllowance();
-  }, []);
+    if (account) {
+      getTestERC20Balance();
+      getTestERC721Balance();
+      getTestETHBalance();
+      getTestLordsBalance();
+    }
+  }, [account]);
 
   const handleCopyAddress = (address: string, standard: string) => {
     copyToClipboard(padAddress(address));
@@ -159,6 +114,44 @@ const RegisterToken = () => {
     setTimeout(() => {
       setCopiedStates((prev) => ({ ...prev, [standard]: false }));
     }, 2000);
+  };
+
+  const handleRegisterToken = async () => {
+    if (tokenType !== null) {
+      if (tokenType === TokenDataType.erc20) {
+        if (tokenAddress === padAddress(eth_mock.contractAddress)) {
+          await approveEth(tournament.contractAddress, 1n, 0n);
+        } else if (tokenAddress === padAddress(lords_mock.contractAddress)) {
+          await approveLords(tournament.contractAddress, 1n, 0n);
+        } else {
+          await approveErc20(tournament.contractAddress, 1n, 0n);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 second
+        await registerTokens([
+          {
+            token: tokenAddress,
+            tokenDataType: new CairoCustomEnum({
+              erc20: {
+                token_amount: 1,
+              },
+              erc721: undefined,
+            }),
+          },
+        ]);
+      } else {
+        await approveErc721(tournament.contractAddress, BigInt(tokenId), 0n);
+        await registerTokens([
+          {
+            token: tokenAddress,
+            tokenDataType: new CairoCustomEnum({
+              erc721: {
+                token_id: tokenId,
+              },
+            }),
+          },
+        ]);
+      }
+    }
   };
 
   return (
@@ -170,7 +163,7 @@ const RegisterToken = () => {
           standard="eth"
           balance={formatBalance(tokenBalance["eth"])}
           onMint={async () => {
-            await mintEth(account.account.address, 100000000000000000000n, 0n);
+            await mintEth(account?.address!, 100000000000000000000n, 0n);
           }}
           onCopy={handleCopyAddress}
           isCopied={copiedStates["eth"]}
@@ -181,11 +174,7 @@ const RegisterToken = () => {
           standard="lords"
           balance={formatBalance(tokenBalance["lords"])}
           onMint={async () => {
-            await mintLords(
-              account.account.address,
-              100000000000000000000n,
-              0n
-            );
+            await mintLords(account?.address!, 100000000000000000000n, 0n);
           }}
           onCopy={handleCopyAddress}
           isCopied={copiedStates["lords"]}
@@ -196,11 +185,7 @@ const RegisterToken = () => {
           standard="erc20"
           balance={formatBalance(tokenBalance["erc20"])}
           onMint={async () => {
-            await mintErc20(
-              account.account.address,
-              100000000000000000000n,
-              0n
-            );
+            await mintErc20(account?.address!, 100000000000000000000n, 0n);
           }}
           onCopy={handleCopyAddress}
           isCopied={copiedStates["erc20"]}
@@ -212,7 +197,7 @@ const RegisterToken = () => {
           standard="erc721"
           balance={Number(tokenBalance["erc721"])}
           onMint={async () => {
-            await mintErc721(account.account.address, 1n, 0n);
+            await mintErc721(account?.address!, 1n, 0n);
           }}
           onCopy={handleCopyAddress}
           isCopied={copiedStates["erc721"]}
@@ -297,49 +282,7 @@ const RegisterToken = () => {
             </div>
           )}
           <Button
-            onClick={async () => {
-              if (tokenType !== null) {
-                if (tokenType === TokenDataType.erc20) {
-                  if (tokenAddress === padAddress(eth_mock.contractAddress)) {
-                    await approveEth(tournament.contractAddress, 1n, 0n);
-                  } else if (
-                    tokenAddress === padAddress(lords_mock.contractAddress)
-                  ) {
-                    await approveLords(tournament.contractAddress, 1n, 0n);
-                  } else {
-                    await approveErc20(tournament.contractAddress, 1n, 0n);
-                  }
-                  await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 second
-                  await registerTokens([
-                    {
-                      token: tokenAddress,
-                      tokenDataType: new CairoCustomEnum({
-                        erc20: {
-                          token_amount: 1,
-                        },
-                        erc721: undefined,
-                      }),
-                    },
-                  ]);
-                } else {
-                  await approveErc721(
-                    tournament.contractAddress,
-                    BigInt(tokenId),
-                    0n
-                  );
-                  await registerTokens([
-                    {
-                      token: tokenAddress,
-                      tokenDataType: new CairoCustomEnum({
-                        erc721: {
-                          token_id: tokenId,
-                        },
-                      }),
-                    },
-                  ]);
-                }
-              }
-            }}
+            onClick={handleRegisterToken}
             disabled={
               tokenAddress == "" ||
               tokenType === null ||

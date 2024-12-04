@@ -1,22 +1,30 @@
 import { useState, ChangeEvent } from "react";
+import { useAccount } from "@starknet-react/core";
 import { Button } from "../components/buttons/Button";
 import { TournamentModel } from "../generated/models.gen";
 import { DateTimePicker } from "../components/ui/datetime-picker";
 import { PlusIcon, TrophyIcon, CloseIcon, InfoIcon } from "../components/Icons";
 import useUIStore from "../hooks/useUIStore";
 import { useSystemCalls } from "@/useSystemCalls";
-import { stringToFelt, formatTime } from "../lib/utils";
+import { stringToFelt, formatTime, bigintToHex } from "../lib/utils";
 import EntryCriteriaDialog from "../components/dialogs/EntryCriteria";
 import EntryFeeBox from "../components/create/EntryFeeBox";
 import PrizeBoxes from "@/components/create/PrizeBoxes";
-import { CairoOption, CairoOptionVariant, byteArray } from "starknet";
+import {
+  CairoOption,
+  CairoOptionVariant,
+  byteArray,
+  addAddressPadding,
+} from "starknet";
 import { useDojoStore } from "@/hooks/useDojoStore";
-import { useDojo } from "@/DojoContext";
+import { useSubscribeTournamentsQuery } from "@/hooks/useSdkQueries";
 
 const Create = () => {
-  const { account } = useDojo();
+  const { account } = useAccount();
   const { formData, setFormData, setInputDialog } = useUIStore();
   const [showEntryCriteria, setShowEntryCriteria] = useState(false);
+
+  useSubscribeTournamentsQuery();
 
   const state = useDojoStore((state) => state);
   const tournamentTotals = state.getEntitiesByModel(
@@ -25,7 +33,7 @@ const Create = () => {
   );
   const tournamentCount =
     tournamentTotals[0]?.models?.tournament?.TournamentTotalsModel
-      ?.total_tournaments!;
+      ?.total_tournaments ?? 0n;
   const { createTournament, addPrize } = useSystemCalls();
 
   const [isMaxLength, setIsMaxLength] = useState(false);
@@ -86,31 +94,43 @@ const Create = () => {
         "gated_type",
         "entry_premium",
       ],
-      tournament_id: BigInt(tournamentCount),
-      creator: BigInt(account.account.address),
-      name: parseInt(stringToFelt(formData.tournamentName).toString()),
-      // description: byteArray.byteArrayFromString(
-      //   formData.tournamentDescription
-      // ),
+      tournament_id: addAddressPadding(
+        bigintToHex(BigInt(tournamentCount) + 1n)
+      ),
+      creator: addAddressPadding(account?.address!),
+      name: addAddressPadding(
+        bigintToHex(stringToFelt(formData.tournamentName))
+      ),
       description: formData.tournamentDescription,
-      start_time: formData.startTime
-        ? Math.floor(
-            formData.startTime.getTime() / 1000 -
-              formData.startTime.getTimezoneOffset() * 60
-          )
-        : 0,
-      end_time: formData.endTime
-        ? Math.floor(
-            formData.endTime.getTime() / 1000 -
-              formData.endTime.getTimezoneOffset() * 60
-          )
-        : 0,
-      submission_period: formData.submissionPeriod,
+      // description: formData.tournamentDescription,
+      start_time: addAddressPadding(
+        bigintToHex(
+          formData.startTime
+            ? Math.floor(
+                formData.startTime.getTime() / 1000 -
+                  formData.startTime.getTimezoneOffset() * 60
+              )
+            : 0
+        )
+      ),
+      end_time: addAddressPadding(
+        bigintToHex(
+          formData.endTime
+            ? Math.floor(
+                formData.endTime.getTime() / 1000 -
+                  formData.endTime.getTimezoneOffset() * 60
+              )
+            : 0
+        )
+      ),
+      submission_period: addAddressPadding(
+        bigintToHex(formData.submissionPeriod)
+      ),
       winners_count: formData.scoreboardSize,
       gated_type: formData.gatedType,
       entry_premium: formData.entryFee,
     };
-    await createTournament(BigInt(tournamentCount), tournament);
+    await createTournament(tournament);
     // Add prizes sequentially
     for (const prize of formData.prizes) {
       await addPrize(BigInt(tournamentCount) + 1n, prize);

@@ -89,17 +89,6 @@ pub struct TournamentModel {
 }
 
 #[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct TournamentEntryModel {
-    #[key]
-    pub tournament_id: u64,
-    #[key]
-    pub game_id: u64,
-    pub address: ContractAddress,
-    pub status: EntryStatus,
-}
-
-#[dojo::model]
 #[derive(Drop, Serde)]
 pub struct TournamentEntryAddressesModel {
     #[key]
@@ -115,6 +104,27 @@ pub struct TournamentEntriesAddressModel {
     #[key]
     pub address: ContractAddress,
     pub entry_count: u64,
+}
+
+#[dojo::model]
+#[derive(Drop, Serde)]
+pub struct TournamentStartsAddressModel {
+    #[key]
+    pub tournament_id: u64,
+    #[key]
+    pub address: ContractAddress,
+    pub start_count: u64,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde)]
+pub struct TournamentGameModel {
+    #[key]
+    pub tournament_id: u64,
+    #[key]
+    pub game_id: u64,
+    pub address: ContractAddress,
+    pub status: EntryStatus,
 }
 
 #[dojo::model]
@@ -193,4 +203,5 @@ pub struct TournamentContracts {
     pub lords: ContractAddress,
     pub loot_survivor: ContractAddress,
     pub oracle: ContractAddress,
+    pub safe_mode: bool,
 }

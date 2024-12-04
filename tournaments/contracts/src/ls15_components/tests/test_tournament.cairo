@@ -1,7 +1,10 @@
 use core::option::Option;
 use starknet::{ContractAddress, get_block_timestamp, testing};
 use dojo::world::WorldStorage;
-use dojo_cairo_test::{spawn_test_world, NamespaceDef, TestResource, ContractDefTrait};
+use dojo_cairo_test::{
+    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
+    WorldStorageTestTrait
+};
 
 use tournament::ls15_components::constants::{
     MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD,
@@ -15,38 +18,43 @@ use tournament::ls15_components::models::{
         m_AdventurerModel, m_AdventurerMetaModel, m_BagModel, m_GameCountModel, m_Contracts
     },
     tournament::{
-        m_TournamentModel, m_TournamentEntryModel, m_TournamentEntryAddressesModel,
-        m_TournamentEntriesAddressModel, m_TournamentStartIdsModel, m_TournamentEntriesModel,
-        m_TournamentScoresModel, m_TournamentTotalsModel, m_TournamentPrizeKeysModel, m_PrizesModel,
-        m_TokenModel, m_TournamentContracts, ERC20Data, ERC721Data, Token, Premium, GatedToken,
-        EntryCriteria, TokenDataType, GatedType, GatedEntryType, GatedSubmissionType
+        m_TournamentModel, m_TournamentGameModel, m_TournamentEntryAddressesModel,
+        m_TournamentEntriesAddressModel, m_TournamentStartsAddressModel, m_TournamentStartIdsModel,
+        m_TournamentEntriesModel, m_TournamentScoresModel, m_TournamentTotalsModel,
+        m_TournamentPrizeKeysModel, m_PrizesModel, m_TokenModel, m_TournamentContracts, ERC20Data,
+        ERC721Data, Token, Premium, GatedToken, EntryCriteria, TokenDataType, GatedType,
+        GatedEntryType, GatedSubmissionType
     }
 };
 
 use tournament::tests::{
     utils,
     constants::{
-        OWNER, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION,
-        STARTING_BALANCE, TEST_START_TIME, TEST_END_TIME
+        OWNER, TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, STARTING_BALANCE, TEST_START_TIME,
+        TEST_END_TIME
     },
 };
 use tournament::ls15_components::tests::helpers::{
     approve_game_costs, create_basic_tournament, create_adventurer_metadata_with_death_date,
     create_dead_adventurer_with_xp, register_tokens_for_test
 };
-use tournament::ls15_components::tests::erc20_mock::{
-    erc20_mock, IERC20MockDispatcher, IERC20MockDispatcherTrait
+use tournament::ls15_components::tests::{
+    erc20_mock::{erc20_mock}, interfaces::{IERC20MockDispatcher, IERC20MockDispatcherTrait},
 };
-use tournament::ls15_components::tests::erc721_mock::{
-    erc721_mock, IERC721MockDispatcher, IERC721MockDispatcherTrait
+use tournament::ls15_components::tests::{
+    erc721_mock::{erc721_mock}, interfaces::{IERC721MockDispatcher, IERC721MockDispatcherTrait},
 };
-use tournament::ls15_components::tests::tournament_mock::{
-    tournament_mock, ITournamentMockDispatcher, ITournamentMockDispatcherTrait
+use tournament::ls15_components::tests::{
+    tournament_mock::{tournament_mock},
+    interfaces::{ITournamentMockDispatcher, ITournamentMockDispatcherTrait},
 };
-use tournament::ls15_components::tests::loot_survivor_mock::{
-    loot_survivor_mock, ILootSurvivorMockDispatcher, ILootSurvivorMockDispatcherTrait
+use tournament::ls15_components::tests::{
+    loot_survivor_mock::{loot_survivor_mock},
+    interfaces::{ILootSurvivorMockDispatcher, ILootSurvivorMockDispatcherTrait},
 };
-use tournament::ls15_components::tests::pragma_mock::{pragma_mock, IPragmaMockDispatcher};
+use tournament::ls15_components::tests::{
+    pragma_mock::{pragma_mock}, interfaces::{IPragmaMockDispatcher},
+};
 
 use openzeppelin_token::erc721::interface;
 use openzeppelin_token::erc721::{ERC721Component::{Transfer, Approval,}};
@@ -106,12 +114,15 @@ fn setup_uninitialized() -> (WorldStorage, IERC20MockDispatcher, IERC20MockDispa
             TestResource::Model(m_Contracts::TEST_CLASS_HASH.try_into().unwrap()),
             // tournament models
             TestResource::Model(m_TournamentModel::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_TournamentEntryModel::TEST_CLASS_HASH.try_into().unwrap()),
+            TestResource::Model(m_TournamentGameModel::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(
                 m_TournamentEntriesAddressModel::TEST_CLASS_HASH.try_into().unwrap()
             ),
             TestResource::Model(
                 m_TournamentEntryAddressesModel::TEST_CLASS_HASH.try_into().unwrap()
+            ),
+            TestResource::Model(
+                m_TournamentStartsAddressModel::TEST_CLASS_HASH.try_into().unwrap()
             ),
             TestResource::Model(m_TournamentStartIdsModel::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TournamentEntriesModel::TEST_CLASS_HASH.try_into().unwrap()),
@@ -122,30 +133,30 @@ fn setup_uninitialized() -> (WorldStorage, IERC20MockDispatcher, IERC20MockDispa
             TestResource::Model(m_TokenModel::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TournamentContracts::TEST_CLASS_HASH.try_into().unwrap()),
             // contracts
-            TestResource::Contract(
-                ContractDefTrait::new(tournament_mock::TEST_CLASS_HASH, "tournament_mock")
-                    .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span())
-            ),
-            TestResource::Contract(
-                ContractDefTrait::new(loot_survivor_mock::TEST_CLASS_HASH, "loot_survivor_mock")
-                    .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span())
-            ),
-            TestResource::Contract(
-                ContractDefTrait::new(pragma_mock::TEST_CLASS_HASH, "pragma_mock")
-                    .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span())
-            ),
-            TestResource::Contract(
-                ContractDefTrait::new(erc20_mock::TEST_CLASS_HASH, "erc20_mock")
-                    .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span())
-            ),
-            TestResource::Contract(
-                ContractDefTrait::new(erc721_mock::TEST_CLASS_HASH, "erc721_mock")
-                    .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span())
-            ),
+            TestResource::Contract(tournament_mock::TEST_CLASS_HASH),
+            TestResource::Contract(loot_survivor_mock::TEST_CLASS_HASH),
+            TestResource::Contract(pragma_mock::TEST_CLASS_HASH),
+            TestResource::Contract(erc20_mock::TEST_CLASS_HASH),
+            TestResource::Contract(erc721_mock::TEST_CLASS_HASH),
         ].span()
     };
 
+    let mut contract_defs: Array<ContractDef> = array![
+        ContractDefTrait::new(@"tournament", @"tournament_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span()),
+        ContractDefTrait::new(@"tournament", @"loot_survivor_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span()),
+        ContractDefTrait::new(@"tournament", @"pragma_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span()),
+        ContractDefTrait::new(@"tournament", @"erc20_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span()),
+        ContractDefTrait::new(@"tournament", @"erc721_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@"tournament")].span()),
+    ];
+
     let mut world: WorldStorage = spawn_test_world([ndef].span());
+
+    world.sync_perms_and_inits(contract_defs.span());
 
     let call_data: Array<felt252> = array![];
     let contract = utils::deploy(erc20_mock::TEST_CLASS_HASH, 'salt4', call_data);
@@ -182,17 +193,11 @@ pub fn setup() -> (
             eth.contract_address,
             lords.contract_address,
             loot_survivor.contract_address,
-            pragma.contract_address
+            pragma.contract_address,
+            false
         );
     loot_survivor
-        .initializer(
-            TOKEN_NAME(),
-            TOKEN_SYMBOL(),
-            BASE_URI(),
-            eth.contract_address,
-            lords.contract_address,
-            pragma.contract_address
-        );
+        .initializer(eth.contract_address, lords.contract_address, pragma.contract_address);
 
     // mint tokens
     utils::impersonate(OWNER());
@@ -655,7 +660,6 @@ fn test_create_tournament_gated_accounts() {
 
     // Create array of allowed accounts
     let allowed_player = starknet::contract_address_const::<0x456>();
-    let disallowed_player = starknet::contract_address_const::<0x789>();
     let allowed_accounts = array![OWNER(), allowed_player].span();
 
     // Create tournament gated by account list

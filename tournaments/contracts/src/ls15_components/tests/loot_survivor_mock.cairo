@@ -1,17 +1,12 @@
 // imports
 
-use adventurer::{
-    adventurer::{ImplAdventurer}, adventurer_meta::{ImplAdventurerMetadata}
-};
+use adventurer::{adventurer::{ImplAdventurer}, adventurer_meta::{ImplAdventurerMetadata}};
 use starknet::ContractAddress;
 
 #[starknet::interface]
 trait ILootSurvivorMockInit<TState> {
     fn initializer(
         ref self: TState,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
         eth_address: ContractAddress,
         lords_address: ContractAddress,
         pragma_address: ContractAddress
@@ -77,9 +72,6 @@ mod loot_survivor_mock {
     impl LootSurvivorInitializerImpl of super::ILootSurvivorMockInit<ContractState> {
         fn initializer(
             ref self: ContractState,
-            name: ByteArray,
-            symbol: ByteArray,
-            base_uri: ByteArray,
             eth_address: ContractAddress,
             lords_address: ContractAddress,
             pragma_address: ContractAddress

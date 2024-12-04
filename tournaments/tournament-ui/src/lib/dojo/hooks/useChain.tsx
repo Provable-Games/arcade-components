@@ -13,14 +13,10 @@ import {
   useAddStarknetChain,
   useSwitchStarknetChain,
 } from "@/lib/dojo/hooks/useWalletRequest";
-import {
-  ChainId,
-  getDojoChainConfig,
-  isChainIdSupported,
-} from "@/lib/dojo/setup/chainConfig";
-import { useStarknetContext } from "@/lib/dojo/StarknetProvider";
-import { feltToString } from "@/lib/utils/starknet";
+import { ChainId, getDojoChainConfig, isChainIdSupported } from "@/config";
+import { feltToString } from "@/lib/utils";
 import { BigNumberish, Provider } from "starknet";
+import { useDojo } from "@/DojoContext";
 
 export const useChainConfig = (chain_id: ChainId | BigNumberish) => {
   const chainId = useMemo<ChainId>(
@@ -46,7 +42,7 @@ export const useChainConfig = (chain_id: ChainId | BigNumberish) => {
 
 export const useChainConfigProvider = (
   chain_id: ChainId | BigNumberish
-): Provider => {
+): Provider | null => {
   const { chainConfig } = useChainConfig(chain_id);
   const provider = useMemo(
     () =>
@@ -59,12 +55,14 @@ export const useChainConfigProvider = (
 };
 
 export const useSelectedChain = () => {
-  const { selectedChainConfig } = useStarknetContext();
+  const {
+    setup: { selectedChainConfig },
+  } = useDojo();
   const { isConnecting, isConnected, account, connector } = useAccount();
   const { chain } = useNetwork();
 
   const { chainId: selectedChainId, chainName: selectedChainName } =
-    useChainConfig(selectedChainConfig.chain.id);
+    useChainConfig(selectedChainConfig?.chain?.id ?? 0n);
   const { chainId: connectedChainId, chainName: connectedChainName } =
     useChainConfig(chain.id);
 
@@ -95,7 +93,9 @@ export const useSelectedChain = () => {
 export const useConnectToSelectedChain = (onConnect?: () => void) => {
   const { connect, connectors } = useConnect();
   const { isConnected, isConnecting } = useAccount();
-  const { selectedChainConfig } = useStarknetContext();
+  const {
+    setup: { selectedChainConfig },
+  } = useDojo();
 
   const [requestedConnect, setRequestedConnect] = useState(false);
   useEffect(() => {
@@ -109,9 +109,12 @@ export const useConnectToSelectedChain = (onConnect?: () => void) => {
       onConnect?.();
     } else if (!isConnecting) {
       // get 1st supported connector on this chain
-      const connector = selectedChainConfig.connectorIds.reduce((acc, id) => {
-        return acc ?? connectors.find((connector) => connector.id == id);
-      }, undefined as Connector);
+      const connector = selectedChainConfig?.connectorIds?.reduce(
+        (acc: Connector | undefined, id: string) => {
+          return acc ?? connectors.find((connector) => connector.id == id);
+        },
+        undefined as Connector | undefined
+      );
       if (connector) {
         console.log(`>> Connecting with [${connector.id}]...`);
         setRequestedConnect(true);
@@ -154,15 +157,15 @@ export const useChainSwitchCallbacks = () => {
     const params: AddStarknetChainParametersImpl = {
       id: selectedChainId,
       chain_id: selectedChainId,
-      chain_name: selectedChainConfig.name,
-      rpcUrl: selectedChainConfig.rpcUrl,
-      rpc_urls: [selectedChainConfig.rpcUrl],
+      chain_name: selectedChainConfig?.name!,
+      rpcUrl: selectedChainConfig?.rpcUrl!,
+      rpc_urls: [selectedChainConfig?.rpcUrl!],
       native_currency: {
         type: "ERC20",
-        options: selectedChainConfig.chain.nativeCurrency,
+        options: selectedChainConfig?.chain?.nativeCurrency!,
       },
-      accountClassHash: selectedChainConfig.accountClassHash,
-      classHash: selectedChainConfig.accountClassHash,
+      accountClassHash: selectedChainConfig?.accountClassHash!,
+      classHash: selectedChainConfig?.accountClassHash!,
     };
     return params;
   }, [selectedChainId, selectedChainConfig]);

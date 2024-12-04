@@ -5,7 +5,7 @@ import { jsonRpcProvider, StarknetConfig } from "@starknet-react/core";
 import React from "react";
 import { useChainConnectors } from "../lib/connectors";
 import { DojoAppConfig, dojoContextConfig } from "../config";
-import { getStarknetProviderChains } from "../lib/dojo/chainConfig";
+import { getStarknetProviderChains } from "@/config";
 
 export function StarknetProvider({
   children,

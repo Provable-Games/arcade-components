@@ -1,7 +1,12 @@
 import { ReactElement } from "react";
 import { ScreenPage } from "../hooks/useUIStore";
 import { Premium } from "@/generated/models.gen";
-import { ByteArray, CairoOption, CairoCustomEnum } from "starknet";
+import {
+  ByteArray,
+  CairoOption,
+  CairoCustomEnum,
+  BigNumberish,
+} from "starknet";
 
 export type Menu = {
   id: number;
@@ -82,6 +87,11 @@ export type TokenDataType = {
   erc721?: ERC721Data;
 };
 
+export type GatedSubmissionType = {
+  token_id: BigNumberish;
+  game_id: BigNumberish[];
+};
+
 // Create a typed wrapper for CairoCustomEnum
 export type TypedCairoEnum<T> = CairoCustomEnum & {
   variant: { [K in keyof T]: T[K] | undefined };
@@ -91,6 +101,7 @@ export type TypedCairoEnum<T> = CairoCustomEnum & {
 export type GatedTypeEnum = TypedCairoEnum<GatedType>;
 export type EntryTypeEnum = TypedCairoEnum<EntryType>;
 export type TokenDataTypeEnum = TypedCairoEnum<TokenDataType>;
+export type GatedSubmissionTypeEnum = TypedCairoEnum<GatedSubmissionType>;
 
 // export type Premium = {
 //   token: string;
@@ -105,4 +116,22 @@ export type ERC20Data = {
 
 export type ERC721Data = {
   token_id: number;
+};
+
+export const DataType = {
+  SpotEntry: (pairId: string) => ({
+    variant: "SpotEntry",
+    activeVariant: () => "SpotEntry",
+    unwrap: () => pairId,
+  }),
+  FutureEntry: (pairId: string, expirationTimestamp: string) => ({
+    variant: "FutureEntry",
+    activeVariant: () => "FutureEntry",
+    unwrap: () => [pairId, expirationTimestamp],
+  }),
+  GenericEntry: (key: string) => ({
+    variant: "GenericEntry",
+    activeVariant: () => "GenericEntry",
+    unwrap: () => key,
+  }),
 };

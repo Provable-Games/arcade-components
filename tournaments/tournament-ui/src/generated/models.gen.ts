@@ -5,6 +5,7 @@ import {
   CairoOption,
   CairoOptionVariant,
   ByteArray,
+  byteArray,
 } from "starknet";
 import { GatedTypeEnum } from "@/lib/types";
 
@@ -49,26 +50,26 @@ export interface Equipment {
 // Type definition for `tournament::ls15_components::models::loot_survivor::Stats` struct
 export interface Stats {
   fieldOrder: string[];
-  strength: number;
-  dexterity: number;
-  vitality: number;
-  intelligence: number;
-  wisdom: number;
-  charisma: number;
-  luck: number;
+  strength: BigNumberish;
+  dexterity: BigNumberish;
+  vitality: BigNumberish;
+  intelligence: BigNumberish;
+  wisdom: BigNumberish;
+  charisma: BigNumberish;
+  luck: BigNumberish;
 }
 
 // Type definition for `tournament::ls15_components::models::loot_survivor::Adventurer` struct
 export interface Adventurer {
   fieldOrder: string[];
-  health: number;
-  xp: number;
-  gold: number;
-  beast_health: number;
-  stat_upgrades_available: number;
+  health: BigNumberish;
+  xp: BigNumberish;
+  gold: BigNumberish;
+  beast_health: BigNumberish;
+  stat_upgrades_available: BigNumberish;
   stats: Stats;
   equipment: Equipment;
-  battle_action_count: number;
+  battle_action_count: BigNumberish;
   mutated: boolean;
   awaiting_item_specials: boolean;
 }
@@ -76,14 +77,14 @@ export interface Adventurer {
 // Type definition for `tournament::ls15_components::models::loot_survivor::Item` struct
 export interface Item {
   fieldOrder: string[];
-  id: number;
-  xp: number;
+  id: BigNumberish;
+  xp: BigNumberish;
 }
 
 // Type definition for `tournament::ls15_components::models::loot_survivor::AdventurerModel` struct
 export interface AdventurerModel {
   fieldOrder: string[];
-  adventurer_id: number;
+  adventurer_id: BigNumberish;
   adventurer: Adventurer;
 }
 
@@ -254,16 +255,16 @@ export interface TournamentEntriesAddressModelValue {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentEntriesAddressModel` struct
 export interface TournamentEntriesAddressModel {
   fieldOrder: string[];
-  tournament_id: number;
-  address: string;
-  entry_count: number;
+  tournament_id: BigNumberish;
+  address: BigNumberish;
+  entry_count: BigNumberish;
 }
 
 // Type definition for `tournament::ls15_components::models::tournament::TournamentEntriesModel` struct
 export interface TournamentEntriesModel {
   fieldOrder: string[];
-  tournament_id: string;
-  entry_count: number;
+  tournament_id: BigNumberish;
+  entry_count: BigNumberish;
   premiums_formatted: boolean;
   distribute_called: boolean;
 }
@@ -373,8 +374,8 @@ export interface TournamentPrizeKeysModel {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentScoresModel` struct
 export interface TournamentScoresModel {
   fieldOrder: string[];
-  tournament_id: number;
-  top_score_ids: Array<number>;
+  tournament_id: BigNumberish;
+  top_score_ids: Array<BigNumberish>;
 }
 
 // Type definition for `tournament::ls15_components::models::tournament::TournamentScoresModelValue` struct
@@ -392,9 +393,9 @@ export interface TournamentStartIdsModelValue {
 // Type definition for `tournament::ls15_components::models::tournament::TournamentStartIdsModel` struct
 export interface TournamentStartIdsModel {
   fieldOrder: string[];
-  tournament_id: number;
-  address: string;
-  game_ids: Array<number>;
+  tournament_id: BigNumberish;
+  address: BigNumberish;
+  game_ids: Array<BigNumberish>;
 }
 
 // Type definition for `tournament::ls15_components::models::tournament::TournamentTotalsModel` struct
@@ -1101,7 +1102,7 @@ export const schema: TournamentSchemaType = {
       ],
       tournament_id: "0",
       name: BigInt(0),
-      description: "",
+      description: byteArray.byteArrayFromString(""),
       creator: "",
       start_time: "0",
       end_time: "0",

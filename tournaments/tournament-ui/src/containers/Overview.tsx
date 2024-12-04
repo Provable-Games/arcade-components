@@ -12,14 +12,13 @@ const Overview = () => {
   const tournamentCount =
     tournamentTotals[0]?.models?.tournament?.TournamentTotalsModel
       ?.total_tournaments;
-  console.log(state);
   useGetAllTournamentsQuery();
   return (
     <div className="flex flex-col">
       <div className="flex flex-row justify-center">
         <div className="flex flex-row border border-terminal-green p-2 gap-2 uppercase">
           <p>Total Tournaments:</p>
-          <p>{Number(tournamentCount).toString()}</p>
+          <p>{Number(tournamentCount ?? 0).toString()}</p>
         </div>
       </div>
       <div className="flex flex-row gap-5 w-full py-4 uppercase">

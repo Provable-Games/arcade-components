@@ -91,3 +91,24 @@ export const copyToClipboard = async (text: string) => {
     console.error("Failed to copy text: ", err);
   }
 };
+
+export const removeFieldOrder = <T extends Record<string, any>>(
+  obj: T
+): Omit<T, "fieldOrder"> => {
+  const newObj = { ...obj } as Record<string, any>; // Cast to a non-generic type
+  delete newObj.fieldOrder;
+
+  Object.keys(newObj).forEach((key) => {
+    if (typeof newObj[key] === "object" && newObj[key] !== null) {
+      newObj[key] = removeFieldOrder(newObj[key]);
+    }
+  });
+
+  return newObj as Omit<T, "fieldOrder">;
+};
+
+export const cleanObject = (obj: any): any =>
+  Object.keys(obj).reduce((acc, key) => {
+    if (obj[key] !== undefined) acc[key] = obj[key];
+    return acc;
+  }, {} as { [key: string]: any });

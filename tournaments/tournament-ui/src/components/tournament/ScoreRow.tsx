@@ -25,15 +25,15 @@ const ScoreRow = ({
       <td className="px-2">
         <div className="flex items-center justify-center">
           {rank === 1 ? (
-            <span className="flex w-5 h-10">
+            <span className="flex w-4 h-8">
               <FirstIcon />
             </span>
           ) : rank === 2 ? (
-            <span className="flex w-5 h-10">
+            <span className="flex w-4 h-8">
               <SecondIcon />
             </span>
           ) : rank === 3 ? (
-            <span className="flex w-5 h-10">
+            <span className="flex w-4 h-8">
               <ThirdIcon />
             </span>
           ) : (

@@ -73,10 +73,11 @@ pub mod LSTournament {
         eth_address: ContractAddress,
         lords_address: ContractAddress,
         loot_survivor_address: ContractAddress,
-        oracle_address: ContractAddress
+        oracle_address: ContractAddress,
+        safe_mode: bool
     ) {
         self
             .tournament
-            .initialize(eth_address, lords_address, loot_survivor_address, oracle_address);
+            .initialize(eth_address, lords_address, loot_survivor_address, oracle_address, safe_mode);
     }
 }

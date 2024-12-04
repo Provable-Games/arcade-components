@@ -2,7 +2,12 @@ import { DojoProvider } from "@dojoengine/core";
 import { Account, ByteArray, CairoOption, BigNumberish } from "starknet";
 import * as models from "./models.gen";
 import * as constants from "./constants";
-import { GatedTypeEnum, Token, TokenDataTypeEnum } from "@/lib/types";
+import {
+  GatedTypeEnum,
+  GatedSubmissionTypeEnum,
+  Token,
+  TokenDataTypeEnum,
+} from "@/lib/types";
 
 export async function setupWorld(provider: DojoProvider) {
   const tournament_mock_initializer = async (
@@ -146,7 +151,7 @@ export async function setupWorld(provider: DojoProvider) {
   const tournament_mock_createTournament = async (
     account: Account,
     name: BigNumberish,
-    description: string,
+    description: ByteArray,
     startTime: BigNumberish,
     endTime: BigNumberish,
     submissionPeriod: BigNumberish,
@@ -199,8 +204,8 @@ export async function setupWorld(provider: DojoProvider) {
 
   const tournament_mock_enterTournament = async (
     account: Account,
-    tournamentId: number,
-    gatedSubmissionType: constants.OptionValue<constants.GatedSubmissionType>
+    tournamentId: BigNumberish,
+    gatedSubmissionType: CairoOption<GatedSubmissionTypeEnum>
   ) => {
     try {
       return await provider.execute(
@@ -221,7 +226,7 @@ export async function setupWorld(provider: DojoProvider) {
     account: Account,
     tournamentId: number,
     startAll: boolean,
-    startCount: constants.OptionValue<number>
+    startCount: CairoOption<number>
   ) => {
     try {
       return await provider.execute(
@@ -240,8 +245,8 @@ export async function setupWorld(provider: DojoProvider) {
 
   const tournament_mock_submitScores = async (
     account: Account,
-    tournamentId: number,
-    gameIds: Array<number>
+    tournamentId: BigNumberish,
+    gameIds: Array<BigNumberish>
   ) => {
     try {
       return await provider.execute(
@@ -260,10 +265,10 @@ export async function setupWorld(provider: DojoProvider) {
 
   const tournament_mock_addPrize = async (
     account: Account,
-    tournamentId: number,
-    token: string,
+    tournamentId: BigNumberish,
+    token: BigNumberish,
     tokenDataType: TokenDataTypeEnum,
-    position: number
+    position: BigNumberish
   ) => {
     try {
       return await provider.execute(
@@ -282,8 +287,8 @@ export async function setupWorld(provider: DojoProvider) {
 
   const tournament_mock_distributePrizes = async (
     account: Account,
-    tournamentId: number,
-    prizeKeys: Array<number>
+    tournamentId: BigNumberish,
+    prizeKeys: Array<BigNumberish>
   ) => {
     try {
       return await provider.execute(
@@ -371,11 +376,15 @@ export async function setupWorld(provider: DojoProvider) {
     }
   };
 
+  interface U256 {
+    low: BigNumberish;
+    high: BigNumberish;
+  }
+
   const erc721_mock_approve = async (
     account: Account,
     to: string,
-    tokenId_low: bigint,
-    tokenId_high: bigint
+    tokenId: U256
   ) => {
     try {
       return await provider.execute(
@@ -383,7 +392,7 @@ export async function setupWorld(provider: DojoProvider) {
         {
           contractName: "erc721_mock",
           entrypoint: "approve",
-          calldata: [to, tokenId_low, tokenId_high],
+          calldata: [to, tokenId],
         },
         "tournament"
       );
@@ -686,20 +695,14 @@ export async function setupWorld(provider: DojoProvider) {
     }
   };
 
-  const pragma_mock_getDataMedian = async (
-    account: Account,
-    dataType: constants.DataType
-  ) => {
+  const pragma_mock_getDataMedian = async (dataType: constants.DataType) => {
     try {
-      return await provider.execute(
-        account,
-        {
-          contractName: "pragma_mock",
-          entrypoint: "get_data_median",
-          calldata: [dataType],
-        },
-        "tournament"
-      );
+      console.log(dataType);
+      return await provider.call("tournament", {
+        contractName: "pragma_mock",
+        entrypoint: "get_data_median",
+        calldata: [dataType],
+      });
     } catch (error) {
       console.error(error);
     }
@@ -921,8 +924,8 @@ export async function setupWorld(provider: DojoProvider) {
   const eth_mock_approve = async (
     account: Account,
     spender: string,
-    amount_high: bigint,
-    amount_low: bigint
+    amount_high: BigNumberish,
+    amount_low: BigNumberish
   ) => {
     try {
       return await provider.execute(
@@ -942,8 +945,8 @@ export async function setupWorld(provider: DojoProvider) {
   const lords_mock_approve = async (
     account: Account,
     spender: string,
-    amount_high: bigint,
-    amount_low: bigint
+    amount_high: BigNumberish,
+    amount_low: BigNumberish
   ) => {
     try {
       return await provider.execute(
@@ -1202,7 +1205,7 @@ export async function setupWorld(provider: DojoProvider) {
 
   const loot_survivor_mock_setAdventurer = async (
     account: Account,
-    adventurerId: number,
+    adventurerId: BigNumberish,
     adventurer: models.Adventurer
   ) => {
     try {

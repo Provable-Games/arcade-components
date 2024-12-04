@@ -4867,8 +4867,8 @@
       ]
     },
     {
-      "address": "0x440f829edc5ac8c5defbad967edf6307d070dbfd71fca3869e1028a1e06ce71",
-      "class_hash": "0x311dbff005bbccc2c917188b2a53b6320efe9157dc17f632f3c1c479e3b78e0",
+      "address": "0x5cf5b1a48825c55ea9a359c9a2fc987e3fc496f8f72fb5393fd87c2ccf329bd",
+      "class_hash": "0xd4435b1c53b5f53d8643df6b96e47b40e86face9209271b75e9fd8b887f838",
       "abi": [
         {
           "type": "impl",
@@ -4926,6 +4926,20 @@
           "interface_name": "tournament::ls15_components::tests::tournament_mock::ITournamentMockInit"
         },
         {
+          "type": "enum",
+          "name": "core::bool",
+          "variants": [
+            {
+              "name": "False",
+              "type": "()"
+            },
+            {
+              "name": "True",
+              "type": "()"
+            }
+          ]
+        },
+        {
           "type": "interface",
           "name": "tournament::ls15_components::tests::tournament_mock::ITournamentMockInit",
           "items": [
@@ -4948,6 +4962,10 @@
                 {
                   "name": "oracle_address",
                   "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "safe_mode",
+                  "type": "core::bool"
                 }
               ],
               "outputs": [],
@@ -5215,20 +5233,6 @@
             {
               "name": "entry_premium",
               "type": "core::option::Option::<tournament::ls15_components::models::tournament::Premium>"
-            }
-          ]
-        },
-        {
-          "type": "enum",
-          "name": "core::bool",
-          "variants": [
-            {
-              "name": "False",
-              "type": "()"
-            },
-            {
-              "name": "True",
-              "type": "()"
             }
           ]
         },
@@ -5716,7 +5720,7 @@
     },
     {
       "members": [],
-      "class_hash": "0x16a468fd4641d3ab475b80066a7cdba58aba94f6f51955171cb3cc836729ff7",
+      "class_hash": "0x6b77f34f62efaf78a11e840520d3c45e7d9f46eeb5e8d1291d378dae908c13c",
       "tag": "tournament-TournamentContracts",
       "selector": "0x3cef2d4443bcdf6ba4141194170ec796fc3501b6f34ae30abc600c1ffb16ec4"
     },

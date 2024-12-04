@@ -270,7 +270,18 @@ function Calendar({
     return genMonths(locale);
   }, []);
 
-  const YEARS = React.useMemo(() => genYears(yearRange), []);
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+
+  const YEARS = React.useMemo(
+    () =>
+      Array.from({ length: yearRange + 1 }, (_, i) => ({
+        value: currentYear + i,
+        label: (currentYear + i).toString(),
+      })),
+    [yearRange, currentYear]
+  );
 
   return (
     <DayPicker
@@ -278,7 +289,7 @@ function Calendar({
       className={cn("p-3", className)}
       classNames={{
         months:
-          "flex flex-col sm:flex-row space-y-4  sm:space-y-0 justify-center",
+          "flex flex-col sm:flex-row space-y-4 sm:space-y-0 justify-center uppercase",
         month: "flex flex-col items-center space-y-4",
         month_caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
@@ -297,8 +308,8 @@ function Calendar({
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
         week: "flex w-full mt-2",
         day: cn(
-          "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1 text-terminal-green hover:bg-terminal-green hover:text-terminal-black",
-          customDisabled && "text-muted-foreground opacity-50 hover:none"
+          "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-terminal-green first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1 text-terminal-green hover:bg-terminal-green hover:text-terminal-black",
+          customDisabled && "text-muted-foreground hover:none"
         ),
         day_button: cn(
           buttonVariants({ variant: "ghost" }),
@@ -306,7 +317,7 @@ function Calendar({
         ),
         range_end: "day-range-end",
         selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-l-md rounded-r-md",
+          "bg-terminal-green text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-terminal-green focus:text-primary-foreground rounded-l-md rounded-r-md",
         today: "bg-accent text-accent-foreground",
         outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
@@ -338,6 +349,10 @@ function Calendar({
                     <SelectItem
                       key={month.value}
                       value={month.value.toString()}
+                      disabled={
+                        displayMonth.getFullYear() === currentYear &&
+                        month.value < currentMonth
+                      }
                     >
                       {month.label}
                     </SelectItem>
@@ -721,6 +736,7 @@ const DateTimePicker = React.forwardRef<
     ref
   ) => {
     const [month, setMonth] = React.useState<Date>(value ?? new Date());
+    const [open, setOpen] = React.useState(false);
     const buttonRef = useRef<HTMLButtonElement>(null);
     /**
      * carry over the current time when a user clicks a new day
@@ -771,7 +787,7 @@ const DateTimePicker = React.forwardRef<
     const now = new Date();
 
     return (
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild disabled={disabled}>
           <Button
             variant="outline"
@@ -817,13 +833,19 @@ const DateTimePicker = React.forwardRef<
             className="bg-terminal-black text-terminal-green border border-terminal-green"
           />
           {granularity !== "day" && (
-            <div className="border-t border-border p-3 bg-terminal-black border-terminal-green">
+            <div className="flex flex-row justify-between items-center border-t border-border py-3 px-10 bg-terminal-black border-terminal-green">
               <TimePicker
                 onChange={onChange}
                 date={value}
                 hourCycle={hourCycle}
                 granularity={granularity}
               />
+              <Button
+                className="bg-terminal-green text-terminal-black uppercase hover:bg-terminal-green/80"
+                onClick={() => setOpen(false)}
+              >
+                Set
+              </Button>
             </div>
           )}
         </PopoverContent>

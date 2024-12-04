@@ -22,3 +22,10 @@ dojo_cairo_test = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.0.
 
 [features]
 default = []
+
+#--------------------------
+# Dojo profiles declaration
+#
+[profile.dev]
+[profile.slot]
+[profile.mainnet]

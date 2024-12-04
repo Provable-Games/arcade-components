@@ -8,8 +8,8 @@ use tournament::ls15_components::models::loot_survivor::{
 use tournament::ls15_components::models::tournament::{
     TournamentTotalsModel, TournamentModel, TournamentEntriesModel, TournamentPrizeKeysModel,
     PrizesModel, TournamentScoresModel, TokenModel, TournamentEntriesAddressModel,
-    TournamentEntryAddressesModel, TournamentEntryModel, TournamentContracts,
-    TournamentStartIdsModel
+    TournamentEntryAddressesModel, TournamentStartsAddressModel, TournamentGameModel,
+    TournamentContracts, TournamentStartIdsModel
 };
 
 #[derive(Copy, Drop)]
@@ -81,17 +81,24 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_tournament_entry(
-        ref self: Store, tournament_id: u64, game_id: felt252
-    ) -> TournamentEntryModel {
-        (self.world.read_model((tournament_id, game_id),))
-    }
-
-    #[inline(always)]
     fn get_tournament_entry_addresses(
         ref self: Store, tournament_id: u64
     ) -> TournamentEntryAddressesModel {
         (self.world.read_model(tournament_id))
+    }
+
+    #[inline(always)]
+    fn get_tournament_starts(
+        ref self: Store, tournament_id: u64, address: ContractAddress
+    ) -> TournamentStartsAddressModel {
+        (self.world.read_model((tournament_id, address),))
+    }
+
+    #[inline(always)]
+    fn get_tournament_game(
+        ref self: Store, tournament_id: u64, game_id: felt252
+    ) -> TournamentGameModel {
+        (self.world.read_model((tournament_id, game_id),))
     }
 
     #[inline(always)]
@@ -176,7 +183,12 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_tournament_entry(ref self: Store, model: @TournamentEntryModel) {
+    fn set_address_starts(ref self: Store, model: @TournamentStartsAddressModel) {
+        self.world.write_model(model);
+    }
+
+    #[inline(always)]
+    fn set_tournament_game(ref self: Store, model: @TournamentGameModel) {
         self.world.write_model(model);
     }
 

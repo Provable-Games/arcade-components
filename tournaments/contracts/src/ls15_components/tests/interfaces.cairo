@@ -132,7 +132,8 @@ pub trait ITournamentMock<TState> {
         eth_address: ContractAddress,
         lords_address: ContractAddress,
         loot_survivor_address: ContractAddress,
-        oracle_address: ContractAddress
+        oracle_address: ContractAddress,
+        safe_mode: bool
     );
 }
 
@@ -205,9 +206,6 @@ pub trait ILootSurvivorMock<TState> {
 
     fn initializer(
         ref self: TState,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
         eth_address: ContractAddress,
         lords_address: ContractAddress,
         pragma_address: ContractAddress

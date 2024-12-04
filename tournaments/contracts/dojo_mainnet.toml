@@ -16,11 +16,12 @@ default = "tournament"
 
 [writers]
 "tournament-TournamentModel" = ["tournament-LSTournament"]
-"tournament-TournamentEntryModel" = ["tournament-LSTournament"]
+"tournament-TournamentGameModel" = ["tournament-LSTournament"]
 "tournament-TournamentEntryAddressesModel" = ["tournament-LSTournament"]
 "tournament-TournamentEntriesAddressModel" = ["tournament-LSTournament"]
 "tournament-TournamentStartIdsModel" = ["tournament-LSTournament"]
 "tournament-TournamentEntriesModel" = ["tournament-LSTournament"]
+"tournament-TournamentStartsAddressModel" = ["tournament-tournament_mock"]
 "tournament-TournamentScoresModel" = ["tournament-LSTournament"]
 "tournament-TournamentTotalsModel" = ["tournament-LSTournament"]
 "tournament-TournamentPrizeKeysModel" = ["tournament-LSTournament"]
@@ -33,7 +34,8 @@ default = "tournament"
     "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
     "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
     "0x018108b32cea514a78ef1b0e4a0753e855cdf620bc0565202c02456f618c4dc4",
-    "0x2a85bd616f912537c50a49a4076db02c00b29b2cdc8a197ce92ed1837fa875b"
+    "0x2a85bd616f912537c50a49a4076db02c00b29b2cdc8a197ce92ed1837fa875b",
+    true
 ]
 
 [migration]

@@ -3,9 +3,10 @@ import { Button } from "./buttons/Button";
 import { CartridgeIcon, ETH, LORDS, LOGO } from "./Icons";
 import useUIStore from "../hooks/useUIStore";
 import { displayAddress, formatNumber, indexAddress } from "@/lib/utils";
-import { useAccount, useConnect } from "@starknet-react/core";
+import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import { checkCartridgeConnector } from "../lib/connectors";
 import { useDojo } from "../DojoContext";
+import { useConnectToSelectedChain } from "@/lib/dojo/hooks/useChain";
 
 export interface HeaderProps {
   ethBalance: bigint;
@@ -14,22 +15,25 @@ export interface HeaderProps {
 
 export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
   const { account } = useAccount();
-  const { connect, connector } = useConnect();
+  const { connector } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { connect } = useConnectToSelectedChain();
   const username = useUIStore((state: any) => state.username);
   const {
     setup: { selectedChainConfig },
   } = useDojo();
+  console.log(account);
 
   // const displayCart = useUIStore((state) => state.displayCart);
   // const setDisplayCart = useUIStore((state) => state.setDisplayCart);
+  // const displayCartButtonRef = useRef<HTMLButtonElement>(null);
+
   const setShowProfile = useUIStore((state: any) => state.setShowProfile);
 
   // const calls = useTransactionCartStore((state) => state.calls);
   // const txInCart = calls.length > 0;
 
   // const { play: clickPlay } = useUiSounds(soundSelector.click);
-
-  // const displayCartButtonRef = useRef<HTMLButtonElement>(null);
 
   const [showLordsBuy, setShowLordsBuy] = useState(false);
 
@@ -47,9 +51,15 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
             variant={"outline"}
             className="self-center xl:px-5"
           >
-            <span className="flex flex-row items-center justify-between w-full self-center sm:w-5 sm:h-5  h-3 w-3 fill-current mr-1">
-              <ETH />
-              <p>{formatNumber(parseInt(ethBalance.toString()) / 10 ** 18)}</p>
+            <span className="flex flex-row items-center">
+              <span className="flex h-5 w-5">
+                <ETH />
+              </span>
+              <p>
+                {formatNumber(
+                  parseInt((ethBalance ?? 0).toString()) / 10 ** 18
+                )}
+              </p>
             </span>
           </Button>
           <Button
@@ -67,12 +77,16 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
             onMouseEnter={() => setShowLordsBuy(true)}
             onMouseLeave={() => setShowLordsBuy(false)}
           >
-            <span className="flex flex-row items-center justify-between w-full self-center sm:w-5 sm:h-5  h-3 w-3 fill-current mr-1">
+            <span className="flex flex-row gap-1 items-center">
               {!showLordsBuy ? (
                 <>
-                  <LORDS />
+                  <span className="flex h-5 w-5 fill-current">
+                    <LORDS />
+                  </span>
                   <p>
-                    {formatNumber(parseInt(lordsBalance.toString()) / 10 ** 18)}
+                    {formatNumber(
+                      parseInt((lordsBalance ?? 0).toString()) / 10 ** 18
+                    )}
                   </p>
                 </>
               ) : (
@@ -88,9 +102,9 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
               size={"sm"}
               onClick={() => {
                 if (account) {
-                  setShowProfile(true);
+                  disconnect();
                 } else {
-                  connect({ connector: cartridge });
+                  connect();
                 }
               }}
               className="xl:px-5 p-0 hover:bg-terminal-green hover:text-terminal-black"
@@ -116,9 +130,9 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
               size={"sm"}
               onClick={() => {
                 if (account) {
-                  setShowProfile(true);
+                  disconnect();
                 } else {
-                  connect({ connector: cartridge });
+                  connect();
                 }
               }}
               className="xl:px-5 hover:bg-terminal-green hover:text-terminal-black"
@@ -141,6 +155,11 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
               </div>
             )}
           </div>
+          <Button variant="outline">
+            {selectedChainConfig.chainId === "WP_LS_TOURNAMENTS_KATANA"
+              ? "Katana"
+              : "Mainnet"}
+          </Button>
         </div>
       </div>
     </div>

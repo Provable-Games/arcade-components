@@ -15,6 +15,7 @@ trait ITournament<TState> {
     fn tournament_prize_keys(self: @TState, tournament_id: u64) -> Array<u64>;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
+    fn register_tokens(ref self: TState, tokens: Array<Token>);
     fn create_tournament(
         ref self: TState,
         name: felt252,
@@ -26,7 +27,6 @@ trait ITournament<TState> {
         gated_type: Option<GatedType>,
         entry_premium: Option<Premium>,
     ) -> u64;
-    fn register_tokens(ref self: TState, tokens: Array<Token>);
     fn enter_tournament(
         ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>
     );
@@ -57,18 +57,19 @@ pub mod tournament_component {
     use tournament::ls15_components::constants::{
         VRF_COST_PER_GAME, TWO_POW_128, MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD,
         MIN_TOURNAMENT_LENGTH, MAX_TOURNAMENT_LENGTH, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD,
-        GAME_EXPIRATION_PERIOD
+        GAME_EXPIRATION_PERIOD, ETHEREUM_ADDRESS, LORDS_ADDRESS, SURVIVORS_ADDRESS, ETH_SAFE_AMOUNT, LORDS_SAFE_AMOUNT
     };
     use tournament::ls15_components::interfaces::{
         ILootSurvivorDispatcher, ILootSurvivorDispatcherTrait, IPragmaABIDispatcher,
         IPragmaABIDispatcherTrait, DataType
     };
     use tournament::ls15_components::models::tournament::{
-        TournamentModel, TournamentEntryModel, TournamentEntryAddressesModel,
-        TournamentEntriesAddressModel, TournamentStartIdsModel, TournamentEntriesModel,
-        TournamentScoresModel, TournamentTotalsModel, TournamentPrizeKeysModel, PrizesModel,
-        TokenModel, TournamentContracts, TokenDataType, EntryStatus, GatedType, GatedSubmissionType,
-        GatedEntryType, GatedToken, Premium, ERC20Data, Token
+        TournamentModel, TournamentGameModel, TournamentEntryAddressesModel,
+        TournamentEntriesAddressModel, TournamentEntriesModel, TournamentStartsAddressModel,
+        TournamentStartIdsModel, TournamentScoresModel, TournamentTotalsModel,
+        TournamentPrizeKeysModel, PrizesModel, TokenModel, TournamentContracts, TokenDataType,
+        EntryStatus, GatedType, GatedSubmissionType, GatedEntryType, GatedToken, Premium, ERC20Data,
+        Token
     };
     use tournament::ls15_components::interfaces::{WorldTrait, WorldImpl,};
     use tournament::ls15_components::libs::store::{Store, StoreTrait};
@@ -125,6 +126,7 @@ pub mod tournament_component {
         pub const TOKEN_SUPPLY_TOO_LARGE: felt252 = 'token supply too large';
         pub const INVALID_TOKEN_APPROVALS: felt252 = 'invalid token approvals';
         pub const INVALID_TOKEN_OWNER: felt252 = 'invalid token owner';
+        pub const INVALID_TOKEN_FOR_SAFE_MODE: felt252 = 'invalid token for safe mode';
         //
         // Enter Tournament
         //
@@ -158,6 +160,7 @@ pub mod tournament_component {
         //
         pub const PRIZE_POSITION_TOO_LARGE: felt252 = 'prize position too large';
         pub const PRIZE_TOKEN_NOT_REGISTERED: felt252 = 'prize token not registered';
+        pub const INVALID_SAFE_TOKEN_AMOUNT: felt252 = 'invalid safe token amount';
         //
         // Distribute Prizes
         //
@@ -167,6 +170,8 @@ pub mod tournament_component {
         pub const PRIZE_DOES_NOT_EXIST: felt252 = 'prize does not exist';
         pub const PRIZE_ALREADY_CLAIMED: felt252 = 'prize already claimed';
     }
+
+
 
     #[embeddable_as(TournamentImpl)]
     impl Tournament<
@@ -226,6 +231,14 @@ pub mod tournament_component {
             self._is_token_registered(ref store, token)
         }
 
+        fn register_tokens(ref self: ComponentState<TContractState>, tokens: Array<Token>) {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), @"tournament"
+            );
+            let mut store: Store = StoreTrait::new(world);
+            self._register_tokens(ref store, tokens);
+        }
+
         fn create_tournament(
             ref self: ComponentState<TContractState>,
             name: felt252,
@@ -269,13 +282,6 @@ pub mod tournament_component {
                     gated_type,
                     entry_premium,
                 )
-        }
-        fn register_tokens(ref self: ComponentState<TContractState>, tokens: Array<Token>) {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), @"tournament"
-            );
-            let mut store: Store = StoreTrait::new(world);
-            self._register_tokens(ref store, tokens);
         }
 
         // TODO: check the safety of setting a large length array of entry criteria for gated tokens
@@ -370,7 +376,8 @@ pub mod tournament_component {
                 let address_entries = store
                     .get_address_entries(tournament_id, get_caller_address())
                     .entry_count;
-                assert(address_entries > 0, Errors::ALL_ENTRIES_STARTED);
+                let address_starts = store.get_tournament_starts(tournament_id, get_caller_address()).start_count;
+                assert(address_entries > address_starts, Errors::ALL_ENTRIES_STARTED);
                 match start_count {
                     Option::Some(start_count) => {
                         assert(address_entries >= start_count, Errors::START_COUNT_TOO_LARGE);
@@ -451,13 +458,13 @@ pub mod tournament_component {
                                 address
                             );
                         game_ids.append(game_id.try_into().unwrap());
-                        let entry = TournamentEntryModel {
+                        let game = TournamentGameModel {
                             tournament_id,
                             game_id: game_id.try_into().unwrap(),
                             address: address,
                             status: EntryStatus::Started
                         };
-                        store.set_tournament_entry(@entry);
+                        store.set_tournament_game(@game);
                         entry_index += 1;
                     };
                     let starts = TournamentStartIdsModel { tournament_id, address, game_ids };
@@ -472,10 +479,10 @@ pub mod tournament_component {
                 let addresses_model = TournamentEntryAddressesModel { tournament_id, addresses };
                 store.set_tournament_entry_addresses(@addresses_model);
             } else {
-                let mut entry_index = 0;
+                let mut start_index = store.get_tournament_starts(tournament_id, get_caller_address()).start_count;
                 let mut game_ids = ArrayTrait::<u64>::new();
                 loop {
-                    if entry_index == entries {
+                    if start_index == entries {
                         break;
                     }
                     let game_id = ls_dispatcher
@@ -490,25 +497,25 @@ pub mod tournament_component {
                             get_caller_address()
                         );
                     game_ids.append(game_id.try_into().unwrap());
-                    let entry = TournamentEntryModel {
+                    let game = TournamentGameModel {
                         tournament_id,
                         game_id: game_id.try_into().unwrap(),
                         address: get_caller_address(),
                         status: EntryStatus::Started
                     };
-                    store.set_tournament_entry(@entry);
-                    entry_index += 1;
+                    store.set_tournament_game(@game);
+                    start_index += 1;
                 };
                 // set stored started game ids and new entries (if no start count provided then
-                // entries - entry_index will be 0)
+                // starts = entries)
                 let starts = TournamentStartIdsModel {
                     tournament_id, address: get_caller_address(), game_ids
                 };
                 store.set_tournament_starts(@starts);
-                let address_entries = TournamentEntriesAddressModel {
-                    tournament_id, address: get_caller_address(), entry_count: entries - entry_index
+                let address_starts = TournamentStartsAddressModel {
+                    tournament_id, address: get_caller_address(), start_count: entries
                 };
-                store.set_address_entries(@address_entries);
+                store.set_address_starts(@address_starts);
             }
         }
 
@@ -641,7 +648,8 @@ pub mod tournament_component {
             eth: ContractAddress,
             lords: ContractAddress,
             loot_survivor: ContractAddress,
-            oracle: ContractAddress
+            oracle: ContractAddress,
+            safe_mode: bool
         ) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @"tournament"
@@ -650,7 +658,7 @@ pub mod tournament_component {
             store
                 .set_tournament_contracts(
                     @TournamentContracts {
-                        contract: get_contract_address(), eth, lords, loot_survivor, oracle
+                        contract: get_contract_address(), eth, lords, loot_survivor, oracle, safe_mode
                     }
                 );
         }
@@ -770,10 +778,10 @@ pub mod tournament_component {
             game_id: felt252,
             score: u16
         ) {
-            let entry = store.get_tournament_entry(tournament_id, game_id);
+            let entry = store.get_tournament_game(tournament_id, game_id);
             store
-                .set_tournament_entry(
-                    @TournamentEntryModel {
+                .set_tournament_game(
+                    @TournamentGameModel {
                         tournament_id,
                         game_id: game_id.try_into().unwrap(),
                         address: entry.address,
@@ -878,6 +886,15 @@ pub mod tournament_component {
                         distribution_index += 1;
                     };
                     self._assert_premium_token_distribution_sum_is_100(distribution_sum);
+
+                    let safe_mode = store.get_tournament_contracts(get_contract_address()).safe_mode;
+                    if (safe_mode) {
+                        if (token.token == ETHEREUM_ADDRESS()) {
+                            assert(token.token_amount <= ETH_SAFE_AMOUNT, Errors::INVALID_SAFE_TOKEN_AMOUNT);
+                        } else {
+                            assert(token.token_amount <= LORDS_SAFE_AMOUNT, Errors::INVALID_SAFE_TOKEN_AMOUNT);
+                        }
+                    }
                 },
                 Option::None => {},
             }
@@ -921,7 +938,7 @@ pub mod tournament_component {
             tournament_id: u64,
             game_id: felt252
         ) {
-            let entry = store.get_tournament_entry(tournament_id, game_id);
+            let entry = store.get_tournament_game(tournament_id, game_id);
             assert(
                 entry.status == EntryStatus::Started || entry.status == EntryStatus::Submitted,
                 Errors::GAME_NOT_STARTED
@@ -1255,6 +1272,7 @@ pub mod tournament_component {
         ) {
             let num_tokens = tokens.len();
             let mut token_index = 0;
+            let safe_mode = store.get_tournament_contracts(get_contract_address()).safe_mode;
             loop {
                 if token_index == num_tokens {
                     break;
@@ -1265,6 +1283,10 @@ pub mod tournament_component {
                     !self._is_token_registered(ref store, token.token),
                     Errors::TOKEN_ALREADY_REGISTERED
                 );
+
+                if (safe_mode) {
+                    assert(token.token == ETHEREUM_ADDRESS() || token.token == LORDS_ADDRESS() || token.token == SURVIVORS_ADDRESS(), Errors::INVALID_TOKEN_FOR_SAFE_MODE);
+                }
 
                 let mut name = "";
                 let mut symbol = "";
@@ -1494,12 +1516,20 @@ pub mod tournament_component {
             match token_data_type {
                 TokenDataType::erc20(token_data) => {
                     let token_dispatcher = IERC20Dispatcher { contract_address: token };
+                    let safe_mode = store.get_tournament_contracts(get_contract_address()).safe_mode;
+                    if (safe_mode) {
+                        if (token == ETHEREUM_ADDRESS()) {
+                            assert(token_data.token_amount <= ETH_SAFE_AMOUNT, Errors::INVALID_SAFE_TOKEN_AMOUNT);
+                        } else {
+                            assert(token_data.token_amount <= LORDS_SAFE_AMOUNT, Errors::INVALID_SAFE_TOKEN_AMOUNT);
+                        }
+                    }
                     token_dispatcher
                         .transfer_from(
-                            get_caller_address(),
-                            get_contract_address(),
-                            token_data.token_amount.into()
-                        );
+                        get_caller_address(),
+                        get_contract_address(),
+                        token_data.token_amount.into()
+                    );
                 },
                 TokenDataType::erc721(token_data) => {
                     let token_dispatcher = IERC721Dispatcher { contract_address: token };

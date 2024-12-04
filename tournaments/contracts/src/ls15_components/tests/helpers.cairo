@@ -3,13 +3,13 @@ use tournament::ls15_components::constants::MIN_SUBMISSION_PERIOD;
 use tournament::tests::{
     constants::{TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_START_TIME, TEST_END_TIME},
 };
-use tournament::ls15_components::tests::erc20_mock::{
+use tournament::ls15_components::tests::interfaces::{
     IERC20MockDispatcher, IERC20MockDispatcherTrait
 };
-use tournament::ls15_components::tests::erc721_mock::{
+use tournament::ls15_components::tests::interfaces::{
     IERC721MockDispatcher, IERC721MockDispatcherTrait
 };
-use tournament::ls15_components::tests::tournament_mock::{
+use tournament::ls15_components::tests::interfaces::{
     ITournamentMockDispatcher, ITournamentMockDispatcherTrait
 };
 use adventurer::{adventurer::Adventurer, equipment::Equipment, item::Item, stats::Stats};

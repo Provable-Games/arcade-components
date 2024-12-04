@@ -4,26 +4,25 @@ import "./index.css";
 import App from "./App.tsx";
 import { StarknetProvider } from "./context/starknet";
 import { DojoContextProvider } from "./DojoContext";
-import { setupBurnerManager } from "@dojoengine/create-burner";
 import { BrowserRouter as Router } from "react-router-dom";
 import { makeDojoAppConfig } from "./config";
-import { dojoConfig } from "../dojoConfig.ts";
+import { ApolloProvider } from "@apollo/client";
+import { lsClientsConfig } from "@/config";
 
 async function main() {
-  // const dojoAppConfig = useMemo(() => makeDojoAppConfig(), []);
   const dojoAppConfig = makeDojoAppConfig();
+  const client = lsClientsConfig[dojoAppConfig.initialChainId].gameClient;
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <StarknetProvider dojoAppConfig={dojoAppConfig}>
-        <DojoContextProvider
-          burnerManager={await setupBurnerManager(dojoConfig)}
-          appConfig={dojoAppConfig}
-        >
-          <Router>
-            <App />
-          </Router>
-        </DojoContextProvider>
-      </StarknetProvider>
+      <ApolloProvider client={client}>
+        <StarknetProvider dojoAppConfig={dojoAppConfig}>
+          <DojoContextProvider appConfig={dojoAppConfig}>
+            <Router>
+              <App />
+            </Router>
+          </DojoContextProvider>
+        </StarknetProvider>
+      </ApolloProvider>
     </StrictMode>
   );
 }

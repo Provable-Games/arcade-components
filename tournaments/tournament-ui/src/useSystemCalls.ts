@@ -1,37 +1,67 @@
 import { getEntityIdFromKeys } from "@dojoengine/utils";
+import { useAccount } from "@starknet-react/core";
 import { useDojoStore } from "./hooks/useDojoStore";
 import { useDojo } from "./DojoContext";
 import { v4 as uuidv4 } from "uuid";
-import { Token, Tournament, Prize, GatedTypeEnum } from "./lib/types";
+import {
+  Token,
+  Prize,
+  GatedTypeEnum,
+  GatedSubmissionTypeEnum,
+} from "./lib/types";
 import { TournamentModel, Premium } from "@/generated/models.gen";
-import { CairoOption } from "starknet";
+import { Account, BigNumberish, CairoOption, byteArray } from "starknet";
+import { useDojoSystem } from "@/hooks/useDojoSystem";
 
 export const useSystemCalls = () => {
   const state = useDojoStore((state) => state);
+  const tournament_mock = useDojoSystem("tournament_mock");
 
   const {
     setup: { client },
-    account: { account },
   } = useDojo();
+  const { account } = useAccount();
 
-  const createTournament = async (
-    tournamentCount: bigint,
-    tournament: TournamentModel
-  ) => {
-    // Generate a unique entity ID
-    const entityId = getEntityIdFromKeys([tournamentCount + 1n]); // add 1 to the tournament count for the new id
-    console.log(entityId);
+  // Tournament
 
-    // Generate a unique transaction ID
+  const registerTokens = async (tokens: Token[]) => {
+    const entityId = getEntityIdFromKeys([
+      BigInt(tournament_mock.contractAddress),
+    ]);
+
     const transactionId = uuidv4();
 
-    // Apply an optimistic update to the state
-    // this uses immer drafts to update the state
     state.applyOptimisticUpdate(transactionId, (draft) => {
-      console.log(draft);
-      // Initialize the path if it doesn't exist
+      if (draft.entities[entityId]?.models?.tournament_mock?.TokenModel) {
+        draft.entities[entityId].models.tournament_mock.TokenModel = tokens; // Create the model from provided data
+      }
+    });
+
+    try {
+      const resolvedClient = await client;
+      await resolvedClient.tournament_mock.registerTokens(account, tokens);
+
+      // Wait for the entity to be updated with the new state
+      await state.waitForEntityChange(entityId, (entity) => {
+        return entity?.models?.tournament_mock?.TokenModel === tokens;
+      });
+    } catch (error) {
+      state.revertOptimisticUpdate(transactionId);
+      console.error("Error executing register tokens:", error);
+      throw error;
+    } finally {
+      state.confirmTransaction(transactionId);
+    }
+  };
+
+  const createTournament = async (tournament: TournamentModel) => {
+    const entityId = getEntityIdFromKeys([BigInt(tournament.tournament_id)]);
+
+    const transactionId = uuidv4();
+
+    state.applyOptimisticUpdate(transactionId, (draft) => {
       if (!draft.entities[entityId]) {
-        draft.entities[entityId] = {
+        const newEntity = {
           entityId,
           models: {
             tournament: {
@@ -39,22 +69,19 @@ export const useSystemCalls = () => {
             },
           },
         };
-      } else {
-        draft.entities[entityId].models.tournament_mock.TournamentModel =
-          tournament;
+        draft.entities[entityId] = newEntity;
       }
     });
 
-    console.log(state);
+    console.log("here");
 
     try {
-      // Await the client promise to get the resolved object
       const resolvedClient = await client;
-      // Execute the spawn action from the client
+
       await resolvedClient.tournament_mock.createTournament(
-        account,
-        Number(tournament.name),
-        tournament.description,
+        account as Account,
+        tournament.name,
+        byteArray.byteArrayFromString(tournament.description),
         tournament.start_time,
         tournament.end_time,
         tournament.submission_period,
@@ -63,12 +90,109 @@ export const useSystemCalls = () => {
         tournament.entry_premium as CairoOption<Premium>
       );
 
-      console.log(entityId);
-
-      // Wait for the entity to be updated with the new state
       await state.waitForEntityChange(entityId, (entity) => {
-        return entity?.models?.tournament_mock?.TournamentModel === tournament;
+        return (
+          entity?.models?.tournament?.TournamentModel?.tournament_id ===
+          tournament.tournament_id
+        );
       });
+    } catch (error) {
+      state.revertOptimisticUpdate(transactionId);
+      console.error("Error executing create tournament:", error);
+      throw error;
+    } finally {
+      state.confirmTransaction(transactionId);
+    }
+  };
+
+  const enterTournament = async (
+    tournamentId: BigNumberish,
+    newEntryCount: BigNumberish,
+    gatedSubmissionType: CairoOption<GatedSubmissionTypeEnum>
+  ) => {
+    const entityId = getEntityIdFromKeys([BigInt(tournamentId)]);
+    const transactionId = uuidv4();
+
+    state.applyOptimisticUpdate(transactionId, (draft) => {
+      if (!draft.entities[entityId]) {
+        const newEntity = {
+          entityId,
+          models: {
+            tournament: {
+              TournamentEntriesModel: {
+                tournament_id: tournamentId,
+                entry_count: newEntryCount,
+              },
+            },
+          },
+        };
+        draft.entities[entityId] = newEntity;
+      } else if (
+        !draft.entities[entityId]?.models?.tournament?.TournamentEntriesModel
+      ) {
+        draft.entities[entityId].models.tournament = {
+          ...draft.entities[entityId].models.tournament,
+          TournamentEntriesModel: {
+            tournament_id: tournamentId,
+            entry_count: newEntryCount,
+            premiums_formatted: false,
+            distribute_called: false,
+          },
+        };
+      } else if (
+        draft.entities[entityId]?.models?.tournament?.TournamentEntriesModel
+      ) {
+        draft.entities[
+          entityId
+        ].models.tournament.TournamentEntriesModel.entry_count = newEntryCount;
+      }
+    });
+
+    try {
+      const resolvedClient = await client;
+      await resolvedClient.tournament_mock.enterTournament(
+        account,
+        tournamentId,
+        gatedSubmissionType
+      );
+
+      await state.waitForEntityChange(entityId, (entity) => {
+        return (
+          entity?.models?.tournament?.TournamentEntriesModel?.entry_count ===
+          newEntryCount
+        );
+      });
+    } catch (error) {
+      state.revertOptimisticUpdate(transactionId);
+      console.error("Error executing create tournament:", error);
+      throw error;
+    } finally {
+      state.confirmTransaction(transactionId);
+    }
+  };
+
+  const startTournament = async (
+    tournamentId: BigNumberish,
+    startAll: boolean,
+    startCount: CairoOption<number>
+  ) => {
+    const entityId = getEntityIdFromKeys([BigInt(tournamentId)]);
+    const transactionId = uuidv4();
+
+    // state.applyOptimisticUpdate(transactionId, (draft) => {
+    //   draft.entities[
+    //     entityId
+    //   ].models.tournament_mock.TournamentModel.start_time = Date.now();
+    // });
+
+    try {
+      const resolvedClient = await client;
+      await resolvedClient.tournament_mock.startTournament(
+        account,
+        Number(tournamentId),
+        startAll,
+        startCount
+      );
     } catch (error) {
       // Revert the optimistic update if an error occurs
       state.revertOptimisticUpdate(transactionId);
@@ -80,35 +204,30 @@ export const useSystemCalls = () => {
     }
   };
 
-  const registerTokens = async (tokens: Token[]) => {
-    // Generate a unique entity ID
-    const entityId = generateEntityId();
-
-    // Generate a unique transaction ID
+  const submitScores = async (
+    tournamentId: BigNumberish,
+    gameIds: Array<BigNumberish>
+  ) => {
+    const entityId = getEntityIdFromKeys([BigInt(tournamentId)]);
     const transactionId = uuidv4();
 
-    // Apply an optimistic update to the state
-    // this uses immer drafts to update the state
-    state.applyOptimisticUpdate(transactionId, (draft) => {
-      if (draft.entities[entityId]?.models?.tournament_mock?.TokenModel) {
-        draft.entities[entityId].models.tournament_mock.TokenModel = tokens; // Create the model from provided data
-      }
-    });
+    // state.applyOptimisticUpdate(transactionId, (draft) => {
+    //   draft.entities[
+    //     entityId
+    //   ].models.tournament_mock.TournamentModel.start_time = Date.now();
+    // });
 
     try {
-      // Await the client promise to get the resolved object
       const resolvedClient = await client;
-      // Execute the spawn action from the client
-      await resolvedClient.tournament_mock.registerTokens(account, tokens);
-
-      // Wait for the entity to be updated with the new state
-      await state.waitForEntityChange(entityId, (entity) => {
-        return entity?.models?.tournament_mock?.TokenModel === tokens;
-      });
+      await resolvedClient.tournament_mock.submitScores(
+        account,
+        tournamentId,
+        gameIds
+      );
     } catch (error) {
       // Revert the optimistic update if an error occurs
       state.revertOptimisticUpdate(transactionId);
-      console.error("Error executing register tokens:", error);
+      console.error("Error executing create tournament:", error);
       throw error;
     } finally {
       // Confirm the transaction if successful
@@ -116,9 +235,9 @@ export const useSystemCalls = () => {
     }
   };
 
-  const addPrize = async (tournamentId: bigint, prize: Prize) => {
+  const addPrize = async (tournamentId: BigNumberish, prize: Prize) => {
     // Generate a unique entity ID
-    const entityId = generateEntityId();
+    const entityId = getEntityIdFromKeys([BigInt(tournamentId)]);
 
     // Generate a unique transaction ID
     const transactionId = uuidv4();
@@ -132,29 +251,68 @@ export const useSystemCalls = () => {
     });
 
     try {
-      // Await the client promise to get the resolved object
       const resolvedClient = await client;
-      // Execute the spawn action from the client
       await resolvedClient.tournament_mock.addPrize(
         account,
-        Number(tournamentId),
+        tournamentId,
         prize.token,
         prize.tokenDataType,
         prize.position
       );
 
-      // Wait for the entity to be updated with the new state
       await state.waitForEntityChange(entityId, (entity) => {
         return entity?.models?.tournament_mock?.PrizeModel === prize;
       });
     } catch (error) {
-      // Revert the optimistic update if an error occurs
       state.revertOptimisticUpdate(transactionId);
       console.error("Error executing add prize:", error);
       throw error;
     } finally {
-      // Confirm the transaction if successful
-      console.log("here");
+      state.confirmTransaction(transactionId);
+    }
+  };
+
+  const distributePrizes = async (
+    tournamentId: BigNumberish,
+    prizeKeys: Array<BigNumberish>
+  ) => {
+    const entityId = getEntityIdFromKeys([BigInt(tournamentId)]);
+    const transactionId = uuidv4();
+
+    try {
+      const resolvedClient = await client;
+      await resolvedClient.tournament_mock.distributePrizes(
+        account,
+        tournamentId,
+        prizeKeys
+      );
+    } catch (error) {
+      state.revertOptimisticUpdate(transactionId);
+      console.error("Error executing distribute prizes:", error);
+      throw error;
+    } finally {
+      state.confirmTransaction(transactionId);
+    }
+  };
+
+  // Loot Survivor
+
+  const setAdventurer = async (adventurerId: BigNumberish, adventurer: any) => {
+    const entityId = getEntityIdFromKeys([BigInt(adventurerId)]);
+    const transactionId = uuidv4();
+
+    try {
+      const resolvedClient = await client;
+      await resolvedClient.loot_survivor_mock.setAdventurer(
+        account,
+        adventurerId,
+        adventurer
+      );
+    } catch (error) {
+      state.revertOptimisticUpdate(transactionId);
+      console.error("Error executing distribute prizes:", error);
+      throw error;
+    } finally {
       state.confirmTransaction(transactionId);
     }
   };
@@ -213,8 +371,8 @@ export const useSystemCalls = () => {
 
   const approveEth = async (
     spender: string,
-    amount_high: bigint,
-    amount_low: bigint
+    amount_high: BigNumberish,
+    amount_low: BigNumberish
   ) => {
     const resolvedClient = await client;
     await resolvedClient.eth_mock.approve(
@@ -226,6 +384,7 @@ export const useSystemCalls = () => {
   };
 
   const getEthBalance = async (address: string) => {
+    console.log(address);
     const resolvedClient = await client;
     return await resolvedClient.eth_mock.balance_of(account, address);
   };
@@ -251,8 +410,8 @@ export const useSystemCalls = () => {
 
   const approveLords = async (
     spender: string,
-    amount_high: bigint,
-    amount_low: bigint
+    amount_high: BigNumberish,
+    amount_low: BigNumberish
   ) => {
     const resolvedClient = await client;
     await resolvedClient.lords_mock.approve(
@@ -306,10 +465,20 @@ export const useSystemCalls = () => {
     return await resolvedClient.erc721_mock.balance_of(address);
   };
 
+  const getDataMedian = async (dataType: any) => {
+    const resolvedClient = await client;
+    return await resolvedClient.pragma_mock.getDataMedian(dataType);
+  };
+
   return {
     createTournament,
+    enterTournament,
+    startTournament,
+    submitScores,
     registerTokens,
     addPrize,
+    distributePrizes,
+    setAdventurer,
     mintErc20,
     approveErc20,
     getERC20Balance,
@@ -325,5 +494,6 @@ export const useSystemCalls = () => {
     mintErc721,
     approveErc721,
     getErc721Balance,
+    getDataMedian,
   };
 };

@@ -35,11 +35,10 @@ const UpcomingRow = ({
   }).format(new Date(startTimestamp));
   const tournamentEntries = tournamentDetails?.[0]?.TournamentEntriesModel;
   const tournamentPrizeKeys = tournamentDetails?.[0]?.TournamentPrizeKeysModel;
-  console.log(tournamentDetails);
   return (
     <tr className="h-10">
       <td className="px-2">{feltToString(BigInt(name!))}</td>
-      <td>{tournamentEntries?.entry_count ?? 0}</td>
+      <td>{BigInt(tournamentEntries?.entry_count ?? 0).toString()}</td>
       <td>{startDate}</td>
       <td>{formatTime(Number(end_time) - Number(start_time))}</td>
       <td>

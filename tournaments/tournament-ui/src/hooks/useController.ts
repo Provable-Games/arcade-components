@@ -20,34 +20,17 @@ const _makeControllerPolicies = (
   const policies: Policy[] = [];
   // contracts
   manifest?.contracts.forEach((contract: any) => {
-    const contractName = contract.tag.split(`${namespace}-`).at(-1);
-    const interfaces = contractInterfaces[contractName];
-    if (interfaces) {
-      // abis
-      contract.abi.forEach((abi: any) => {
-        // interfaces
-        const interfaceName = abi.name.split("::").slice(-1)[0];
-        // console.log(`CI:`, contractName, interfaceName)
-        if (abi.type == "interface" && interfaces.includes(interfaceName)) {
-          abi.items.forEach((item: any) => {
-            // functions
-            const method = item.name;
-            if (
-              item.type == "function" &&
-              item.state_mutability == "external" &&
-              !exclusions.includes(method)
-            ) {
-              // console.log(`CI:`, item.name, item)
-              policies.push({
-                target: contract.address,
-                method,
-                description: `${contract.tag}::${item.name}()`,
-              });
-            }
-          });
-        }
-      });
-    }
+    // abis
+    contract.systems.forEach((system: any) => {
+      // interfaces
+      if (!exclusions.includes(system)) {
+        policies.push({
+          target: contract.address,
+          method: system,
+          description: `${contract.tag}::${system}()`,
+        });
+      }
+    });
   });
   return policies;
 };

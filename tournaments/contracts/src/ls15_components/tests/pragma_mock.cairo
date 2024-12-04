@@ -7,12 +7,12 @@ pub trait IPragmaMock<TState> {
     fn world(self: @TState,) -> IWorldDispatcher;
 
     // IERCPublic
-    fn get_data_median(ref self: TState, data_type: DataType) -> PragmaPricesResponse;
+    fn get_data_median(self: @TState, data_type: DataType) -> PragmaPricesResponse;
 }
 
 #[starknet::interface]
 pub trait IPragmaMockPublic<TState> {
-    fn get_data_median(ref self: TState, data_type: DataType) -> PragmaPricesResponse;
+    fn get_data_median(self: @TState, data_type: DataType) -> PragmaPricesResponse;
 }
 
 
@@ -35,7 +35,7 @@ pub mod pragma_mock {
     use super::{IPragmaMockPublic};
     #[abi(embed_v0)]
     impl PragmaMockPublicImpl of IPragmaMockPublic<ContractState> {
-        fn get_data_median(ref self: ContractState, data_type: DataType) -> PragmaPricesResponse {
+        fn get_data_median(self: @ContractState, data_type: DataType) -> PragmaPricesResponse {
             PragmaPricesResponse {
                 price: 250000000000,
                 decimals: 8,

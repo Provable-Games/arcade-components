@@ -3,22 +3,22 @@
 #
 echo "------------------------------------------------------------------------------"
 echo "Cleaning..."
-sozo clean
+sozo -P slot clean
 echo "Building..."
-sozo build
+sozo -P slot build
 
 #-----------------
 # migrate
 #
 echo ">>> Migrate"
-sozo migrate
+sozo -P slot migrate
 echo "👍"
 
 #-----------------
 # get deployed addresses
 #
 
-export MANIFEST_FILE_PATH="./manifest_dev.json"
+export MANIFEST_FILE_PATH="./manifest_slot.json"
 
 get_contract_address () {
   local TAG=$1
@@ -46,8 +46,8 @@ echo "ORACLE_ADDRESS: $ORACLE_ADDRESS"
 echo "Waiting 10 seconds before execution..."
 sleep 10
 
-sozo execute tournament_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$LOOT_SURVIVOR_ADDRESS,$ORACLE_ADDRESS,true
-sozo execute loot_survivor_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$ORACLE_ADDRESS
+sozo -P slot execute tournament_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$LOOT_SURVIVOR_ADDRESS,$ORACLE_ADDRESS,0
+sozo -P slot execute loot_survivor_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$ORACLE_ADDRESS
 
 #------------------
 echo "--- DONE! 👍"

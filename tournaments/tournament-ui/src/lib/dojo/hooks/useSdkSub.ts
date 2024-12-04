@@ -37,7 +37,7 @@ export const useSdkSubscribeEntities = ({
     let _unsubscribe: (() => void) | undefined;
 
     const _subscribe = async () => {
-      await sdk.subscribeEntityQuery({
+      const subscription = await sdk.subscribeEntityQuery({
         query,
         callback: (response) => {
           if (response.error) {
@@ -46,7 +46,9 @@ export const useSdkSubscribeEntities = ({
               response.error.message
             );
           } else if (response.data && response.data[0].entityId !== "0x0") {
-            state.setEntities(response.data);
+            response.data.forEach((entity) => {
+              state.updateEntity(entity);
+            });
             setEntities(
               response.data.map(
                 (e: any) =>
@@ -60,12 +62,15 @@ export const useSdkSubscribeEntities = ({
         },
       });
       setIsSubscribed(true);
+      _unsubscribe = () => subscription.cancel();
     };
 
     // mount
     setIsSubscribed(false);
     if (enabled) {
       _subscribe();
+    } else {
+      setEntities(null);
     }
 
     // umnount
