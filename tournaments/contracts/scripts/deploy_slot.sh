@@ -46,7 +46,7 @@ echo "ORACLE_ADDRESS: $ORACLE_ADDRESS"
 echo "Waiting 10 seconds before execution..."
 sleep 10
 
-sozo -P slot execute tournament_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$LOOT_SURVIVOR_ADDRESS,$ORACLE_ADDRESS,0
+sozo -P slot execute tournament_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$LOOT_SURVIVOR_ADDRESS,$ORACLE_ADDRESS,0,1
 sozo -P slot execute loot_survivor_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$ORACLE_ADDRESS
 
 #------------------

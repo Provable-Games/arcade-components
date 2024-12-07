@@ -1,9 +1,10 @@
-import { useCallback, useRef } from "react";
-import { Connector } from "@starknet-react/core";
+import { useCallback, useRef, useMemo } from "react";
+import { useAccount, useConnect, Connector } from "@starknet-react/core";
 import { Policy, ControllerOptions } from "@cartridge/controller";
 import { ControllerConnector } from "@cartridge/connector";
 import { ContractInterfaces } from "@/config";
 import { DojoManifest } from "@/hooks/useDojoSystem";
+import { supportedConnectorIds } from "@/lib/connectors";
 
 // sync from here:
 // https://github.com/cartridge-gg/controller/blob/main/packages/account-wasm/src/constants.rs
@@ -12,11 +13,7 @@ export const CONTROLLER_CLASS_HASH =
 
 const exclusions = ["dojo_init"];
 
-const _makeControllerPolicies = (
-  manifest: DojoManifest,
-  namespace: string,
-  contractInterfaces: ContractInterfaces
-): Policy[] => {
+const _makeControllerPolicies = (manifest: DojoManifest): Policy[] => {
   const policies: Policy[] = [];
   // contracts
   manifest?.contracts.forEach((contract: any) => {
@@ -37,15 +34,9 @@ const _makeControllerPolicies = (
 
 export const makeControllerConnector = (
   manifest: DojoManifest,
-  rpcUrl: string,
-  namespace: string,
-  contractInterfaces: ContractInterfaces
+  rpcUrl: string
 ): Connector => {
-  const policies = _makeControllerPolicies(
-    manifest,
-    namespace,
-    contractInterfaces
-  );
+  const policies = _makeControllerPolicies(manifest);
 
   // tokens to display
   // const tokens: Tokens = {
@@ -84,18 +75,41 @@ export const useControllerConnector = (
   const connectorRef = useRef<any>(undefined);
   const controller = useCallback(() => {
     if (!connectorRef.current) {
-      connectorRef.current = makeControllerConnector(
-        manifest,
-        rpcUrl,
-        namespace,
-        contractInterfaces
-      );
+      connectorRef.current = makeControllerConnector(manifest, rpcUrl);
     }
     return connectorRef.current;
   }, [manifest, rpcUrl, namespace, contractInterfaces]);
   return {
     controller,
   };
+};
+
+export const useControllerMenu = () => {
+  const { account } = useAccount();
+  const controllerConnector = useConnectedController();
+  const openMenu = async () => {
+    if (account) {
+      await controllerConnector?.controller.openSettings();
+      // await controllerConnector?.controller.openProfile()
+    }
+  };
+  return {
+    openMenu,
+  };
+};
+
+export const useConnectedController = () => {
+  // const { connector } = useAccount()
+  const { connector } = useConnect();
+
+  const controllerConnector = useMemo(
+    () =>
+      connector?.id == supportedConnectorIds.CONTROLLER
+        ? (connector as unknown as ControllerConnector)
+        : undefined,
+    [connector]
+  );
+  return controllerConnector;
 };
 
 // export const useControllerAccount = (contractAddress: BigNumberish) => {

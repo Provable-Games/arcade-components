@@ -262,9 +262,7 @@ export const dojoContextConfig: Record<ChainId, DojoChainConfig> = {
 
 const CONTROLLER = makeControllerConnector(
   manifests[defaultChainId],
-  dojoContextConfig[defaultChainId]?.rpcUrl!,
-  NAMESPACE,
-  CONTRACT_INTERFACES[defaultChainId]
+  dojoContextConfig[defaultChainId]?.rpcUrl!
 );
 //------------------------
 

@@ -27,7 +27,7 @@ default = "tournament"
 "tournament-TournamentPrizeKeysModel" = ["tournament-LSTournament"]
 "tournament-PrizesModel" = ["tournament-LSTournament"]
 "tournament-TokenModel" = ["tournament-LSTournament"]
-"tournament-TournamentContracts" = ["tournament-LSTournament"]
+"tournament-TournamentConfig" = ["tournament-LSTournament"]
 
 [init_call_args]
 "tournament-LSTournament" = [
@@ -35,7 +35,8 @@ default = "tournament"
     "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
     "0x018108b32cea514a78ef1b0e4a0753e855cdf620bc0565202c02456f618c4dc4",
     "0x2a85bd616f912537c50a49a4076db02c00b29b2cdc8a197ce92ed1837fa875b",
-    true
+    true, # safe_mode
+    true # test_mode
 ]
 
 [migration]

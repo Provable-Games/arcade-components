@@ -3,14 +3,19 @@ import { useAccount } from "@starknet-react/core";
 import { useDojoStore } from "./hooks/useDojoStore";
 import { useDojo } from "./DojoContext";
 import { v4 as uuidv4 } from "uuid";
+import { Token, Prize, GatedSubmissionTypeEnum } from "./lib/types";
 import {
-  Token,
-  Prize,
-  GatedTypeEnum,
-  GatedSubmissionTypeEnum,
-} from "./lib/types";
-import { TournamentModel, Premium } from "@/generated/models.gen";
-import { Account, BigNumberish, CairoOption, byteArray } from "starknet";
+  InputTournamentModel,
+  Premium,
+  InputGatedTypeEnum,
+} from "@/generated/models.gen";
+import {
+  Account,
+  BigNumberish,
+  CairoOption,
+  CairoOptionVariant,
+  byteArray,
+} from "starknet";
 import { useDojoSystem } from "@/hooks/useDojoSystem";
 
 export const useSystemCalls = () => {
@@ -39,7 +44,7 @@ export const useSystemCalls = () => {
 
     try {
       const resolvedClient = await client;
-      await resolvedClient.tournament_mock.registerTokens(account, tokens);
+      resolvedClient.tournament_mock.registerTokens(account!, tokens);
 
       // Wait for the entity to be updated with the new state
       await state.waitForEntityChange(entityId, (entity) => {
@@ -54,7 +59,7 @@ export const useSystemCalls = () => {
     }
   };
 
-  const createTournament = async (tournament: TournamentModel) => {
+  const createTournament = async (tournament: InputTournamentModel) => {
     const entityId = getEntityIdFromKeys([BigInt(tournament.tournament_id)]);
 
     const transactionId = uuidv4();
@@ -73,20 +78,18 @@ export const useSystemCalls = () => {
       }
     });
 
-    console.log("here");
-
     try {
       const resolvedClient = await client;
 
-      await resolvedClient.tournament_mock.createTournament(
-        account as Account,
+      resolvedClient.tournament_mock.createTournament(
+        account!,
         tournament.name,
         byteArray.byteArrayFromString(tournament.description),
         tournament.start_time,
         tournament.end_time,
         tournament.submission_period,
         tournament.winners_count,
-        tournament.gated_type as CairoOption<GatedTypeEnum>,
+        tournament.gated_type as CairoOption<InputGatedTypeEnum>,
         tournament.entry_premium as CairoOption<Premium>
       );
 
@@ -108,15 +111,20 @@ export const useSystemCalls = () => {
   const enterTournament = async (
     tournamentId: BigNumberish,
     newEntryCount: BigNumberish,
+    newEntryAddressCount: BigNumberish,
     gatedSubmissionType: CairoOption<GatedSubmissionTypeEnum>
   ) => {
-    const entityId = getEntityIdFromKeys([BigInt(tournamentId)]);
+    const entriesEntityId = getEntityIdFromKeys([BigInt(tournamentId)]);
+    const entriesAddressEntityId = getEntityIdFromKeys([
+      BigInt(tournamentId),
+      BigInt(account?.address ?? "0x0"),
+    ]);
     const transactionId = uuidv4();
 
     state.applyOptimisticUpdate(transactionId, (draft) => {
-      if (!draft.entities[entityId]) {
-        const newEntity = {
-          entityId,
+      if (!draft.entities[entriesEntityId]) {
+        const entriesEntity = {
+          entityId: entriesEntityId,
           models: {
             tournament: {
               TournamentEntriesModel: {
@@ -126,12 +134,40 @@ export const useSystemCalls = () => {
             },
           },
         };
-        draft.entities[entityId] = newEntity;
+        const entriesAddressEntity = {
+          entityId: entriesAddressEntityId,
+          models: {
+            tournament: {
+              TournamentEntriesAddressModel: {
+                tournament_id: tournamentId,
+                address: account?.address,
+                entry_count: newEntryAddressCount,
+              },
+            },
+          },
+        };
+        draft.entities[entriesEntityId] = entriesAddressEntity;
+        draft.entities[entriesEntityId] = entriesEntity;
+      } else if (!draft.entities[entriesAddressEntityId]) {
+        const entriesAddressEntity = {
+          entityId: entriesAddressEntityId,
+          models: {
+            tournament: {
+              TournamentEntriesAddressModel: {
+                tournament_id: tournamentId,
+                address: account?.address,
+                entry_count: newEntryAddressCount,
+              },
+            },
+          },
+        };
+        draft.entities[entriesAddressEntityId] = entriesAddressEntity;
       } else if (
-        !draft.entities[entityId]?.models?.tournament?.TournamentEntriesModel
+        !draft.entities[entriesEntityId]?.models?.tournament
+          ?.TournamentEntriesModel
       ) {
-        draft.entities[entityId].models.tournament = {
-          ...draft.entities[entityId].models.tournament,
+        draft.entities[entriesEntityId].models.tournament = {
+          ...draft.entities[entriesEntityId].models.tournament,
           TournamentEntriesModel: {
             tournament_id: tournamentId,
             entry_count: newEntryCount,
@@ -139,32 +175,53 @@ export const useSystemCalls = () => {
             distribute_called: false,
           },
         };
-      } else if (
-        draft.entities[entityId]?.models?.tournament?.TournamentEntriesModel
-      ) {
-        draft.entities[
-          entityId
-        ].models.tournament.TournamentEntriesModel.entry_count = newEntryCount;
+        draft.entities[entriesAddressEntityId].models.tournament = {
+          ...draft.entities[entriesAddressEntityId].models.tournament,
+          TournamentEntriesAddressModel: {
+            tournament_id: tournamentId,
+            address: account?.address,
+            entry_count: newEntryAddressCount,
+          },
+        };
+      } else {
+        if (
+          draft.entities[entriesEntityId]?.models?.tournament
+            ?.TournamentEntriesModel
+        ) {
+          draft.entities[
+            entriesEntityId
+          ].models.tournament.TournamentEntriesModel.entry_count =
+            newEntryCount;
+        }
+        if (
+          draft.entities[entriesAddressEntityId]?.models?.tournament
+            ?.TournamentEntriesAddressModel
+        ) {
+          draft.entities[
+            entriesAddressEntityId
+          ].models.tournament.TournamentEntriesAddressModel.entry_count =
+            newEntryAddressCount;
+        }
       }
     });
 
     try {
       const resolvedClient = await client;
-      await resolvedClient.tournament_mock.enterTournament(
-        account,
+      resolvedClient.tournament_mock.enterTournament(
+        account as Account,
         tournamentId,
         gatedSubmissionType
       );
 
-      await state.waitForEntityChange(entityId, (entity) => {
+      await state.waitForEntityChange(entriesEntityId, (entity) => {
         return (
-          entity?.models?.tournament?.TournamentEntriesModel?.entry_count ===
+          entity?.models?.tournament?.TournamentEntriesModel?.entry_count ==
           newEntryCount
         );
       });
     } catch (error) {
       state.revertOptimisticUpdate(transactionId);
-      console.error("Error executing create tournament:", error);
+      console.error("Error executing enter tournament:", error);
       throw error;
     } finally {
       state.confirmTransaction(transactionId);
@@ -187,8 +244,8 @@ export const useSystemCalls = () => {
 
     try {
       const resolvedClient = await client;
-      await resolvedClient.tournament_mock.startTournament(
-        account,
+      resolvedClient.tournament_mock.startTournament(
+        account!,
         Number(tournamentId),
         startAll,
         startCount
@@ -219,8 +276,8 @@ export const useSystemCalls = () => {
 
     try {
       const resolvedClient = await client;
-      await resolvedClient.tournament_mock.submitScores(
-        account,
+      resolvedClient.tournament_mock.submitScores(
+        account!,
         tournamentId,
         gameIds
       );
@@ -235,7 +292,11 @@ export const useSystemCalls = () => {
     }
   };
 
-  const addPrize = async (tournamentId: BigNumberish, prize: Prize) => {
+  const addPrize = async (
+    tournamentId: BigNumberish,
+    prize: Prize,
+    prizeKey: BigNumberish
+  ) => {
     // Generate a unique entity ID
     const entityId = getEntityIdFromKeys([BigInt(tournamentId)]);
 
@@ -245,15 +306,29 @@ export const useSystemCalls = () => {
     // Apply an optimistic update to the state
     // this uses immer drafts to update the state
     state.applyOptimisticUpdate(transactionId, (draft) => {
-      if (draft.entities[entityId]?.models?.tournament_mock?.PrizeModel) {
-        draft.entities[entityId].models.tournament_mock.PrizeModel = prize; // Create the model from provided data
+      if (
+        !draft.entities[entityId]?.models?.tournament?.TournamentPrizeKeysModel
+      ) {
+        draft.entities[entityId].models.tournament = {
+          ...draft.entities[entityId].models.tournament,
+          TournamentPrizeKeysModel: {
+            tournament_id: tournamentId,
+            prize_keys: [prizeKey],
+          },
+        };
+      } else if (
+        draft.entities[entityId]?.models?.tournament?.TournamentPrizeKeysModel
+      ) {
+        draft.entities[
+          entityId
+        ].models.tournament.TournamentPrizeKeysModel.prize_keys.push(prizeKey);
       }
     });
 
     try {
       const resolvedClient = await client;
-      await resolvedClient.tournament_mock.addPrize(
-        account,
+      resolvedClient.tournament_mock.addPrize(
+        account!,
         tournamentId,
         prize.token,
         prize.tokenDataType,
@@ -261,7 +336,9 @@ export const useSystemCalls = () => {
       );
 
       await state.waitForEntityChange(entityId, (entity) => {
-        return entity?.models?.tournament_mock?.PrizeModel === prize;
+        return entity?.models?.tournament?.TournamentPrizeKeysModel?.prize_keys.includes(
+          prizeKey
+        );
       });
     } catch (error) {
       state.revertOptimisticUpdate(transactionId);
@@ -281,8 +358,8 @@ export const useSystemCalls = () => {
 
     try {
       const resolvedClient = await client;
-      await resolvedClient.tournament_mock.distributePrizes(
-        account,
+      resolvedClient.tournament_mock.distributePrizes(
+        account!,
         tournamentId,
         prizeKeys
       );
@@ -303,8 +380,8 @@ export const useSystemCalls = () => {
 
     try {
       const resolvedClient = await client;
-      await resolvedClient.loot_survivor_mock.setAdventurer(
-        account,
+      resolvedClient.loot_survivor_mock.setAdventurer(
+        account!,
         adventurerId,
         adventurer
       );
@@ -324,7 +401,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.erc20_mock.mint(
-      account,
+      account!,
       recipient,
       amount_high,
       amount_low
@@ -338,7 +415,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.erc20_mock.approve(
-      account,
+      account!,
       spender,
       amount_high,
       amount_low
@@ -347,7 +424,7 @@ export const useSystemCalls = () => {
 
   const getERC20Balance = async (address: string) => {
     const resolvedClient = await client;
-    return await resolvedClient.erc20_mock.balance_of(account, address);
+    return await resolvedClient.erc20_mock.balanceOf(address);
   };
 
   const getERC20Allowance = async (owner: string, spender: string) => {
@@ -362,7 +439,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.eth_mock.mint(
-      account,
+      account as Account,
       recipient,
       amount_high,
       amount_low
@@ -376,7 +453,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.eth_mock.approve(
-      account,
+      account!,
       spender,
       amount_high,
       amount_low
@@ -384,9 +461,8 @@ export const useSystemCalls = () => {
   };
 
   const getEthBalance = async (address: string) => {
-    console.log(address);
     const resolvedClient = await client;
-    return await resolvedClient.eth_mock.balance_of(account, address);
+    return await resolvedClient.eth_mock.balanceOf(address);
   };
 
   const getEthAllowance = async (owner: string, spender: string) => {
@@ -401,7 +477,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.lords_mock.mint(
-      account,
+      account!,
       recipient,
       amount_high,
       amount_low
@@ -415,7 +491,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.lords_mock.approve(
-      account,
+      account!,
       spender,
       amount_high,
       amount_low
@@ -424,7 +500,7 @@ export const useSystemCalls = () => {
 
   const getLordsBalance = async (address: string) => {
     const resolvedClient = await client;
-    return await resolvedClient.lords_mock.balance_of(address);
+    return await resolvedClient.lords_mock.balanceOf(address);
   };
 
   const getLordsAllowance = async (owner: string, spender: string) => {
@@ -439,7 +515,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.erc721_mock.mint(
-      account,
+      account!,
       recipient,
       tokenId_low,
       tokenId_high
@@ -453,7 +529,7 @@ export const useSystemCalls = () => {
   ) => {
     const resolvedClient = await client;
     await resolvedClient.erc721_mock.approve(
-      account,
+      account!,
       spender,
       tokenId_low,
       tokenId_high
@@ -462,12 +538,40 @@ export const useSystemCalls = () => {
 
   const getErc721Balance = async (address: string) => {
     const resolvedClient = await client;
-    return await resolvedClient.erc721_mock.balance_of(address);
+    return await resolvedClient.erc721_mock.balanceOf(address);
   };
 
   const getDataMedian = async (dataType: any) => {
     const resolvedClient = await client;
     return await resolvedClient.pragma_mock.getDataMedian(dataType);
+  };
+
+  const approveERC20General = async (token: Token) => {
+    (account as Account)?.execute([
+      {
+        contractAddress: token.token,
+        entrypoint: "approve",
+        calldata: [
+          tournament_mock.contractAddress,
+          token.tokenDataType.variant.erc20?.token_amount,
+          "0",
+        ],
+      },
+    ]);
+  };
+
+  const approveERC721General = async (token: Token) => {
+    (account as Account)?.execute([
+      {
+        contractAddress: token.token,
+        entrypoint: "approve",
+        calldata: [
+          tournament_mock.contractAddress,
+          token.tokenDataType.variant.erc721?.token_id,
+          "0",
+        ],
+      },
+    ]);
   };
 
   return {
@@ -495,5 +599,7 @@ export const useSystemCalls = () => {
     approveErc721,
     getErc721Balance,
     getDataMedian,
+    approveERC20General,
+    approveERC721General,
   };
 };

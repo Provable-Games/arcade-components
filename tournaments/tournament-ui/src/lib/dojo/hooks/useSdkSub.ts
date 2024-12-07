@@ -46,6 +46,10 @@ export const useSdkSubscribeEntities = ({
               response.error.message
             );
           } else if (response.data && response.data[0].entityId !== "0x0") {
+            console.log(
+              "useSdkSubscribeEntities() response.data",
+              response.data
+            );
             response.data.forEach((entity) => {
               state.updateEntity(entity);
             });

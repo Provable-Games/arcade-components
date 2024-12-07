@@ -1,7 +1,7 @@
 import { useState, ChangeEvent } from "react";
 import { useAccount } from "@starknet-react/core";
 import { Button } from "../components/buttons/Button";
-import { TournamentModel } from "../generated/models.gen";
+import { InputTournamentModel } from "../generated/models.gen";
 import { DateTimePicker } from "../components/ui/datetime-picker";
 import { PlusIcon, TrophyIcon, CloseIcon, InfoIcon } from "../components/Icons";
 import useUIStore from "../hooks/useUIStore";
@@ -10,12 +10,7 @@ import { stringToFelt, formatTime, bigintToHex } from "../lib/utils";
 import EntryCriteriaDialog from "../components/dialogs/EntryCriteria";
 import EntryFeeBox from "../components/create/EntryFeeBox";
 import PrizeBoxes from "@/components/create/PrizeBoxes";
-import {
-  CairoOption,
-  CairoOptionVariant,
-  byteArray,
-  addAddressPadding,
-} from "starknet";
+import { CairoOption, CairoOptionVariant, addAddressPadding } from "starknet";
 import { useDojoStore } from "@/hooks/useDojoStore";
 import { useSubscribeTournamentsQuery } from "@/hooks/useSdkQueries";
 
@@ -34,7 +29,12 @@ const Create = () => {
   const tournamentCount =
     tournamentTotals[0]?.models?.tournament?.TournamentTotalsModel
       ?.total_tournaments ?? 0n;
-  const { createTournament, addPrize } = useSystemCalls();
+  const {
+    createTournament,
+    addPrize,
+    approveERC20General,
+    approveERC721General,
+  } = useSystemCalls();
 
   const [isMaxLength, setIsMaxLength] = useState(false);
   const [overMaxSubmission, setOverMaxSubmission] = useState(false);
@@ -83,17 +83,7 @@ const Create = () => {
   };
 
   const handleCreateTournament = async () => {
-    const tournament: TournamentModel = {
-      fieldOrder: [
-        "name",
-        "description",
-        "start_time",
-        "end_time",
-        "submission_period",
-        "winners_count",
-        "gated_type",
-        "entry_premium",
-      ],
+    const tournament: InputTournamentModel = {
       tournament_id: addAddressPadding(
         bigintToHex(BigInt(tournamentCount) + 1n)
       ),
@@ -132,8 +122,20 @@ const Create = () => {
     };
     await createTournament(tournament);
     // Add prizes sequentially
+    let prizeKey = 0;
     for (const prize of formData.prizes) {
-      await addPrize(BigInt(tournamentCount) + 1n, prize);
+      // approve tokens to be added
+      if (prize.tokenDataType.activeVariant() === "erc20") {
+        await approveERC20General(prize);
+      } else {
+        await approveERC721General(prize);
+      }
+      await addPrize(
+        BigInt(tournamentCount) + 1n,
+        prize,
+        addAddressPadding(bigintToHex(prizeKey))
+      );
+      prizeKey++;
     }
   };
 
@@ -179,21 +181,22 @@ const Create = () => {
           }
         />
       )}
-      <h3 className="2xl:text-5xl text-center">Create Tournament</h3>
       <div className="flex flex-row gap-5">
         <div className="w-1/2 flex flex-col gap-2">
           <div className="relative flex flex-col gap-2">
             <p className="2xl:text-4xl">Name</p>
-            <input
-              type="text"
-              name="tournamentName"
-              onChange={handleChangeName}
-              className="ml-16 mt-2 px-2 2xl:h-8 2xl:w-96 2xl:text-2xl bg-terminal-black border border-terminal-green animate-pulse transform"
-              maxLength={31}
-            />
-            {isMaxLength && (
-              <p className="absolute top-10 sm:top-20">MAX LENGTH!</p>
-            )}
+            <div className="flex flex-row items-center gap-2">
+              <input
+                type="text"
+                name="tournamentName"
+                onChange={handleChangeName}
+                className="ml-16 mt-2 px-2 2xl:h-8 2xl:w-96 2xl:text-2xl bg-terminal-black border border-terminal-green no-text-shadow transform"
+                maxLength={31}
+              />
+              {isMaxLength && (
+                <p className="text-terminal-yellow">MAX LENGTH!</p>
+              )}
+            </div>
           </div>
           <div className="relative flex flex-col gap-2">
             <p className="2xl:text-4xl">Description</p>

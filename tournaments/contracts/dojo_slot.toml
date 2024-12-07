@@ -25,9 +25,10 @@ private_key = "0x3e3979c1ed728490308054fe357a9f49cf67f80f9721f44cc57235129e090f4
 [writers]
 # Tournament
 "tournament-TournamentModel" = ["tournament-tournament_mock"]
-"tournament-TournamentEntryModel" = ["tournament-tournament_mock"]
+"tournament-TournamentGameModel" = ["tournament-tournament_mock"]
 "tournament-TournamentEntryAddressesModel" = ["tournament-tournament_mock"]
 "tournament-TournamentEntriesAddressModel" = ["tournament-tournament_mock"]
+"tournament-TournamentStartsAddressModel" = ["tournament-tournament_mock"]
 "tournament-TournamentStartIdsModel" = ["tournament-tournament_mock"]
 "tournament-TournamentEntriesModel" = ["tournament-tournament_mock"]
 "tournament-TournamentScoresModel" = ["tournament-tournament_mock"]
@@ -35,7 +36,7 @@ private_key = "0x3e3979c1ed728490308054fe357a9f49cf67f80f9721f44cc57235129e090f4
 "tournament-TournamentPrizeKeysModel" = ["tournament-tournament_mock"]
 "tournament-PrizesModel" = ["tournament-tournament_mock"]
 "tournament-TokenModel" = ["tournament-tournament_mock"]
-"tournament-TournamentContracts" = ["tournament-tournament_mock"]
+"tournament-TournamentConfig" = ["tournament-tournament_mock"]
 # Loot Survivor
 "tournament-AdventurerModel" = ["tournament-loot_survivor_mock"]
 "tournament-AdventurerMetaModel" = ["tournament-loot_survivor_mock"]

@@ -57,6 +57,7 @@ pub mod tournament_component {
     use tournament::ls15_components::constants::{
         VRF_COST_PER_GAME, TWO_POW_128, MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD,
         MIN_TOURNAMENT_LENGTH, MAX_TOURNAMENT_LENGTH, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD,
+        TEST_MIN_REGISTRATION_PERIOD, TEST_MIN_SUBMISSION_PERIOD, TEST_MIN_TOURNAMENT_LENGTH,
         GAME_EXPIRATION_PERIOD, ETHEREUM_ADDRESS, LORDS_ADDRESS, SURVIVORS_ADDRESS, ETH_SAFE_AMOUNT, LORDS_SAFE_AMOUNT
     };
     use tournament::ls15_components::interfaces::{
@@ -67,7 +68,7 @@ pub mod tournament_component {
         TournamentModel, TournamentGameModel, TournamentEntryAddressesModel,
         TournamentEntriesAddressModel, TournamentEntriesModel, TournamentStartsAddressModel,
         TournamentStartIdsModel, TournamentScoresModel, TournamentTotalsModel,
-        TournamentPrizeKeysModel, PrizesModel, TokenModel, TournamentContracts, TokenDataType,
+        TournamentPrizeKeysModel, PrizesModel, TokenModel, TournamentConfig, TokenDataType,
         EntryStatus, GatedType, GatedSubmissionType, GatedEntryType, GatedToken, Premium, ERC20Data,
         Token
     };
@@ -255,11 +256,11 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
 
-            self._assert_start_time_after_min_registration(start_time);
+            self._assert_start_time_after_min_registration(ref store, start_time);
             self._assert_start_time_before_max_registration(start_time);
-            self._assert_tournament_length_not_too_short(end_time, start_time);
+            self._assert_tournament_length_not_too_short(ref store, end_time, start_time);
             self._assert_tournament_length_not_too_long(end_time, start_time);
-            self._assert_submission_period_larger_than_minimum(submission_period);
+            self._assert_submission_period_larger_than_minimum(ref store,submission_period);
             self._assert_submission_period_less_than_maximum(submission_period);
             self._assert_winners_count_greater_than_zero(winners_count);
             self._assert_gated_type_validates(ref store, gated_type);
@@ -391,15 +392,15 @@ pub mod tournament_component {
             }
 
             // define contract interfaces
-            let tournament_contracts = store.get_tournament_contracts(get_contract_address());
+            let tournament_config = store.get_tournament_config(get_contract_address());
             let mut ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: tournament_contracts.loot_survivor
+                contract_address: tournament_config.loot_survivor
             };
             let lords_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: tournament_contracts.lords
+                contract_address: tournament_config.lords
             };
             let eth_dispatcher: IERC20Dispatcher = IERC20Dispatcher {
-                contract_address: tournament_contracts.eth
+                contract_address: tournament_config.eth
             };
 
             // get current game cost
@@ -416,15 +417,15 @@ pub mod tournament_component {
             // transfer VRF cost
             let vrf_cost = self
                 ._convert_usd_to_wei(
-                    tournament_contracts, entries.into() * VRF_COST_PER_GAME.into()
+                    tournament_config, entries.into() * VRF_COST_PER_GAME.into()
                 );
             eth_dispatcher
                 .transfer_from(get_caller_address(), get_contract_address(), vrf_cost.into());
 
             // set the approvals according to entries
             lords_dispatcher
-                .approve(tournament_contracts.loot_survivor, entries.into() * cost_to_play.into());
-            eth_dispatcher.approve(tournament_contracts.loot_survivor, vrf_cost.into());
+                .approve(tournament_config.loot_survivor, entries.into() * cost_to_play.into());
+            eth_dispatcher.approve(tournament_config.loot_survivor, vrf_cost.into());
 
             let tournament = store.get_tournament(tournament_id);
 
@@ -535,9 +536,9 @@ pub mod tournament_component {
             // assert submission period is not over
             self._assert_tournament_not_settled(ref tournament);
 
-            let contracts = store.get_tournament_contracts(get_contract_address());
+            let tournament_config = store.get_tournament_config(get_contract_address());
             let mut ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: contracts.loot_survivor
+                contract_address: tournament_config.loot_survivor
             };
 
             // loop through game ids and update scores
@@ -649,16 +650,17 @@ pub mod tournament_component {
             lords: ContractAddress,
             loot_survivor: ContractAddress,
             oracle: ContractAddress,
-            safe_mode: bool
+            safe_mode: bool,
+            test_mode: bool
         ) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @"tournament"
             );
             let mut store: Store = StoreTrait::new(world);
             store
-                .set_tournament_contracts(
-                    @TournamentContracts {
-                        contract: get_contract_address(), eth, lords, loot_survivor, oracle, safe_mode
+                .set_tournament_config(
+                    @TournamentConfig {
+                        contract: get_contract_address(), eth, lords, loot_survivor, oracle, safe_mode, test_mode
                     }
                 );
         }
@@ -670,9 +672,9 @@ pub mod tournament_component {
         fn get_score_from_id(
             self: @ComponentState<TContractState>, ref store: Store, game_id: felt252
         ) -> u16 {
-            let tournament_contracts = store.get_tournament_contracts(get_contract_address());
+            let tournament_config = store.get_tournament_config(get_contract_address());
             let ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: tournament_contracts.loot_survivor
+                contract_address: tournament_config.loot_survivor
             };
             ls_dispatcher.get_adventurer(game_id).xp
         }
@@ -680,9 +682,9 @@ pub mod tournament_component {
         fn get_death_date_from_id(
             self: @ComponentState<TContractState>, ref store: Store, game_id: felt252
         ) -> u64 {
-            let tournament_contracts = store.get_tournament_contracts(get_contract_address());
+            let tournament_config = store.get_tournament_config(get_contract_address());
             let ls_dispatcher = ILootSurvivorDispatcher {
-                contract_address: tournament_contracts.loot_survivor
+                contract_address: tournament_config.loot_survivor
             };
             ls_dispatcher.get_adventurer_meta(game_id).death_date
         }
@@ -804,10 +806,16 @@ pub mod tournament_component {
         //
 
         fn _assert_start_time_after_min_registration(
-            self: @ComponentState<TContractState>, start_time: u64
+            self: @ComponentState<TContractState>, ref store: Store, start_time: u64
         ) {
+            let test_mode = store.get_tournament_config(get_contract_address()).test_mode;
+            let min_registration_period = if test_mode {
+                TEST_MIN_REGISTRATION_PERIOD
+            } else {
+                MIN_REGISTRATION_PERIOD
+            };
             assert(
-                start_time >= get_block_timestamp() + MIN_REGISTRATION_PERIOD.into(),
+                start_time >= get_block_timestamp() + min_registration_period.into(),
                 Errors::START_TIME_NOT_AFTER_MIN_REGISTRATION
             );
         }
@@ -822,10 +830,16 @@ pub mod tournament_component {
         }
 
         fn _assert_tournament_length_not_too_short(
-            self: @ComponentState<TContractState>, end_time: u64, start_time: u64
+            self: @ComponentState<TContractState>, ref store: Store, end_time: u64, start_time: u64
         ) {
+            let test_mode = store.get_tournament_config(get_contract_address()).test_mode;
+            let min_tournament_length = if test_mode {
+                TEST_MIN_TOURNAMENT_LENGTH
+            } else {
+                MIN_TOURNAMENT_LENGTH
+            };
             assert(
-                end_time - start_time >= MIN_TOURNAMENT_LENGTH.into(), Errors::TOURNAMENT_TOO_SHORT
+                end_time - start_time >= min_tournament_length.into(), Errors::TOURNAMENT_TOO_SHORT
             );
         }
 
@@ -838,10 +852,16 @@ pub mod tournament_component {
         }
 
         fn _assert_submission_period_larger_than_minimum(
-            self: @ComponentState<TContractState>, submission_period: u64
+            self: @ComponentState<TContractState>, ref store: Store, submission_period: u64
         ) {
+            let test_mode = store.get_tournament_config(get_contract_address()).test_mode;
+            let min_submission_period = if test_mode {
+                TEST_MIN_SUBMISSION_PERIOD
+            } else {
+                MIN_SUBMISSION_PERIOD
+            };
             assert(
-                submission_period >= MIN_SUBMISSION_PERIOD.into(),
+                submission_period >= min_submission_period.into(),
                 Errors::SUBMISSION_PERIOD_TOO_SHORT
             );
         }
@@ -887,7 +907,7 @@ pub mod tournament_component {
                     };
                     self._assert_premium_token_distribution_sum_is_100(distribution_sum);
 
-                    let safe_mode = store.get_tournament_contracts(get_contract_address()).safe_mode;
+                    let safe_mode = store.get_tournament_config(get_contract_address()).safe_mode;
                     if (safe_mode) {
                         if (token.token == ETHEREUM_ADDRESS()) {
                             assert(token.token_amount <= ETH_SAFE_AMOUNT, Errors::INVALID_SAFE_TOKEN_AMOUNT);
@@ -1013,8 +1033,8 @@ pub mod tournament_component {
                 self.get_contract().world_dispatcher(), @"tournament"
             );
             let mut store: Store = StoreTrait::new(world);
-            let tournament_contracts = store.get_tournament_contracts(get_contract_address());
-            let owner = self._get_owner(tournament_contracts.loot_survivor, game_id);
+            let tournament_config = store.get_tournament_config(get_contract_address());
+            let owner = self._get_owner(tournament_config.loot_survivor, game_id);
             assert(owner == account, Errors::NOT_GAME_OWNER);
         }
 
@@ -1174,10 +1194,10 @@ pub mod tournament_component {
                                 game_ids.len() == tournament_ids.len(),
                                 Errors::INVALID_SUBMITTED_GAMES_LENGTH
                             );
-                            let tournament_contracts = store
-                                .get_tournament_contracts(get_contract_address());
+                            let tournament_config = store
+                                .get_tournament_config(get_contract_address());
                             let ls_dispatcher = ILootSurvivorDispatcher {
-                                contract_address: tournament_contracts.loot_survivor
+                                contract_address: tournament_config.loot_survivor
                             };
                             let mut loop_index = 0;
                             loop {
@@ -1272,7 +1292,7 @@ pub mod tournament_component {
         ) {
             let num_tokens = tokens.len();
             let mut token_index = 0;
-            let safe_mode = store.get_tournament_contracts(get_contract_address()).safe_mode;
+            let safe_mode = store.get_tournament_config(get_contract_address()).safe_mode;
             loop {
                 if token_index == num_tokens {
                     break;
@@ -1491,11 +1511,11 @@ pub mod tournament_component {
 
         fn _convert_usd_to_wei(
             self: @ComponentState<TContractState>,
-            tournament_contracts: TournamentContracts,
+            tournament_config: TournamentConfig,
             usd: u128
         ) -> u128 {
             let oracle_dispatcher = IPragmaABIDispatcher {
-                contract_address: tournament_contracts.oracle
+                contract_address: tournament_config.oracle
             };
             let response = oracle_dispatcher.get_data_median(DataType::SpotEntry('ETH/USD'));
             assert(response.price > 0, Errors::FETCHING_ETH_PRICE_ERROR);
@@ -1516,7 +1536,7 @@ pub mod tournament_component {
             match token_data_type {
                 TokenDataType::erc20(token_data) => {
                     let token_dispatcher = IERC20Dispatcher { contract_address: token };
-                    let safe_mode = store.get_tournament_contracts(get_contract_address()).safe_mode;
+                    let safe_mode = store.get_tournament_config(get_contract_address()).safe_mode;
                     if (safe_mode) {
                         if (token == ETHEREUM_ADDRESS()) {
                             assert(token_data.token_amount <= ETH_SAFE_AMOUNT, Errors::INVALID_SAFE_TOKEN_AMOUNT);
@@ -1603,7 +1623,7 @@ pub mod tournament_component {
             prize_keys: Array<u64>,
             top_score_ids: Span<u64>
         ) {
-            let tournament_contracts = store.get_tournament_contracts(get_contract_address());
+            let tournament_config = store.get_tournament_config(get_contract_address());
             let num_prizes = prize_keys.len();
             let mut prize_index = 0;
             loop {
@@ -1621,11 +1641,11 @@ pub mod tournament_component {
                 // get payout position address
                 let payout_position_id = *top_score_ids.at(prize.payout_position.into() - 1);
                 let payout_position_address = self
-                    ._get_owner(tournament_contracts.loot_survivor, payout_position_id.into());
+                    ._get_owner(tournament_config.loot_survivor, payout_position_id.into());
                 // get first place address
                 let first_place_id = *top_score_ids.at(0);
                 let first_place_address = self
-                    ._get_owner(tournament_contracts.loot_survivor, first_place_id.into());
+                    ._get_owner(tournament_config.loot_survivor, first_place_id.into());
                 // perform the distributions based on the token data type
                 match prize.token_data_type {
                     TokenDataType::erc20(token_data) => {

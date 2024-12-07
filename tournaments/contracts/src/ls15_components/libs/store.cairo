@@ -9,7 +9,7 @@ use tournament::ls15_components::models::tournament::{
     TournamentTotalsModel, TournamentModel, TournamentEntriesModel, TournamentPrizeKeysModel,
     PrizesModel, TournamentScoresModel, TokenModel, TournamentEntriesAddressModel,
     TournamentEntryAddressesModel, TournamentStartsAddressModel, TournamentGameModel,
-    TournamentContracts, TournamentStartIdsModel
+    TournamentConfig, TournamentStartIdsModel
 };
 
 #[derive(Copy, Drop)]
@@ -122,7 +122,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_tournament_contracts(ref self: Store, contract: ContractAddress) -> TournamentContracts {
+    fn get_tournament_config(ref self: Store, contract: ContractAddress) -> TournamentConfig {
         (self.world.read_model(contract))
     }
     // Setters
@@ -218,7 +218,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_tournament_contracts(ref self: Store, model: @TournamentContracts) {
+    fn set_tournament_config(ref self: Store, model: @TournamentConfig) {
         self.world.write_model(model);
     }
 }

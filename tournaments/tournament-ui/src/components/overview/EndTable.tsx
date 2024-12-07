@@ -1,11 +1,11 @@
-import { useGetLiveTournamentsQuery } from "@/hooks/useSdkQueries";
-import LiveRow from "@/components/overview/LiveRow";
+import { useGetEndedTournamentsQuery } from "@/hooks/useSdkQueries";
+import EndRow from "@/components/overview/EndRow";
 
-const LiveTable = () => {
+const EndTable = () => {
   // const [currentPage, setCurrentPage] = useState<number>(1);
   const hexTimestamp = (BigInt(new Date().getTime()) / 1000n).toString(16);
   const { entities: tournaments, isLoading } =
-    useGetLiveTournamentsQuery(hexTimestamp);
+    useGetEndedTournamentsQuery(hexTimestamp);
 
   return (
     <div className="flex flex-col gap-4">
@@ -23,7 +23,7 @@ const LiveTable = () => {
           {tournaments && tournaments.length > 0 ? (
             tournaments.map((tournament) => {
               const tournamentModel = tournament.TournamentModel;
-              return <LiveRow key={tournament.entityId} {...tournamentModel} />;
+              return <EndRow key={tournament.entityId} {...tournamentModel} />;
             })
           ) : isLoading ? (
             <p>Loading...</p>
@@ -76,4 +76,4 @@ const LiveTable = () => {
   );
 };
 
-export default LiveTable;
+export default EndTable;

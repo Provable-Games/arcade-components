@@ -16,8 +16,6 @@ const LootSurvivor = () => {
   const state = useDojoStore((state) => state);
   const [scores, setScores] = useState<Record<string, number>>({});
 
-  console.log(state);
-
   const adventurers = state.getEntitiesByModel("tournament", "AdventurerModel");
   const startIdsModel = state.getEntitiesByModel(
     "tournament",

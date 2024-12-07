@@ -2978,7 +2978,7 @@
     },
     {
       "address": "0x60b58d084173a70b02dfbdee17962a6435e8b4c6fcc21286adfc67d461c3725",
-      "class_hash": "0x643f1083cca123f24cb237710170b7d46f6cefe8ca959ce4f1e9521f8c9df56",
+      "class_hash": "0x7c13728455d61dc47cf58cdd4feca87a76408a5fddc1c02afe9608c1ced95fe",
       "abi": [
         {
           "type": "impl",
@@ -3499,7 +3499,7 @@
                 }
               ],
               "outputs": [],
-              "state_mutability": "view"
+              "state_mutability": "external"
             },
             {
               "type": "function",
@@ -3515,7 +3515,7 @@
                 }
               ],
               "outputs": [],
-              "state_mutability": "view"
+              "state_mutability": "external"
             },
             {
               "type": "function",
@@ -3531,7 +3531,7 @@
                 }
               ],
               "outputs": [],
-              "state_mutability": "view"
+              "state_mutability": "external"
             }
           ]
         },
@@ -4087,6 +4087,9 @@
         "initializer",
         "upgrade",
         "new_game",
+        "set_adventurer",
+        "set_adventurer_meta",
+        "set_bag",
         "safe_transfer_from",
         "transfer_from",
         "approve",
@@ -4868,7 +4871,7 @@
     },
     {
       "address": "0x5cf5b1a48825c55ea9a359c9a2fc987e3fc496f8f72fb5393fd87c2ccf329bd",
-      "class_hash": "0xd4435b1c53b5f53d8643df6b96e47b40e86face9209271b75e9fd8b887f838",
+      "class_hash": "0x6f6056c3f7b22594c8b6f30af604a5c2a61a495622f40029b2ce7444d43e85b",
       "abi": [
         {
           "type": "impl",
@@ -4965,6 +4968,10 @@
                 },
                 {
                   "name": "safe_mode",
+                  "type": "core::bool"
+                },
+                {
+                  "name": "test_mode",
                   "type": "core::bool"
                 }
               ],
@@ -5720,9 +5727,9 @@
     },
     {
       "members": [],
-      "class_hash": "0x6b77f34f62efaf78a11e840520d3c45e7d9f46eeb5e8d1291d378dae908c13c",
-      "tag": "tournament-TournamentContracts",
-      "selector": "0x3cef2d4443bcdf6ba4141194170ec796fc3501b6f34ae30abc600c1ffb16ec4"
+      "class_hash": "0x71bd6392a00912a7252a5c6711c88c252ce519ae1ad8300206738343623a6e0",
+      "tag": "tournament-TournamentConfig",
+      "selector": "0x547cd590eea00da15c7206cf56bafbdacb70341a5648eef169c86d20c7ad77f"
     },
     {
       "members": [],

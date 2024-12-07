@@ -3,10 +3,11 @@ import { Button } from "./buttons/Button";
 import { CartridgeIcon, ETH, LORDS, LOGO } from "./Icons";
 import useUIStore from "../hooks/useUIStore";
 import { displayAddress, formatNumber, indexAddress } from "@/lib/utils";
-import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
+import { useAccount, useConnect } from "@starknet-react/core";
 import { checkCartridgeConnector } from "../lib/connectors";
 import { useDojo } from "../DojoContext";
 import { useConnectToSelectedChain } from "@/lib/dojo/hooks/useChain";
+import { useControllerMenu } from "@/hooks/useController";
 
 export interface HeaderProps {
   ethBalance: bigint;
@@ -16,13 +17,12 @@ export interface HeaderProps {
 export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
   const { account } = useAccount();
   const { connector } = useConnect();
-  const { disconnect } = useDisconnect();
   const { connect } = useConnectToSelectedChain();
+  const { openMenu } = useControllerMenu();
   const username = useUIStore((state: any) => state.username);
   const {
     setup: { selectedChainConfig },
   } = useDojo();
-  console.log(account);
 
   // const displayCart = useUIStore((state) => state.displayCart);
   // const setDisplayCart = useUIStore((state) => state.setDisplayCart);
@@ -102,12 +102,12 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
               size={"sm"}
               onClick={() => {
                 if (account) {
-                  disconnect();
+                  openMenu();
                 } else {
                   connect();
                 }
               }}
-              className="xl:px-5 p-0 hover:bg-terminal-green hover:text-terminal-black"
+              className="xl:px-5 p-0"
             >
               {account ? (
                 username ? (
@@ -130,12 +130,12 @@ export default function Header({ ethBalance, lordsBalance }: HeaderProps) {
               size={"sm"}
               onClick={() => {
                 if (account) {
-                  disconnect();
+                  openMenu();
                 } else {
                   connect();
                 }
               }}
-              className="xl:px-5 hover:bg-terminal-green hover:text-terminal-black"
+              className="xl:px-5"
             >
               {account ? (
                 username ? (

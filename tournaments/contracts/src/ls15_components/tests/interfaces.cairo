@@ -133,7 +133,8 @@ pub trait ITournamentMock<TState> {
         lords_address: ContractAddress,
         loot_survivor_address: ContractAddress,
         oracle_address: ContractAddress,
-        safe_mode: bool
+        safe_mode: bool,
+        test_mode: bool
     );
 }
 
@@ -198,11 +199,11 @@ pub trait ILootSurvivorMock<TState> {
         launch_tournament_winner_token_id: u128,
         mint_to: ContractAddress
     ) -> felt252;
-    fn set_adventurer(self: @TState, adventurer_id: felt252, adventurer: Adventurer);
+    fn set_adventurer(ref self: TState, adventurer_id: felt252, adventurer: Adventurer);
     fn set_adventurer_meta(
-        self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
+        ref self: TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
     );
-    fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
+    fn set_bag(ref self: TState, adventurer_id: felt252, bag: Bag);
 
     fn initializer(
         ref self: TState,

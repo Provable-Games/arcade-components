@@ -1,6 +1,13 @@
 import { ReactElement } from "react";
 import { ScreenPage } from "../hooks/useUIStore";
-import { Premium } from "@/generated/models.gen";
+import {
+  InputPremium,
+  InputGatedTypeEnum,
+  InputTokenDataTypeEnum,
+  Premium,
+  GatedTypeEnum,
+  TokenDataTypeEnum,
+} from "@/generated/models.gen";
 import {
   ByteArray,
   CairoOption,
@@ -35,7 +42,7 @@ export type Tournament = {
   end_time: number;
   submission_period: number;
   winners_count: number;
-  gated_type: CairoOption<CairoCustomEnum>;
+  gated_type: CairoOption<GatedTypeEnum>;
   entry_premium: CairoOption<Premium>;
 };
 
@@ -66,30 +73,35 @@ export interface Token {
   tokenDataType: TokenDataTypeEnum;
 }
 
-export type GatedType = {
-  token?: GatedToken;
-  tournament?: number[];
-  address?: string[];
-};
-
-export type GatedToken = {
-  token: string;
-  entry_type: EntryTypeEnum;
-};
-
 export type EntryType = {
   criteria?: EntryCriteria[];
   uniform?: number;
 };
 
-export type TokenDataType = {
-  erc20?: ERC20Data;
-  erc721?: ERC721Data;
-};
-
 export type GatedSubmissionType = {
   token_id: BigNumberish;
   game_id: BigNumberish[];
+};
+
+export type DataType = {
+  SpotEntry: BigNumberish;
+  FutureEntry: FutureEntry;
+  GenericEntry: BigNumberish;
+};
+
+export type FutureEntry = {
+  pair_id: BigNumberish;
+  expiration_timestamp: BigNumberish;
+};
+
+export enum TokenDataEnum {
+  erc20,
+  erc721,
+}
+
+export type TokenDataType = {
+  erc20: ERC20Data;
+  erc721: ERC721Data;
 };
 
 // Create a typed wrapper for CairoCustomEnum
@@ -98,10 +110,7 @@ export type TypedCairoEnum<T> = CairoCustomEnum & {
   unwrap(): T[keyof T];
 };
 
-export type GatedTypeEnum = TypedCairoEnum<GatedType>;
-export type EntryTypeEnum = TypedCairoEnum<EntryType>;
-export type TokenDataTypeEnum = TypedCairoEnum<TokenDataType>;
-export type GatedSubmissionTypeEnum = TypedCairoEnum<GatedSubmissionType>;
+export type DataTypeEnum = TypedCairoEnum<DataType>;
 
 // export type Premium = {
 //   token: string;

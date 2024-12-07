@@ -59,8 +59,8 @@ export const useGetAllTournamentsQuery = () => {
 };
 
 export const useGetUpcomingTournamentsQuery = (currentTime: string) => {
-  const query = useMemo<TournamentGetQuery>(
-    () => ({
+  const query = useMemo<TournamentGetQuery>(() => {
+    return {
       tournament: {
         TournamentModel: {
           $: {
@@ -70,12 +70,12 @@ export const useGetUpcomingTournamentsQuery = (currentTime: string) => {
           },
         },
       },
-    }),
-    []
-  );
+    };
+  }, [currentTime]);
 
   const { entities, isLoading, refetch } = useSdkGetEntities({
     query,
+    limit: 1,
   });
   return { entities, isLoading, refetch };
 };
@@ -105,13 +105,45 @@ export const useGetLiveTournamentsQuery = (currentTime: string) => {
   return { entities, isLoading, refetch };
 };
 
-export const useGetTournamentDetailsQuery = (
-  tournamentId: BigNumberish,
-  address: BigNumberish
-) => {
+export const useGetEndedTournamentsQuery = (currentTime: string) => {
   const query = useMemo<TournamentGetQuery>(
     () => ({
       tournament: {
+        TournamentModel: {
+          $: {
+            where: {
+              end_time: { $lte: addAddressPadding(currentTime) },
+            },
+          },
+        },
+      },
+    }),
+    []
+  );
+  const { entities, isLoading, refetch } = useSdkGetEntities({
+    query,
+  });
+  return { entities, isLoading, refetch };
+};
+
+export const useGetTournamentDetailsQuery = (tournamentId: BigNumberish) => {
+  const query = useMemo<TournamentGetQuery>(
+    () => ({
+      tournament: {
+        TournamentModel: {
+          $: {
+            where: {
+              tournament_id: { $eq: addAddressPadding(tournamentId) },
+            },
+          },
+        },
+        TournamentEntriesAddressModel: {
+          $: {
+            where: {
+              tournament_id: { $eq: addAddressPadding(tournamentId) },
+            },
+          },
+        },
         TournamentEntriesModel: {
           $: {
             where: {
@@ -119,14 +151,7 @@ export const useGetTournamentDetailsQuery = (
             },
           },
         },
-        TournamentPrizeKeysModel: {
-          $: {
-            where: {
-              tournament_id: { $eq: addAddressPadding(tournamentId) },
-            },
-          },
-        },
-        TournamentModel: {
+        TournamentGameModel: {
           $: {
             where: {
               tournament_id: { $eq: addAddressPadding(tournamentId) },
@@ -140,7 +165,7 @@ export const useGetTournamentDetailsQuery = (
             },
           },
         },
-        TournamentEntriesAddressModel: {
+        TournamentPrizeKeysModel: {
           $: {
             where: {
               tournament_id: { $eq: addAddressPadding(tournamentId) },
@@ -218,6 +243,7 @@ export const useSubscribeTournamentsQuery = () => {
     () => ({
       tournament: {
         TournamentModel: [],
+        TournamentPrizeKeysModel: [],
       },
     }),
     []
@@ -279,6 +305,31 @@ export const useSubscribeTournamentDetailsQuery = (
         //     },
         //   },
         // },
+      },
+    }),
+    []
+  );
+  const { entities, isSubscribed } = useSdkSubscribeEntities({
+    query,
+  });
+  return { entities, isSubscribed };
+};
+
+export const useSubscribeTournamentDetailsAddressQuery = (
+  tournamentId: BigNumberish,
+  address: BigNumberish
+) => {
+  const query = useMemo<TournamentSubQuery>(
+    () => ({
+      tournament: {
+        TournamentEntriesAddressModel: {
+          $: {
+            where: {
+              tournament_id: { $is: addAddressPadding(tournamentId) },
+              address: { $is: addAddressPadding(address) },
+            },
+          },
+        },
       },
     }),
     []

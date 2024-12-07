@@ -1,23 +1,6 @@
+import { CairoCustomEnum } from "starknet";
 import { useState, useEffect } from "react";
 import { useSystemCalls } from "@/useSystemCalls.ts";
-
-export const DataType = {
-  SpotEntry: (pairId: string) => ({
-    variant: "SpotEntry",
-    activeVariant: () => "SpotEntry",
-    unwrap: () => pairId,
-  }),
-  FutureEntry: (pairId: string, expirationTimestamp: string) => ({
-    variant: "FutureEntry",
-    activeVariant: () => "FutureEntry",
-    unwrap: () => [pairId, expirationTimestamp],
-  }),
-  GenericEntry: (key: string) => ({
-    variant: "GenericEntry",
-    activeVariant: () => "GenericEntry",
-    unwrap: () => key,
-  }),
-};
 
 export type PragmaPrice = {
   decimals: bigint;
@@ -34,7 +17,11 @@ export const useVRFCost = () => {
   useEffect(() => {
     const fetchVRFCost = async () => {
       const result = await getDataMedian(
-        DataType.SpotEntry("19514442401534788")
+        new CairoCustomEnum({
+          SpotEntry: "19514442401534788",
+          tournament: undefined,
+          address: undefined,
+        })
       );
       const dollarToWei = BigInt(5) * BigInt(10) ** BigInt(17);
       const ethToWei = (result as PragmaPrice).price / BigInt(10) ** BigInt(8);

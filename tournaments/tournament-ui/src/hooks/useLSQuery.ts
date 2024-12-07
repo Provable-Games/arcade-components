@@ -1,8 +1,13 @@
 import { useDojo } from "@/DojoContext";
 import { useQuery, DocumentNode } from "@apollo/client";
 
+type Variables = Record<
+  string,
+  string | number | number[] | boolean | null | undefined | Date
+>;
+
 // Custom hook that safely handles both mainnet and non-mainnet cases
-export const useLSQuery = (query: DocumentNode) => {
+export const useLSQuery = (query: DocumentNode, variables?: Variables) => {
   const {
     setup: { selectedChainConfig },
   } = useDojo();
@@ -10,12 +15,14 @@ export const useLSQuery = (query: DocumentNode) => {
 
   // Always call useQuery, but skip it when not on mainnet
   const { data, loading, error } = useQuery(query, {
-    skip: !isMainnet,
+    variables,
+    // skip: !isMainnet,
   });
 
   // Return consistent shape regardless of chain
   return {
-    data: isMainnet ? data : null,
+    // data: isMainnet ? data : null,
+    data,
     loading,
     error,
     isMainnet,

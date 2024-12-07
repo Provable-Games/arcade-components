@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BigNumberish } from "starknet";
 import { QueryType } from "@dojoengine/sdk";
 import { useDojo } from "@/DojoContext";
-import { TournamentSchemaType } from "@/generated/models.gen";
-import { useDojoStore } from "@/hooks/useDojoStore";
+import { SchemaType } from "@/generated/models.gen";
 
-export type TournamentGetQuery = QueryType<TournamentSchemaType>;
+export type TournamentGetQuery = QueryType<SchemaType>;
 
 export type EntityResult = {
   entityId: BigNumberish;
-} & Partial<TournamentSchemaType["tournament"]>;
+} & Partial<SchemaType["tournament"]>;
 
 export type UseSdkGetEntitiesResult = {
   entities: EntityResult[] | null;
@@ -17,7 +16,6 @@ export type UseSdkGetEntitiesResult = {
   refetch: () => void;
 };
 export type UseSdkGetEntityResult = {
-  entity: EntityResult | null;
   isLoading: boolean;
   refetch: () => void;
 };
@@ -38,9 +36,8 @@ export const useSdkGetEntities = ({
   const {
     setup: { sdk },
   } = useDojo();
-  const [entities, setEntities] = useState<EntityResult[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const state = useDojoStore((state) => state);
+  const [entities, setEntities] = useState<EntityResult[] | null>(null);
 
   const fetchEntities = useCallback(async () => {
     try {
@@ -53,16 +50,7 @@ export const useSdkGetEntities = ({
             return;
           }
           if (resp.data) {
-            state.setEntities(resp.data);
-            setEntities(
-              resp.data.map(
-                (e: any) =>
-                  ({
-                    entityId: e.entityId,
-                    ...e.models.tournament,
-                  } as EntityResult)
-              )
-            );
+            setEntities(resp.data);
           }
         },
         limit,
@@ -80,9 +68,8 @@ export const useSdkGetEntities = ({
       fetchEntities();
     } else {
       setIsLoading(false);
-      setEntities(null);
     }
-  }, [fetchEntities, enabled]);
+  }, [enabled, fetchEntities]);
 
   return {
     entities,
@@ -97,16 +84,11 @@ export const useSdkGetEntities = ({
 export const useSdkGetEntity = (
   props: UseSdkGetEntitiesProps
 ): UseSdkGetEntityResult => {
-  const { entities, isLoading, refetch } = useSdkGetEntities({
+  const { isLoading, refetch } = useSdkGetEntities({
     ...props,
     limit: 1,
   });
-  const entity = useMemo(
-    () => (Array.isArray(entities) ? entities[0] : entities),
-    [entities]
-  );
   return {
-    entity,
     isLoading,
     refetch,
   };

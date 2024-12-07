@@ -2,7 +2,7 @@ import { useState, ChangeEvent, useEffect } from "react";
 import { useAccount } from "@starknet-react/core";
 import { Button } from "../components/buttons/Button";
 import { useSystemCalls } from "../useSystemCalls";
-import { TokenDataType } from "@/generated/models.gen";
+import { TokenDataEnum } from "@/lib/types";
 import { CairoCustomEnum } from "starknet";
 import { useDojoStore } from "../hooks/useDojoStore";
 import {
@@ -22,7 +22,7 @@ const RegisterToken = () => {
   const lords_mock = useDojoSystem("lords_mock");
   const erc20_mock = useDojoSystem("erc20_mock");
   const erc721_mock = useDojoSystem("erc721_mock");
-  const [tokenType, setTokenType] = useState<TokenDataType | null>(null);
+  const [tokenType, setTokenType] = useState<TokenDataEnum | null>(null);
   const [tokenAddress, setTokenAddress] = useState("");
   const [tokenId, setTokenId] = useState("");
   const [tokenBalance, setTokenBalance] = useState<Record<string, bigint>>({});
@@ -118,7 +118,7 @@ const RegisterToken = () => {
 
   const handleRegisterToken = async () => {
     if (tokenType !== null) {
-      if (tokenType === TokenDataType.erc20) {
+      if (tokenType === TokenDataEnum.erc20) {
         if (tokenAddress === padAddress(eth_mock.contractAddress)) {
           await approveEth(tournament.contractAddress, 1n, 0n);
         } else if (tokenAddress === padAddress(lords_mock.contractAddress)) {
@@ -143,7 +143,7 @@ const RegisterToken = () => {
         await registerTokens([
           {
             token: tokenAddress,
-            tokenDataType: new CairoCustomEnum({
+            TokenDataEnum: new CairoCustomEnum({
               erc721: {
                 token_id: tokenId,
               },
@@ -243,19 +243,19 @@ const RegisterToken = () => {
             <div className="flex flex-row gap-10">
               <Button
                 variant={
-                  tokenType === TokenDataType.erc20 ? "default" : "token"
+                  tokenType === TokenDataEnum.erc20 ? "default" : "token"
                 }
                 size="md"
-                onClick={() => setTokenType(TokenDataType.erc20)}
+                onClick={() => setTokenType(TokenDataEnum.erc20)}
               >
                 ERC20
               </Button>
               <Button
                 variant={
-                  tokenType === TokenDataType.erc721 ? "default" : "token"
+                  tokenType === TokenDataEnum.erc721 ? "default" : "token"
                 }
                 size="md"
-                onClick={() => setTokenType(TokenDataType.erc721)}
+                onClick={() => setTokenType(TokenDataEnum.erc721)}
               >
                 ERC721
               </Button>
@@ -270,7 +270,7 @@ const RegisterToken = () => {
               className="p-1 m-2 h-12 w-[700px] 2xl:text-2xl bg-terminal-black border border-terminal-green animate-pulse transform"
             />
           </div>
-          {tokenType === TokenDataType.erc721 && (
+          {tokenType === TokenDataEnum.erc721 && (
             <div className="flex flex-col items-center gap-2">
               <h3 className="text-xl">Enter Token ID</h3>
               <input
@@ -286,7 +286,7 @@ const RegisterToken = () => {
             disabled={
               tokenAddress == "" ||
               tokenType === null ||
-              (tokenType === TokenDataType.erc721 ? tokenId === "" : false)
+              (tokenType === TokenDataEnum.erc721 ? tokenId === "" : false)
             }
           >
             Register Token

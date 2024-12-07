@@ -36,7 +36,7 @@ private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
 "tournament-TournamentPrizeKeysModel" = ["tournament-tournament_mock"]
 "tournament-PrizesModel" = ["tournament-tournament_mock"]
 "tournament-TokenModel" = ["tournament-tournament_mock"]
-"tournament-TournamentContracts" = ["tournament-tournament_mock"]
+"tournament-TournamentConfig" = ["tournament-tournament_mock"]
 # Loot Survivor
 "tournament-AdventurerModel" = ["tournament-loot_survivor_mock"]
 "tournament-AdventurerMetaModel" = ["tournament-loot_survivor_mock"]

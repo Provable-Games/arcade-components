@@ -13,6 +13,8 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { Clock } from "lucide-react";
 import * as React from "react";
@@ -26,7 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DayPicker } from "react-day-picker";
-import { isBefore } from "@/lib/utils";
 
 // ---------- utils start ----------
 /**
@@ -254,9 +255,8 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   yearRange = 50,
-  customDisabled,
   ...props
-}: CalendarProps & { yearRange?: number; customDisabled: boolean }) {
+}: CalendarProps & { yearRange?: number }) {
   const MONTHS = React.useMemo(() => {
     let locale: Pick<Locale, "options" | "localize" | "formatLong"> = enUS;
     const { options, localize, formatLong } = props.locale || {};
@@ -287,6 +287,11 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      disabled={(date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return date < today; // Disable past dates
+      }}
       classNames={{
         months:
           "flex flex-col sm:flex-row space-y-4 sm:space-y-0 justify-center uppercase",
@@ -308,8 +313,7 @@ function Calendar({
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
         week: "flex w-full mt-2",
         day: cn(
-          "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-terminal-green first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1 text-terminal-green hover:bg-terminal-green hover:text-terminal-black",
-          customDisabled && "text-muted-foreground hover:none"
+          "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-terminal-green first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1 text-terminal-green hover:bg-terminal-green hover:text-terminal-black disabled:invisible"
         ),
         day_button: cn(
           buttonVariants({ variant: "ghost" }),
@@ -321,7 +325,7 @@ function Calendar({
         today: "bg-accent text-accent-foreground",
         outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-        disabled: "text-muted-foreground opacity-50",
+        disabled: "invisible",
         range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
         hidden: "invisible",
@@ -546,28 +550,50 @@ const TimePickerInput = React.forwardRef<
       }
     };
 
+    const handleArrowClick = (step: number) => {
+      const newValue = getArrowByType(calculatedValue, step, picker);
+      const tempDate = date ? new Date(date) : new Date();
+      onDateChange?.(setDateByType(tempDate, newValue, picker, period));
+    };
+
     return (
-      <Input
-        ref={ref}
-        id={id || picker}
-        name={name || picker}
-        className={cn(
-          "w-[48px] text-center font-mono text-base tabular-nums caret-transparent bg-terminal-black border border-terminal-green [&::-webkit-inner-spin-button]:appearance-none",
-          className
-        )}
-        value={value || calculatedValue}
-        onChange={(e) => {
-          e.preventDefault();
-          onChange?.(e);
-        }}
-        type={type}
-        inputMode="decimal"
-        onKeyDown={(e) => {
-          onKeyDown?.(e);
-          handleKeyDown(e);
-        }}
-        {...props}
-      />
+      <div className="flex flex-col">
+        <button
+          type="button"
+          className="flex items-center justify-center p-1 hover:bg-terminal-green/20"
+          onClick={() => handleArrowClick(1)}
+        >
+          <ChevronUp className="h-3 w-3" />
+        </button>
+        <Input
+          ref={ref}
+          id={id || picker}
+          name={name || picker}
+          className={cn(
+            "w-[48px] text-center font-mono text-base tabular-nums caret-transparent bg-terminal-black border border-terminal-green [&::-webkit-inner-spin-button]:appearance-none",
+            className
+          )}
+          value={value || calculatedValue}
+          onChange={(e) => {
+            e.preventDefault();
+            onChange?.(e);
+          }}
+          type={type}
+          inputMode="decimal"
+          onKeyDown={(e) => {
+            onKeyDown?.(e);
+            handleKeyDown(e);
+          }}
+          {...props}
+        />
+        <button
+          type="button"
+          className="flex items-center justify-center p-1 hover:bg-terminal-green/20"
+          onClick={() => handleArrowClick(-1)}
+        >
+          <ChevronDown className="h-3 w-3" />
+        </button>
+      </div>
     );
   }
 );
@@ -628,7 +654,7 @@ const TimePicker = React.forwardRef<TimePickerRef, TimePickerProps>(
         />
         {(granularity === "minute" || granularity === "second") && (
           <>
-            :
+            <span>:</span>
             <TimePickerInput
               picker="minutes"
               date={date}
@@ -641,7 +667,7 @@ const TimePicker = React.forwardRef<TimePickerRef, TimePickerProps>(
         )}
         {granularity === "second" && (
           <>
-            :
+            <span>:</span>
             <TimePickerInput
               picker="seconds"
               date={date}
@@ -653,7 +679,7 @@ const TimePicker = React.forwardRef<TimePickerRef, TimePickerProps>(
           </>
         )}
         {hourCycle === 12 && (
-          <div className="grid gap-1 text-center">
+          <div className="grid gap-1 text-center mt-7">
             <TimePeriodSelect
               period={period}
               setPeriod={setPeriod}
@@ -737,23 +763,41 @@ const DateTimePicker = React.forwardRef<
   ) => {
     const [month, setMonth] = React.useState<Date>(value ?? new Date());
     const [open, setOpen] = React.useState(false);
+    const [tempDate, setTempDate] = React.useState<Date | undefined>(value);
     const buttonRef = useRef<HTMLButtonElement>(null);
-    /**
-     * carry over the current time when a user clicks a new day
-     * instead of resetting to 00:00
-     */
+
+    const isValidDateTime = React.useMemo(() => {
+      if (!tempDate) return false;
+      return tempDate > new Date();
+    }, [tempDate]);
+
     const handleSelect = (newDay: Date | undefined) => {
       if (!newDay) return;
-      if (!value) {
-        onChange?.(newDay);
-        setMonth(newDay);
+
+      if (!tempDate) {
+        setTempDate(newDay);
         return;
       }
-      const diff = newDay.getTime() - value.getTime();
-      const diffInDays = diff / (1000 * 60 * 60 * 24);
-      const newDateFull = add(value, { days: Math.ceil(diffInDays) });
-      onChange?.(newDateFull);
-      setMonth(newDateFull);
+
+      // Preserve the time when changing dates
+      const newTempDate = new Date(newDay);
+      newTempDate.setHours(
+        tempDate.getHours(),
+        tempDate.getMinutes(),
+        tempDate.getSeconds()
+      );
+      setTempDate(newTempDate);
+    };
+
+    const handleTimeChange = (date: Date | undefined) => {
+      setTempDate(date);
+    };
+
+    const handleSetDateTime = () => {
+      if (isValidDateTime && tempDate) {
+        onChange?.(tempDate);
+        setOpen(false);
+      }
     };
 
     useImperativeHandle(
@@ -784,7 +828,6 @@ const DateTimePicker = React.forwardRef<
         formatLong,
       };
     }
-    const now = new Date();
 
     return (
       <Popover open={open} onOpenChange={setOpen}>
@@ -817,32 +860,27 @@ const DateTimePicker = React.forwardRef<
         <PopoverContent className="w-auto p-0">
           <Calendar
             mode="single"
-            selected={value}
+            selected={tempDate}
             month={month}
-            onSelect={(d) => handleSelect(d)}
-            onMonthChange={handleSelect}
+            onSelect={handleSelect}
+            onMonthChange={setMonth}
             yearRange={yearRange}
             locale={locale}
-            customDisabled={() => {
-              if (startTime && value) {
-                return isBefore(value, now) || isBefore(value, startTime);
-              }
-              isBefore(value, now);
-            }}
             {...props}
             className="bg-terminal-black text-terminal-green border border-terminal-green"
           />
           {granularity !== "day" && (
             <div className="flex flex-row justify-between items-center border-t border-border py-3 px-10 bg-terminal-black border-terminal-green">
               <TimePicker
-                onChange={onChange}
-                date={value}
+                onChange={handleTimeChange}
+                date={tempDate}
                 hourCycle={hourCycle}
                 granularity={granularity}
               />
               <Button
-                className="bg-terminal-green text-terminal-black uppercase hover:bg-terminal-green/80"
-                onClick={() => setOpen(false)}
+                className="bg-terminal-green text-terminal-black uppercase hover:bg-terminal-green/80 disabled:opacity-50"
+                onClick={handleSetDateTime}
+                disabled={!isValidDateTime}
               >
                 Set
               </Button>

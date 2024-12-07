@@ -1,5 +1,5 @@
 import { CloseIcon } from "../Icons";
-import { EntryCriteria } from "@/lib/types";
+import { EntryCriteria } from "@/generated/models.gen";
 
 interface EntryCriteriaDialogProps {
   setShowEntryCriteria: (show: boolean) => void;
@@ -27,8 +27,8 @@ const EntryCriteriaDialog = ({
           <div className="flex flex-col gap-2 w-full items-center max-h-[400px] overflow-y-auto">
             {entryCriteria.map((criteria, index) => (
               <div key={index} className="text-lg">
-                {criteria.token_id}
-                {criteria.entry_count}
+                {criteria.token_id.toString()}
+                {criteria.entry_count.toString()}
               </div>
             ))}
           </div>

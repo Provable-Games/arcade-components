@@ -1,25 +1,23 @@
+import { BigNumberish } from "starknet";
+import { useDojo } from "@/DojoContext";
 import { FirstIcon, SecondIcon, ThirdIcon } from "../Icons";
 
 // First, define the props interface
 interface ScoreRowProps {
+  gameId: BigNumberish;
   rank: number;
-  address: string;
-  id: number;
-  level: number;
-  xp: number;
-  deathTime: string;
-  prizes: number;
+  adventurer: any;
 }
 
-const ScoreRow = ({
-  rank,
-  address,
-  id,
-  level,
-  xp,
-  deathTime,
-  prizes,
-}: ScoreRowProps) => {
+const ScoreRow = ({ gameId, rank, adventurer }: ScoreRowProps) => {
+  const {
+    setup: { selectedChainConfig },
+  } = useDojo();
+  const isMainnet = selectedChainConfig.chainId === "SN_MAINNET";
+  const formattedAdventurer = isMainnet
+    ? adventurer
+    : adventurer.models.tournament.AdventurerModel.adventurer;
+  console.log(formattedAdventurer);
   return (
     <tr className="h-10">
       <td className="px-2">
@@ -41,12 +39,12 @@ const ScoreRow = ({
           )}
         </div>
       </td>
-      <td>{address}</td>
-      <td>{id}</td>
-      <td>{level}</td>
-      <td>{xp}</td>
-      <td>{deathTime}</td>
-      <td>{prizes}</td>
+      <td>{formattedAdventurer.address ?? "-"}</td>
+      <td>{formattedAdventurer.id ?? "-"}</td>
+      <td>{formattedAdventurer.level ?? "-"}</td>
+      <td>{formattedAdventurer.xp ?? "-"}</td>
+      <td>{formattedAdventurer.deathTime ?? "-"}</td>
+      <td>{formattedAdventurer.prizes ?? "-"}</td>
     </tr>
   );
 };

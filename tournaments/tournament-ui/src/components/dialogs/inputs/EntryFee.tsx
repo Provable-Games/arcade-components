@@ -1,9 +1,9 @@
 import { Button } from "@/components/buttons/Button";
 import { PlusIcon } from "@/components/Icons";
 import { useState } from "react";
-import { Distribution, Token } from "@/lib/types";
+import { Distribution } from "@/lib/types";
 import useUIStore from "@/hooks/useUIStore";
-import { CairoCustomEnum, CairoOption, CairoOptionVariant } from "starknet";
+import { CairoOption, CairoOptionVariant } from "starknet";
 import { useDojoStore } from "@/hooks/useDojoStore";
 import { displayAddress } from "@/lib/utils";
 

@@ -18,14 +18,23 @@ import {
   useGetAdventurersQuery,
   useGetTournamentDetailsQuery,
   useSubscribeTournamentDetailsQuery,
+  useSubscribeTournamentDetailsAddressQuery,
 } from "@/hooks/useSdkQueries.ts";
 import { useDojoStore } from "@/hooks/useDojoStore.ts";
 import { useDojoSystem } from "@/hooks/useDojoSystem.ts";
 import { useVRFCost } from "@/hooks/useVRFCost";
+import { useLSQuery } from "@/hooks/useLSQuery";
+import { getAdventurersInList } from "@/hooks/graphql/queries.ts";
+import { useDojo } from "@/DojoContext.tsx";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
   const { account } = useAccount();
+  const {
+    setup: { selectedChainConfig },
+  } = useDojo();
+
+  const isMainnet = selectedChainConfig.chainId === "SN_MAINNET";
 
   const state = useDojoStore((state) => state);
   const tournament = useDojoSystem("tournament_mock");
@@ -42,11 +51,12 @@ const Tournament = () => {
   const { dollarPrice } = useVRFCost();
 
   // Data fetching
-  useGetTournamentDetailsQuery(
-    addAddressPadding(bigintToHex(id!)),
-    account?.address ?? "0x0"
-  );
+  useGetTournamentDetailsQuery(addAddressPadding(bigintToHex(id!)));
   useSubscribeTournamentDetailsQuery(addAddressPadding(bigintToHex(id!)));
+  useSubscribeTournamentDetailsAddressQuery(
+    addAddressPadding(bigintToHex(id!)),
+    addAddressPadding(account?.address ?? "0x0")
+  );
   useGetAdventurersQuery(account?.address ?? "0x0");
 
   // Get states
@@ -55,7 +65,7 @@ const Tournament = () => {
     [id]
   );
   const tournamentAddressEntityId = useMemo(
-    () => getEntityIdFromKeys([BigInt(id!), BigInt(account?.address!)]),
+    () => getEntityIdFromKeys([BigInt(id!), BigInt(account?.address ?? "0x0")]),
     [id, account?.address]
   );
   const tournamentModel = useModel(tournamentEntityId, Models.TournamentModel);
@@ -79,11 +89,40 @@ const Tournament = () => {
     tournamentAddressEntityId,
     Models.TournamentStartIdsModel
   );
+  const gamesData = state.getEntitiesByModel(
+    "tournament",
+    "TournamentGameModel"
+  );
+  console.log(gamesData);
+  const adventurersTestEntities = state.getEntitiesByModel(
+    "tournament",
+    "AdventurerModel"
+  );
+  console.log(adventurersTestEntities);
   // Handle get adventurer scores fir account
   const addressGameIds = startIds?.game_ids;
+  const formattedGameIds = addressGameIds?.map((id: any) => Number(id));
+
+  const adventurersListVariables = useMemo(() => {
+    return {
+      ids: formattedGameIds,
+    };
+  }, []);
+
+  const { data: adventurersMainData } = useLSQuery(
+    getAdventurersInList,
+    adventurersListVariables
+  );
+
+  const adventurersData = isMainnet
+    ? adventurersMainData
+    : adventurersTestEntities;
+
+  console.log(adventurersData);
+  console.log(tournamentScores);
 
   const scores =
-    addressGameIds?.reduce((acc: any, id) => {
+    addressGameIds?.reduce((acc: any, id: any) => {
       const adventurerEntityId = getEntityIdFromKeys([BigInt(id!)]);
       const adventurerModel =
         state.getEntity(adventurerEntityId)?.models?.tournament
@@ -137,6 +176,7 @@ const Tournament = () => {
   const isSubmissionLive = ended && !submissionEnded;
 
   const entryCount = tournamentEntries?.entry_count ?? 0;
+  const entryAddressCount = tournamentEntriesAddressModel?.entry_count ?? 0;
 
   const getCostToPlay = () => {
     // const cost = await getCostToPlay(tournament?.tournament_id!);
@@ -152,6 +192,7 @@ const Tournament = () => {
     await enterTournament(
       tournamentModel?.tournament_id!,
       addAddressPadding(bigintToHex(BigInt(entryCount) + 1n)),
+      addAddressPadding(bigintToHex(BigInt(entryAddressCount) + 1n)),
       new CairoOption(CairoOptionVariant.None)
     );
   };
@@ -280,7 +321,9 @@ const Tournament = () => {
           <p className="text-xl uppercase">Prizes</p>
           {tournamentPrizeKeys ? (
             <p className="text-terminal-green/75 no-text-shadow text-lg uppercase">
-              {tournamentPrizeKeys?.prize_keys.map((key) => feltToString(key))}
+              {tournamentPrizeKeys?.prize_keys.map((key: any) =>
+                feltToString(key)
+              )}
             </p>
           ) : (
             <p className="text-terminal-green/75 no-text-shadow text-lg uppercase">
@@ -288,17 +331,19 @@ const Tournament = () => {
             </p>
           )}
         </div>
-        <div className="absolute top-2 right-2">
-          <Button className="bg-terminal-green/25 text-terminal-green hover:text-terminal-black">
-            Add Prize
-          </Button>
-        </div>
+        {!started && (
+          <div className="absolute top-2 right-2">
+            <Button className="bg-terminal-green/25 text-terminal-green hover:text-terminal-black">
+              Add Prize
+            </Button>
+          </div>
+        )}
       </div>
       <div className="flex flex-row gap-5">
         <div className="w-1/2 flex flex-col">
           <h2 className="text-2xl uppercase">Scores</h2>
           <table className="w-full border border-terminal-green">
-            <thead className="border border-terminal-green text-lg h-10">
+            <thead className="border border-terminal-green text-lg h-20">
               <tr>
                 <th className="text-center">Name</th>
                 <th className="text-left">Address</th>
@@ -310,10 +355,29 @@ const Tournament = () => {
               </tr>
             </thead>
             <tbody>
-              {tournamentScores ? (
-                tournamentScores?.top_score_ids.map((row, index) => (
-                  <ScoreRow key={index} />
-                ))
+              {tournamentScores && adventurersData.length > 0 ? (
+                tournamentScores?.top_score_ids.map(
+                  (gameId: any, index: any) => {
+                    const adventurer = isMainnet
+                      ? adventurersData.find(
+                          (adventurer: any) =>
+                            adventurer.adventurer_id === gameId
+                        )
+                      : adventurersData.find(
+                          (entity: any) =>
+                            entity.models.tournament.AdventurerModel
+                              .adventurer_id === gameId
+                        );
+                    return (
+                      <ScoreRow
+                        key={index}
+                        gameId={gameId}
+                        rank={index + 1}
+                        adventurer={adventurer}
+                      />
+                    );
+                  }
+                )
               ) : (
                 <p className="text-center">No Scores Submitted</p>
               )}
@@ -322,7 +386,7 @@ const Tournament = () => {
         </div>
         <div className="w-1/2 flex flex-col">
           <h2 className="text-2xl uppercase">Enter</h2>
-          <div className="flex flex-col gap-5 border border-terminal-green p-2 h-[360px]">
+          <div className="flex flex-col justify-between border border-terminal-green p-2 h-[300px]">
             <div className="flex flex-row">
               <div className="flex flex-col w-1/2">
                 <div className="flex flex-row items-center gap-2">
@@ -358,14 +422,14 @@ const Tournament = () => {
                 </div>
               </div>
             </div>
-            <h3 className="text-xl uppercase">
-              {!started
-                ? "My Entries"
-                : isLive
-                ? "My Games Played"
-                : "Scores Submitted"}
-            </h3>
-            <div className="flex flex-col gap-2 h-20">
+            <div className="flex flex-col gap-2 h-10">
+              <h3 className="text-xl uppercase">
+                {!started
+                  ? "My Entries"
+                  : isLive
+                  ? "My Games Played"
+                  : "Scores Submitted"}
+              </h3>
               {tournamentEntriesAddressModel ? (
                 <div className="flex flex-row items-center justify-between px-5">
                   <p className="text-terminal-green/75 no-text-shadow uppercase text-2xl">
@@ -432,11 +496,23 @@ const Tournament = () => {
                   </Button>
                 </>
               )}
-              {isSubmissionLive && <Button>Submit Scores</Button>}
+              {isSubmissionLive && (
+                <Button onClick={handleSubmitScores}>Submit Scores</Button>
+              )}
               {submissionEnded && (
                 <>
-                  <Button>Claim Prizes</Button>
-                  <Button>Distribute All Prizes</Button>
+                  <Button
+                    onClick={handleClaimPrizes}
+                    disabled={!tournamentPrizeKeys}
+                  >
+                    Claim Prizes
+                  </Button>
+                  <Button
+                    onClick={handleDistributeAllPrizes}
+                    disabled={!tournamentPrizeKeys}
+                  >
+                    Distribute All Prizes
+                  </Button>
                 </>
               )}
             </div>

@@ -49,7 +49,8 @@ pub trait ITournamentMock<TState> {
         lords_address: ContractAddress,
         loot_survivor_address: ContractAddress,
         oracle_address: ContractAddress,
-        safe_mode: bool
+        safe_mode: bool,
+        test_mode: bool
     );
 }
 
@@ -61,7 +62,8 @@ trait ITournamentMockInit<TState> {
         lords_address: ContractAddress,
         loot_survivor_address: ContractAddress,
         oracle_address: ContractAddress,
-        safe_mode: bool
+        safe_mode: bool,
+        test_mode: bool
     );
 }
 
@@ -97,11 +99,12 @@ pub mod tournament_mock {
             lords_address: ContractAddress,
             loot_survivor_address: ContractAddress,
             oracle_address: ContractAddress,
-            safe_mode: bool
+            safe_mode: bool,
+            test_mode: bool
         ) {
             self
                 .tournament
-                .initialize(eth_address, lords_address, loot_survivor_address, oracle_address, safe_mode);
+                .initialize(eth_address, lords_address, loot_survivor_address, oracle_address, safe_mode, test_mode);
         }
     }
 }

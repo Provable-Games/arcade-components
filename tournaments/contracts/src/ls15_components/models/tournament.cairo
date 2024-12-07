@@ -196,7 +196,7 @@ pub struct TokenModel {
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde)]
-pub struct TournamentContracts {
+pub struct TournamentConfig {
     #[key]
     pub contract: ContractAddress,
     pub eth: ContractAddress,
@@ -204,4 +204,5 @@ pub struct TournamentContracts {
     pub loot_survivor: ContractAddress,
     pub oracle: ContractAddress,
     pub safe_mode: bool,
+    pub test_mode: bool
 }

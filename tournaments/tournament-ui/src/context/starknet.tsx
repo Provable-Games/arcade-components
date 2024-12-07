@@ -42,7 +42,7 @@ export function StarknetProvider({
 
   return (
     <StarknetConfig
-      // autoConnect={true}
+      autoConnect={true}
       chains={chains}
       connectors={chainConnectors}
       provider={jsonRpcProvider({ rpc })}

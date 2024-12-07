@@ -18,11 +18,11 @@ trait ILootSurvivor<TState> {
         launch_tournament_winner_token_id: u128,
         mint_to: ContractAddress
     ) -> felt252;
-    fn set_adventurer(self: @TState, adventurer_id: felt252, adventurer: Adventurer);
+    fn set_adventurer(ref self: TState, adventurer_id: felt252, adventurer: Adventurer);
     fn set_adventurer_meta(
-        self: @TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
+        ref self: TState, adventurer_id: felt252, adventurer_meta: AdventurerMetadata
     );
-    fn set_bag(self: @TState, adventurer_id: felt252, bag: Bag);
+    fn set_bag(ref self: TState, adventurer_id: felt252, bag: Bag);
 }
 
 ///
@@ -210,7 +210,7 @@ pub mod loot_survivor_component {
         }
 
         fn set_adventurer(
-            self: @ComponentState<TContractState>, adventurer_id: felt252, adventurer: Adventurer
+            ref self: ComponentState<TContractState>, adventurer_id: felt252, adventurer: Adventurer
         ) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @"tournament"
@@ -220,7 +220,7 @@ pub mod loot_survivor_component {
         }
 
         fn set_adventurer_meta(
-            self: @ComponentState<TContractState>,
+            ref self: ComponentState<TContractState>,
             adventurer_id: felt252,
             adventurer_meta: AdventurerMetadata
         ) {
@@ -232,7 +232,7 @@ pub mod loot_survivor_component {
                 .set_adventurer_meta_model(@AdventurerMetaModel { adventurer_id, adventurer_meta });
         }
 
-        fn set_bag(self: @ComponentState<TContractState>, adventurer_id: felt252, bag: Bag) {
+        fn set_bag(ref self: ComponentState<TContractState>, adventurer_id: felt252, bag: Bag) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @"tournament"
             );

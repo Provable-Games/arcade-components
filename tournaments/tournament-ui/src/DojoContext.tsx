@@ -9,12 +9,12 @@ import {
 import { DojoProvider } from "@dojoengine/core";
 import { setupWorld } from "./generated/contracts.gen";
 import { SDK, init } from "@dojoengine/sdk";
-import { TournamentSchemaType, schema } from "./generated/models.gen";
+import { SchemaType, schema } from "./generated/models.gen";
 import { DojoManifest } from "./hooks/useDojoSystem";
 import { DojoAppConfig, DojoChainConfig, dojoContextConfig } from "./config";
 
 interface DojoContextType {
-  sdk: SDK<TournamentSchemaType>;
+  sdk: SDK<SchemaType>;
   manifest: DojoManifest;
   selectedChainConfig: DojoChainConfig;
   nameSpace: string;
@@ -30,9 +30,7 @@ export const DojoContextProvider = ({
   children: ReactNode;
   appConfig: DojoAppConfig;
 }) => {
-  const [sdk, setSdk] = useState<SDK<TournamentSchemaType> | undefined>(
-    undefined
-  );
+  const [sdk, setSdk] = useState<SDK<SchemaType> | undefined>(undefined);
   const currentValue = useContext(DojoContext);
   if (currentValue) {
     throw new Error("DojoProvider can only be used once");
@@ -51,7 +49,7 @@ export const DojoContextProvider = ({
   );
 
   useEffect(() => {
-    init<TournamentSchemaType>(
+    init<SchemaType>(
       {
         client: {
           rpcUrl: selectedChainConfig.rpcUrl!,

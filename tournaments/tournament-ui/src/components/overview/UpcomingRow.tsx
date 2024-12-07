@@ -1,64 +1,74 @@
 import { Premium } from "../../lib/types";
-import { Button } from "../buttons/Button";
+import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useNavigate } from "react-router-dom";
 import { CairoOption } from "starknet";
 import { feltToString, formatTime } from "../../lib/utils";
 import useModel from "../../useModel.ts";
-import { Models } from "../../generated/models.gen";
-import { useGetTournamentDetailsQuery } from "@/hooks/useSdkQueries";
+import { Models, PrizesModel } from "../../generated/models.gen";
 
 interface UpcomingRowProps {
-  entityId: any;
-  tournament_id?: any;
+  tournamentId?: any;
   name?: any;
-  start_time?: any;
-  end_time?: any;
-  entry_premium?: any;
+  startTime?: any;
+  endTime?: any;
+  entryPremium?: any;
+  entries?: any;
+  prizeKeys?: any;
 }
 
 const UpcomingRow = ({
-  entityId,
-  tournament_id,
+  tournamentId,
   name,
-  start_time,
-  end_time,
-  entry_premium,
+  startTime,
+  endTime,
+  entryPremium,
+  entries,
+  prizeKeys,
 }: UpcomingRowProps) => {
-  const { entities: tournamentDetails } = useGetTournamentDetailsQuery(
-    tournament_id?.toString(16)!
-  );
   const navigate = useNavigate();
-  const startTimestamp = Number(start_time) * 1000;
+  const startTimestamp = Number(startTime) * 1000;
   const startDate = new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(startTimestamp));
-  const tournamentEntries = tournamentDetails?.[0]?.TournamentEntriesModel;
-  const tournamentPrizeKeys = tournamentDetails?.[0]?.TournamentPrizeKeysModel;
+  console.log(prizeKeys);
   return (
-    <tr className="h-10">
-      <td className="px-2">{feltToString(BigInt(name!))}</td>
-      <td>{BigInt(tournamentEntries?.entry_count ?? 0).toString()}</td>
+    <tr
+      className="h-10 hover:bg-terminal-green/50 hover:cursor-pointer border border-terminal-green/50"
+      onClick={() => {
+        navigate(`/tournament/${Number(tournamentId)}`);
+      }}
+    >
+      <td className="px-2 max-w-20">
+        <p className="overflow-hidden whitespace-nowrap text-ellipsis">
+          {feltToString(BigInt(name!))}
+        </p>
+      </td>
+      <td className="text-xl">{BigInt(entries ?? 0).toString()}</td>
       <td>{startDate}</td>
-      <td>{formatTime(Number(end_time) - Number(start_time))}</td>
+      <td>{formatTime(Number(endTime) - Number(startTime))}</td>
       <td>
-        {entry_premium === "None"
+        {entryPremium === "None"
           ? "-"
-          : (entry_premium as CairoOption<Premium>).Some?.token_amount}
+          : (entryPremium as CairoOption<Premium>).Some?.token_amount}
       </td>
       <td>
-        {entry_premium === "None"
+        {entryPremium === "None"
           ? "-"
-          : (entry_premium as CairoOption<Premium>).Some?.creator_fee}
+          : (entryPremium as CairoOption<Premium>).Some?.creator_fee}
       </td>
       <td>
         <div className="flex flex-col gap-2">
-          {tournamentPrizeKeys ? (
-            tournamentPrizeKeys?.prize_keys.map((prizeKey) => {
-              const prize = useModel(prizeKey.toString(), Models.PrizesModel);
+          {prizeKeys ? (
+            prizeKeys?.map((prizeKey: any) => {
+              const entityId = getEntityIdFromKeys([BigInt(prizeKey)]);
+
+              const prize: PrizesModel = useModel(entityId, Models.PrizesModel);
+              // TODO: when token data type data is supported add the details
               return (
                 <div key={prizeKey}>
-                  {prize?.token_data_type} {prize?.token}
+                  {/* {prize?.token_data_type.variant.erc20?.token_amount} */}
+                  {prize ? prize?.token_data_type.toString() : "-"}
                 </div>
               );
             })
@@ -66,16 +76,6 @@ const UpcomingRow = ({
             <p>-</p>
           )}
         </div>
-      </td>
-      <td>
-        <Button
-          variant="outline"
-          onClick={() => {
-            navigate(`/tournament/${Number(tournament_id)}`);
-          }}
-        >
-          View
-        </Button>
       </td>
     </tr>
   );

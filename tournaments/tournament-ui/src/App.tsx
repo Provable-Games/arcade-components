@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useAccount } from "@starknet-react/core";
 import Header from "@/components/Header";
@@ -19,15 +19,23 @@ import {
 } from "@/hooks/useSdkQueries";
 import { useDojoSystem } from "@/hooks/useDojoSystem";
 import { useSystemCalls } from "@/useSystemCalls";
+import { useControllerMenu } from "@/hooks/useController";
+import { useDojo } from "@/DojoContext";
+import { addAddressPadding } from "starknet";
 
 function App() {
+  const {
+    setup: { sdk },
+  } = useDojo();
   const { account } = useAccount();
+  const { openMenu } = useControllerMenu();
   const tournament_mock = useDojoSystem("tournament_mock");
+  const eth_mock = useDojoSystem("eth_mock");
   const { getEthBalance, getLordsBalance } = useSystemCalls();
   const [tokenBalance, setTokenBalance] = useState<Record<string, bigint>>({});
 
-  useGetTournamentCountsQuery(tournament_mock.contractAddress);
-  useGetTokensQuery();
+  // useGetTournamentCountsQuery(tournament_mock.contractAddress);
+  // useGetTokensQuery();
 
   const { inputDialog } = useUIStore();
 
@@ -103,19 +111,43 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    if (account) {
-      getTestETHBalance();
-      getTestLordsBalance();
-    }
-  }, [account]);
+  // Memoize these functions to prevent recreating on every render
+  const getBalances = useCallback(async () => {
+    if (!account?.address) return;
+
+    const [ethBalance, lordsBalance] = await Promise.all([
+      getEthBalance(account.address),
+      getLordsBalance(account.address),
+    ]);
+
+    setTokenBalance((prev) => ({
+      ...prev,
+      eth: ethBalance as bigint,
+      lords: lordsBalance as bigint,
+    }));
+  }, [account?.address, getEthBalance, getLordsBalance]);
 
   useEffect(() => {
     if (account) {
-      getTestETHBalance();
-      getTestLordsBalance();
+      getBalances();
     }
   }, [account]);
+
+  const getTokenBalances = async () => {
+    const balances = await sdk.getTokenBalances(
+      [account?.address!],
+      [addAddressPadding(eth_mock?.contractAddress!)]
+    );
+    console.log(balances);
+  };
+
+  useEffect(() => {
+    if (account) {
+      getTokenBalances();
+    }
+  }, [account]);
+
+  console.log("rerun");
 
   return (
     <div

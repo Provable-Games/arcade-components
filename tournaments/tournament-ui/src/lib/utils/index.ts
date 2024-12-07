@@ -44,7 +44,6 @@ export const stringToFelt = (v: string): BigNumberish =>
   v ? shortString.encodeShortString(v) : "0x0";
 
 export const feltToString = (v: BigNumberish): string => {
-  console.log(bigintToHex(v));
   return BigInt(v) > 0n ? shortString.decodeShortString(bigintToHex(v)) : "";
 };
 

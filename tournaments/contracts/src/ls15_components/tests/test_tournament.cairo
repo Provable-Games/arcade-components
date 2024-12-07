@@ -21,7 +21,7 @@ use tournament::ls15_components::models::{
         m_TournamentModel, m_TournamentGameModel, m_TournamentEntryAddressesModel,
         m_TournamentEntriesAddressModel, m_TournamentStartsAddressModel, m_TournamentStartIdsModel,
         m_TournamentEntriesModel, m_TournamentScoresModel, m_TournamentTotalsModel,
-        m_TournamentPrizeKeysModel, m_PrizesModel, m_TokenModel, m_TournamentContracts, ERC20Data,
+        m_TournamentPrizeKeysModel, m_PrizesModel, m_TokenModel, m_TournamentConfig, ERC20Data,
         ERC721Data, Token, Premium, GatedToken, EntryCriteria, TokenDataType, GatedType,
         GatedEntryType, GatedSubmissionType
     }
@@ -131,7 +131,7 @@ fn setup_uninitialized() -> (WorldStorage, IERC20MockDispatcher, IERC20MockDispa
             TestResource::Model(m_TournamentPrizeKeysModel::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_PrizesModel::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TokenModel::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_TournamentContracts::TEST_CLASS_HASH.try_into().unwrap()),
+            TestResource::Model(m_TournamentConfig::TEST_CLASS_HASH.try_into().unwrap()),
             // contracts
             TestResource::Contract(tournament_mock::TEST_CLASS_HASH),
             TestResource::Contract(loot_survivor_mock::TEST_CLASS_HASH),
@@ -194,6 +194,7 @@ pub fn setup() -> (
             lords.contract_address,
             loot_survivor.contract_address,
             pragma.contract_address,
+            false,
             false
         );
     loot_survivor

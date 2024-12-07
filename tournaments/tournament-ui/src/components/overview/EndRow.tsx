@@ -3,19 +3,19 @@ import { useGetTournamentDetailsQuery } from "@/hooks/useSdkQueries";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/buttons/Button";
 
-interface LiveRowProps {
+interface EndRowProps {
   tournament_id?: any;
   name?: any;
   end_time?: any;
   winners_count?: any;
 }
 
-const LiveRow = ({
+const EndRow = ({
   tournament_id,
   name,
   end_time,
   winners_count,
-}: LiveRowProps) => {
+}: EndRowProps) => {
   const { entities: tournamentDetails } =
     useGetTournamentDetailsQuery(tournament_id);
   const navigate = useNavigate();
@@ -49,4 +49,4 @@ const LiveRow = ({
   );
 };
 
-export default LiveRow;
+export default EndRow;
