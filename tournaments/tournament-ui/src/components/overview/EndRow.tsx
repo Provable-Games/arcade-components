@@ -4,26 +4,49 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/buttons/Button";
 
 interface EndRowProps {
-  tournament_id?: any;
+  tournamentId?: any;
   name?: any;
-  end_time?: any;
-  winners_count?: any;
+  winnersCount?: any;
+  endTime?: any;
+  submissionPeriod?: any;
 }
 
 const EndRow = ({
-  tournament_id,
+  tournamentId,
   name,
-  end_time,
-  winners_count,
+  winnersCount,
+  endTime,
+  submissionPeriod,
 }: EndRowProps) => {
   const { entities: tournamentDetails } =
-    useGetTournamentDetailsQuery(tournament_id);
+    useGetTournamentDetailsQuery(tournamentId);
   const navigate = useNavigate();
   const tournamentEntries = tournamentDetails?.[0]?.TournamentEntriesModel;
   const tournamentPrizeKeys = tournamentDetails?.[0]?.TournamentPrizeKeysModel;
   const currentTime = BigInt(new Date().getTime()) / 1000n;
+
+  const endTimestamp = Number(endTime) * 1000;
+  const endDate = new Date(endTimestamp);
+  const submissionEndDate = new Date(
+    (Number(endTime) + Number(submissionPeriod)) * 1000
+  );
+
+  const ended = Boolean(endTime && endDate.getTime() <= Date.now());
+  const submissionEnded = Boolean(
+    submissionPeriod && submissionEndDate.getTime() <= Date.now()
+  );
+
+  const isSubmissionLive = ended && !submissionEnded;
+
+  const status = isSubmissionLive ? "Submitting" : "Closed";
+
   return (
-    <tr className="h-10">
+    <tr
+      className="h-8 hover:bg-terminal-green/50 hover:cursor-pointer border border-terminal-green/50"
+      onClick={() => {
+        navigate(`/tournament/${Number(tournamentId)}`);
+      }}
+    >
       <td className="px-2 max-w-20">
         <p className="overflow-hidden whitespace-nowrap text-ellipsis">
           {feltToString(BigInt(name!))}
@@ -31,20 +54,10 @@ const EndRow = ({
       </td>
       {/* <td>{`${gamesPlayed} / ${entries}`}</td> */}
       <td>0/0</td>
-      <td>{winners_count}</td>
+      <td>{winnersCount}</td>
+      <td>{status}</td>
       {/* <td>{prizes}</td> */}
       <td>0</td>
-      <td>{formatTime(Number(end_time) - Number(currentTime))}</td>
-      <td>
-        <Button
-          variant="outline"
-          onClick={() => {
-            navigate(`/tournament/${Number(tournament_id)}`);
-          }}
-        >
-          View
-        </Button>
-      </td>
     </tr>
   );
 };

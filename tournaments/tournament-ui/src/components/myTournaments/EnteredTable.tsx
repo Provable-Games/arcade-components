@@ -1,13 +1,28 @@
 import { useMemo, useState } from "react";
-import { useGetLiveTournamentsQuery } from "@/hooks/useSdkQueries";
-import LiveRow from "@/components/overview/LiveRow";
+import { useAccount } from "@starknet-react/core";
+import { addAddressPadding } from "starknet";
+import { useGetAccountCreatedTournamentsQuery } from "@/hooks/useSdkQueries";
+import CreatedRow from "@/components/myTournaments/CreatedRow";
 import Pagination from "@/components/table/Pagination";
 
-const LiveTable = () => {
+const EnteredTable = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const hexTimestamp = (BigInt(new Date().getTime()) / 1000n).toString(16);
+  const { account } = useAccount();
+  const address = useMemo(
+    () => addAddressPadding(account?.address ?? "0x0"),
+    [account]
+  );
   const { entities: tournaments, isLoading } =
-    useGetLiveTournamentsQuery(hexTimestamp);
+    useGetAccountCreatedTournamentsQuery(address);
+
+  console.log(tournaments);
+
+  // TODO: Remove handling of pagination within client for paginated queries
+  // (get totalPages from the totals model)
+
+  const handleClick = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const totalPages = useMemo(() => {
     if (!tournaments) return 0;
@@ -20,45 +35,52 @@ const LiveTable = () => {
   }, [tournaments, currentPage]);
 
   return (
-    <div className="flex flex-col items-center border-4 border-terminal-green/75 h-1/2">
+    <div className="w-full flex flex-col items-center border-4 border-terminal-green/75 h-1/2">
       <div className="flex flex-row items-center justify-between w-full">
         <div className="w-1/4"></div>
-        <p className="w-1/2 text-4xl text-center">Live</p>
-        {tournaments && tournaments.length > 10 ? (
-          <div className="w-1/4 flex justify-end">
+        <p className="text-4xl">Created Tournaments</p>
+        <div className="w-1/4 flex justify-end">
+          {tournaments && tournaments.length > 10 ? (
             <Pagination
               currentPage={currentPage}
               setCurrentPage={setCurrentPage}
               totalPages={totalPages}
             />
-          </div>
-        ) : (
-          <div className="w-1/4"></div>
-        )}
+          ) : null}
+        </div>
       </div>
       <div className="w-full max-h-[500px]">
         <div className="flex flex-col gap-4">
           <table className="relative w-full">
-            <thead className="bg-terminal-green/75 no-text-shadow text-terminal-black text-lg h-8">
+            <thead className="bg-terminal-green/75 no-text-shadow text-terminal-black text-lg h-6">
               <tr>
                 <th className="px-2 text-left">Name</th>
-                <th className="text-left">Games Played</th>
-                <th className="text-left">Top Scores</th>
+                <th className="text-left">Entries</th>
+                <th className="text-left">Start</th>
+                <th className="text-left">Status</th>
+                <th className="text-left">Entry Fee</th>
+                <th className="text-left">Creator Fee</th>
                 <th className="text-left">Prizes</th>
-                <th className="text-left">Time Left</th>
               </tr>
             </thead>
             <tbody>
               {tournaments && tournaments.length > 0 ? (
                 pagedTournaments.map((tournament) => {
                   const tournamentModel = tournament.TournamentModel;
+                  const tournamentEntries = tournament.TournamentEntriesModel;
+                  const tournamentPrizeKeys =
+                    tournament.TournamentPrizeKeysModel;
                   return (
-                    <LiveRow
+                    <CreatedRow
                       key={tournament.entityId}
+                      entityId={tournament.entityId}
                       tournamentId={tournamentModel?.tournament_id}
                       name={tournamentModel?.name}
+                      startTime={tournamentModel?.start_time}
                       endTime={tournamentModel?.end_time}
-                      winnersCount={tournamentModel?.winners_count}
+                      entryPremium={tournamentModel?.entry_premium}
+                      entries={tournamentEntries?.entry_count}
+                      prizeKeys={tournamentPrizeKeys?.prize_keys}
                     />
                   );
                 })
@@ -68,7 +90,7 @@ const LiveTable = () => {
                 </div>
               ) : (
                 <div className="absolute flex items-center justify-center w-full h-full">
-                  <p className="text-2xl text-center">No Live Tournaments</p>
+                  <p className="text-2xl text-center">No Created Tournaments</p>
                 </div>
               )}
             </tbody>
@@ -79,4 +101,4 @@ const LiveTable = () => {
   );
 };
 
-export default LiveTable;
+export default EnteredTable;

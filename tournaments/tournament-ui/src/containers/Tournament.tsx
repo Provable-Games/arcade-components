@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useAccount } from "@starknet-react/core";
-import ScoreRow from "../components/tournament/ScoreRow";
+import ScoreTable from "@/components/tournament/ScoreTable";
 import useModel from "../useModel.ts";
-import { Models, AdventurerModel } from "../generated/models.gen";
+import { Models, AdventurerModel, PrizesModel } from "../generated/models.gen";
 import {
   feltToString,
   formatTime,
@@ -26,6 +26,8 @@ import { useVRFCost } from "@/hooks/useVRFCost";
 import { useLSQuery } from "@/hooks/useLSQuery";
 import { getAdventurersInList } from "@/hooks/graphql/queries.ts";
 import { useDojo } from "@/DojoContext.tsx";
+import { Countdown } from "@/components/Countdown.tsx";
+import useUIStore from "@/hooks/useUIStore";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +35,7 @@ const Tournament = () => {
   const {
     setup: { selectedChainConfig },
   } = useDojo();
+  const { setInputDialog } = useUIStore();
 
   const isMainnet = selectedChainConfig.chainId === "SN_MAINNET";
 
@@ -60,6 +63,10 @@ const Tournament = () => {
   useGetAdventurersQuery(account?.address ?? "0x0");
 
   // Get states
+  const contractEntityId = useMemo(
+    () => getEntityIdFromKeys([BigInt(tournament?.contractAddress)]),
+    [tournament?.contractAddress]
+  );
   const tournamentEntityId = useMemo(
     () => getEntityIdFromKeys([BigInt(id!)]),
     [id]
@@ -68,6 +75,7 @@ const Tournament = () => {
     () => getEntityIdFromKeys([BigInt(id!), BigInt(account?.address ?? "0x0")]),
     [id, account?.address]
   );
+  const totalsModel = useModel(contractEntityId, Models.TournamentTotalsModel);
   const tournamentModel = useModel(tournamentEntityId, Models.TournamentModel);
   const tournamentEntries = useModel(
     tournamentEntityId,
@@ -85,22 +93,26 @@ const Tournament = () => {
     tournamentAddressEntityId,
     Models.TournamentEntriesAddressModel
   );
-  const startIds = useModel(
+  const tournamentStartIdsModel = useModel(
     tournamentAddressEntityId,
     Models.TournamentStartIdsModel
+  );
+  const tournamentStartsAddressModel = useModel(
+    tournamentAddressEntityId,
+    Models.TournamentStartsAddressModel
   );
   const gamesData = state.getEntitiesByModel(
     "tournament",
     "TournamentGameModel"
   );
-  console.log(gamesData);
   const adventurersTestEntities = state.getEntitiesByModel(
     "tournament",
     "AdventurerModel"
   );
-  console.log(adventurersTestEntities);
+  const prizesData = state.getEntitiesByModel("tournament", "PrizesModel");
+
   // Handle get adventurer scores fir account
-  const addressGameIds = startIds?.game_ids;
+  const addressGameIds = tournamentStartIdsModel?.game_ids;
   const formattedGameIds = addressGameIds?.map((id: any) => Number(id));
 
   const adventurersListVariables = useMemo(() => {
@@ -117,9 +129,6 @@ const Tournament = () => {
   const adventurersData = isMainnet
     ? adventurersMainData
     : adventurersTestEntities;
-
-  console.log(adventurersData);
-  console.log(tournamentScores);
 
   const scores =
     addressGameIds?.reduce((acc: any, id: any) => {
@@ -175,8 +184,11 @@ const Tournament = () => {
   const isLive = started && !ended;
   const isSubmissionLive = ended && !submissionEnded;
 
+  // count calculations
   const entryCount = tournamentEntries?.entry_count ?? 0;
   const entryAddressCount = tournamentEntriesAddressModel?.entry_count ?? 0;
+  const currentAddressStartCount =
+    tournamentStartsAddressModel?.start_count ?? 0;
 
   const getCostToPlay = () => {
     // const cost = await getCostToPlay(tournament?.tournament_id!);
@@ -191,13 +203,14 @@ const Tournament = () => {
   const handleEnterTournament = async () => {
     await enterTournament(
       tournamentModel?.tournament_id!,
+      feltToString(tournamentModel?.name!),
       addAddressPadding(bigintToHex(BigInt(entryCount) + 1n)),
       addAddressPadding(bigintToHex(BigInt(entryAddressCount) + 1n)),
       new CairoOption(CairoOptionVariant.None)
     );
   };
 
-  const handleStartTournamentSingle = async () => {
+  const handleStartTournamentCustom = async (customStartCount: number) => {
     if (dollarPrice) {
       const totalVRFCost = BigInt(dollarPrice) * BigInt(entryCount);
       await approveLords(tournament?.contractAddress, totalGameCost, BigInt(0));
@@ -205,40 +218,79 @@ const Tournament = () => {
       await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 second
       await startTournament(
         tournamentModel?.tournament_id!,
+        feltToString(tournamentModel?.name!),
         false,
-        new CairoOption(CairoOptionVariant.None)
+        new CairoOption(CairoOptionVariant.Some, customStartCount),
+        currentAddressStartCount + customStartCount
       );
     }
   };
 
   const handleStartTournamentAll = async () => {
-    await startTournament(
-      tournamentModel?.tournament_id!,
-      false,
-      new CairoOption(CairoOptionVariant.None)
-    );
+    if (dollarPrice) {
+      const totalVRFCost = BigInt(dollarPrice) * BigInt(entryCount);
+      await approveLords(tournament?.contractAddress, totalGameCost, BigInt(0));
+      await approveEth(tournament?.contractAddress, totalVRFCost, BigInt(0));
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 second
+      await startTournament(
+        tournamentModel?.tournament_id!,
+        feltToString(tournamentModel?.name!),
+        false,
+        new CairoOption(CairoOptionVariant.None),
+        entryAddressCount
+      );
+    }
   };
 
   const handleStartTournamentForEveryone = async () => {
     await startTournament(
       tournamentModel?.tournament_id!,
+      feltToString(tournamentModel?.name!),
       true,
-      new CairoOption(CairoOptionVariant.None)
+      new CairoOption(CairoOptionVariant.None),
+      entryCount
     );
   };
 
   const handleSubmitScores = async () => {
     const submitableScores = getSubmitableScores();
-    await submitScores(tournamentModel?.tournament_id!, submitableScores);
-  };
-
-  const handleClaimPrizes = async () => {
-    await distributePrizes(tournamentModel?.tournament_id!, []);
+    await submitScores(
+      tournamentModel?.tournament_id!,
+      feltToString(tournamentModel?.name!),
+      submitableScores
+    );
   };
 
   const handleDistributeAllPrizes = async () => {
-    await distributePrizes(tournamentModel?.tournament_id!, []);
+    const prizeKeys = tournamentPrizeKeys?.prize_keys;
+    await distributePrizes(
+      tournamentModel?.tournament_id!,
+      feltToString(tournamentModel?.name!),
+      prizeKeys
+    );
   };
+
+  const [countDownExpired, setCountDownExpired] = useState(false);
+
+  const [customStartCount, setCustomStartCount] = useState(0);
+
+  const handleChangeStartCount = (e: any) => {
+    setCustomStartCount(e.target.value);
+  };
+
+  const unclaimedPrizes = useMemo<PrizesModel[]>(() => {
+    return (
+      prizesData
+        ?.filter((entity: any) => {
+          const prizeModel = entity.models.tournament.PrizesModel;
+          return (
+            !prizeModel.claimed &&
+            tournamentPrizeKeys?.prize_keys?.includes(prizeModel.prize_key)
+          );
+        })
+        .map((entity) => entity.models.tournament.PrizesModel) ?? []
+    );
+  }, [prizesData, tournamentPrizeKeys?.prize_keys]);
 
   if (!tournamentModel?.tournament_id)
     return (
@@ -248,10 +300,26 @@ const Tournament = () => {
     );
   return (
     <div className="flex flex-col gap-2 item-center w-full py-2">
-      <h1 className="text-5xl text-center uppercase">
-        {feltToString(tournamentModel?.name!)}
-      </h1>
-      <div className="relative flex flex-row gap-2 border border-terminal-green p-2">
+      <div className="flex flex-row items-center justify-between">
+        <div className="w-1/4"></div>
+        <h1 className="w-1/2 text-5xl text-center uppercase">
+          {feltToString(tournamentModel?.name!)}
+        </h1>
+        {isLive ? (
+          <div className="w-1/4 flex flex-row gap-5 justify-end">
+            <h2 className="text-4xl uppercase text-terminal-green/75 no-text-shadow">
+              Ends
+            </h2>
+            <Countdown
+              targetTime={endDate.getTime()}
+              countDownExpired={() => setCountDownExpired(true)}
+            />
+          </div>
+        ) : (
+          <div className="w-1/4"></div>
+        )}
+      </div>
+      <div className="relative flex flex-row gap-2 border-4 border-terminal-green/75 p-2">
         <div className="flex flex-col gap-1 w-1/2">
           <div className="flex flex-col gap-1">
             <p className="text-xl uppercase">Description</p>
@@ -317,76 +385,55 @@ const Tournament = () => {
             </p>
           </div>
         </div>
-        <div className="flex flex-col gap-2 w-1/4">
-          <p className="text-xl uppercase">Prizes</p>
-          {tournamentPrizeKeys ? (
+        <div className="flex flex-col justify-between w-1/4">
+          <div className="flex flex-col gap-2">
+            <p className="text-xl uppercase">Prizes</p>
+            {tournamentPrizeKeys ? (
+              <p className="text-terminal-green/75 no-text-shadow text-lg uppercase">
+                {tournamentPrizeKeys?.prize_keys.map((key: any) =>
+                  feltToString(key)
+                )}
+              </p>
+            ) : (
+              <p className="text-terminal-green/75 no-text-shadow text-lg uppercase">
+                No Prizes Added
+              </p>
+            )}
+          </div>
+          <div className="flex flex-row items-center gap-2">
+            <p className="text-xl uppercase">Scoreboard Size</p>
             <p className="text-terminal-green/75 no-text-shadow text-lg uppercase">
-              {tournamentPrizeKeys?.prize_keys.map((key: any) =>
-                feltToString(key)
-              )}
+              {tournamentModel?.winners_count}
             </p>
-          ) : (
-            <p className="text-terminal-green/75 no-text-shadow text-lg uppercase">
-              No Prizes Added
-            </p>
-          )}
+          </div>
         </div>
         {!started && (
           <div className="absolute top-2 right-2">
-            <Button className="bg-terminal-green/25 text-terminal-green hover:text-terminal-black">
+            <Button
+              className="bg-terminal-green/25 text-terminal-green hover:text-terminal-black"
+              onClick={() =>
+                setInputDialog({
+                  type: "add-prize",
+                  props: {
+                    tournamentId: tournamentModel?.tournament_id,
+                    tournamentName: feltToString(tournamentModel?.name!),
+                    currentPrizeCount: totalsModel?.total_prizes,
+                  },
+                })
+              }
+            >
               Add Prize
             </Button>
           </div>
         )}
       </div>
       <div className="flex flex-row gap-5">
+        <ScoreTable
+          tournamentScores={tournamentScores}
+          adventurersData={adventurersData}
+        />
         <div className="w-1/2 flex flex-col">
-          <h2 className="text-2xl uppercase">Scores</h2>
-          <table className="w-full border border-terminal-green">
-            <thead className="border border-terminal-green text-lg h-20">
-              <tr>
-                <th className="text-center">Name</th>
-                <th className="text-left">Address</th>
-                <th className="text-left">ID</th>
-                <th className="text-left">Level</th>
-                <th className="text-left">XP</th>
-                <th className="text-left">Death Time</th>
-                <th className="text-left">Prizes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tournamentScores && adventurersData.length > 0 ? (
-                tournamentScores?.top_score_ids.map(
-                  (gameId: any, index: any) => {
-                    const adventurer = isMainnet
-                      ? adventurersData.find(
-                          (adventurer: any) =>
-                            adventurer.adventurer_id === gameId
-                        )
-                      : adventurersData.find(
-                          (entity: any) =>
-                            entity.models.tournament.AdventurerModel
-                              .adventurer_id === gameId
-                        );
-                    return (
-                      <ScoreRow
-                        key={index}
-                        gameId={gameId}
-                        rank={index + 1}
-                        adventurer={adventurer}
-                      />
-                    );
-                  }
-                )
-              ) : (
-                <p className="text-center">No Scores Submitted</p>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="w-1/2 flex flex-col">
-          <h2 className="text-2xl uppercase">Enter</h2>
-          <div className="flex flex-col justify-between border border-terminal-green p-2 h-[300px]">
+          <div className="flex flex-col justify-between border-4 border-terminal-green/75 p-2 h-[300px]">
             <div className="flex flex-row">
               <div className="flex flex-col w-1/2">
                 <div className="flex flex-row items-center gap-2">
@@ -438,10 +485,12 @@ const Tournament = () => {
                           tournamentEntriesAddressModel?.entry_count
                         ).toString()
                       : isLive
-                      ? startIds?.game_ids?.length
-                      : `${tournamentScores?.top_score_ids.length ?? 0} / ${
-                          startIds?.game_ids?.length ?? 0
-                        }`}
+                      ? `${BigInt(
+                          currentAddressStartCount
+                        ).toString()} / ${BigInt(entryAddressCount).toString()}`
+                      : `${
+                          tournamentScores?.top_score_ids.length ?? 0
+                        } / ${currentAddressStartCount}`}
                   </p>
                   {(!started || isLive) && (
                     <div className="flex flex-row items-center gap-2">
@@ -473,45 +522,68 @@ const Tournament = () => {
                   <Button
                     disabled={
                       !tournamentEntriesAddressModel ||
-                      tournamentEntriesAddressModel?.entry_count === 0
-                    }
-                    onClick={handleStartTournamentSingle}
-                  >
-                    Start
-                  </Button>
-                  <Button
-                    disabled={
-                      !tournamentEntriesAddressModel ||
-                      tournamentEntriesAddressModel?.entry_count === 0
+                      entryAddressCount === currentAddressStartCount
                     }
                     onClick={handleStartTournamentAll}
                   >
                     Start All
                   </Button>
                   <Button
-                    disabled={!tournamentEntriesAddressModel}
+                    disabled={
+                      !tournamentEntriesAddressModel ||
+                      entryAddressCount === currentAddressStartCount
+                    }
                     onClick={handleStartTournamentForEveryone}
                   >
                     Start For Everyone
                   </Button>
+                  <div className="flex flex-row items-center gap-2">
+                    <p className="text-xl uppercase">Custom</p>
+                    <input
+                      type="number"
+                      name="position"
+                      onChange={handleChangeStartCount}
+                      max={tournamentEntriesAddressModel?.entry_count}
+                      min={1}
+                      className="p-1 m-2 w-16 h-8 2xl:text-2xl bg-terminal-black border border-terminal-green"
+                    />
+                    <Button
+                      disabled={
+                        !tournamentEntriesAddressModel ||
+                        entryAddressCount === currentAddressStartCount
+                      }
+                      onClick={() =>
+                        handleStartTournamentCustom(customStartCount)
+                      }
+                    >
+                      Start
+                    </Button>
+                  </div>
                 </>
               )}
               {isSubmissionLive && (
-                <Button onClick={handleSubmitScores}>Submit Scores</Button>
+                <Button
+                  onClick={handleSubmitScores}
+                  disabled={tournamentScores}
+                >
+                  Submit Scores
+                </Button>
               )}
               {submissionEnded && (
                 <>
-                  <Button
+                  {/* <Button
                     onClick={handleClaimPrizes}
                     disabled={!tournamentPrizeKeys}
                   >
                     Claim Prizes
-                  </Button>
+                  </Button> */}
                   <Button
                     onClick={handleDistributeAllPrizes}
-                    disabled={!tournamentPrizeKeys}
+                    disabled={
+                      !tournamentPrizeKeys || unclaimedPrizes.length === 0
+                    }
                   >
-                    Distribute All Prizes
+                    Distribute Prizes
                   </Button>
                 </>
               )}

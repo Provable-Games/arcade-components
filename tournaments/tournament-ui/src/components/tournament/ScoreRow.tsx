@@ -13,11 +13,12 @@ const ScoreRow = ({ gameId, rank, adventurer }: ScoreRowProps) => {
   const {
     setup: { selectedChainConfig },
   } = useDojo();
+
+  if (!adventurer) return null;
   const isMainnet = selectedChainConfig.chainId === "SN_MAINNET";
   const formattedAdventurer = isMainnet
     ? adventurer
     : adventurer.models.tournament.AdventurerModel.adventurer;
-  console.log(formattedAdventurer);
   return (
     <tr className="h-10">
       <td className="px-2">

@@ -1,34 +1,47 @@
 import { useState, ChangeEvent } from "react";
 import { useAccount } from "@starknet-react/core";
 import { Button } from "../components/buttons/Button";
-import { InputTournamentModel } from "../generated/models.gen";
+import { InputTournamentModel, Models } from "../generated/models.gen";
 import { DateTimePicker } from "../components/ui/datetime-picker";
 import { PlusIcon, TrophyIcon, CloseIcon, InfoIcon } from "../components/Icons";
 import useUIStore from "../hooks/useUIStore";
 import { useSystemCalls } from "@/useSystemCalls";
-import { stringToFelt, formatTime, bigintToHex } from "../lib/utils";
+import {
+  stringToFelt,
+  formatTime,
+  bigintToHex,
+  feltToString,
+} from "../lib/utils";
 import EntryCriteriaDialog from "../components/dialogs/EntryCriteria";
 import EntryFeeBox from "../components/create/EntryFeeBox";
 import PrizeBoxes from "@/components/create/PrizeBoxes";
 import { CairoOption, CairoOptionVariant, addAddressPadding } from "starknet";
-import { useDojoStore } from "@/hooks/useDojoStore";
 import { useSubscribeTournamentsQuery } from "@/hooks/useSdkQueries";
+import { useDojoSystem } from "@/hooks/useDojoSystem";
+import { getEntityIdFromKeys } from "@dojoengine/utils";
+import useModel from "../useModel.ts";
 
 const Create = () => {
   const { account } = useAccount();
   const { formData, setFormData, setInputDialog } = useUIStore();
   const [showEntryCriteria, setShowEntryCriteria] = useState(false);
 
+  const tournament = useDojoSystem("tournament_mock");
+
   useSubscribeTournamentsQuery();
 
-  const state = useDojoStore((state) => state);
-  const tournamentTotals = state.getEntitiesByModel(
-    "tournament",
-    "TournamentTotalsModel"
+  // states
+  const contractEntityId = getEntityIdFromKeys([
+    BigInt(tournament?.contractAddress),
+  ]);
+  const tournamentTotals = useModel(
+    contractEntityId,
+    Models.TournamentTotalsModel
   );
   const tournamentCount =
     tournamentTotals[0]?.models?.tournament?.TournamentTotalsModel
       ?.total_tournaments ?? 0n;
+
   const {
     createTournament,
     addPrize,
@@ -132,8 +145,10 @@ const Create = () => {
       }
       await addPrize(
         BigInt(tournamentCount) + 1n,
+        feltToString(formData.tournamentName),
         prize,
-        addAddressPadding(bigintToHex(prizeKey))
+        addAddressPadding(bigintToHex(prizeKey)),
+        false
       );
       prizeKey++;
     }
@@ -363,7 +378,7 @@ const Create = () => {
                       : "token"
                   }
                   size="md"
-                  onClick={() => setInputDialog("gated token")}
+                  onClick={() => setInputDialog({ type: "gated-token" })}
                 >
                   <p>Token</p>
                 </Button>
@@ -374,7 +389,7 @@ const Create = () => {
                       : "token"
                   }
                   size="md"
-                  onClick={() => setInputDialog("gated tournaments")}
+                  onClick={() => setInputDialog({ type: "gated-tournaments" })}
                 >
                   <p>Tournament</p>
                 </Button>
@@ -385,7 +400,7 @@ const Create = () => {
                       : "token"
                   }
                   size="md"
-                  onClick={() => setInputDialog("gated addresses")}
+                  onClick={() => setInputDialog({ type: "gated-addresses" })}
                 >
                   <p>Addresses</p>
                 </Button>
@@ -437,7 +452,7 @@ const Create = () => {
               {formData.entryFee.isNone() && (
                 <Button
                   variant="token"
-                  onClick={() => setInputDialog("entry fee")}
+                  onClick={() => setInputDialog({ type: "entry-fee" })}
                 >
                   <span className="w-4 h-4">
                     <PlusIcon />
@@ -450,7 +465,12 @@ const Create = () => {
             <p className="2xl:text-4xl">Prizes</p>
             <div className="flex flex-row gap-2">
               <PrizeBoxes prizes={formData.prizes} />
-              <Button variant="token" onClick={() => setInputDialog("prize")}>
+              <Button
+                variant="token"
+                onClick={() =>
+                  setInputDialog({ type: "create-tournament-prize" })
+                }
+              >
                 <span className="w-4 h-4">
                   <PlusIcon />
                 </span>
@@ -460,7 +480,17 @@ const Create = () => {
         </div>
       </div>
       <div className="hidden sm:flex items-center justify-center">
-        <Button size={"lg"} onClick={() => handleCreateTournament()}>
+        <Button
+          size={"lg"}
+          onClick={() => handleCreateTournament()}
+          disabled={
+            !formData.tournamentName ||
+            !formData.startTime ||
+            !formData.endTime ||
+            !formData.submissionPeriod ||
+            !formData.scoreboardSize
+          }
+        >
           Create
         </Button>
       </div>

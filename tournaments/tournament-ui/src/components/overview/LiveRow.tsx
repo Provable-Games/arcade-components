@@ -4,26 +4,31 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/buttons/Button";
 
 interface LiveRowProps {
-  tournament_id?: any;
+  tournamentId?: any;
   name?: any;
-  end_time?: any;
-  winners_count?: any;
+  endTime?: any;
+  winnersCount?: any;
 }
 
 const LiveRow = ({
-  tournament_id,
+  tournamentId,
   name,
-  end_time,
-  winners_count,
+  endTime,
+  winnersCount,
 }: LiveRowProps) => {
   const { entities: tournamentDetails } =
-    useGetTournamentDetailsQuery(tournament_id);
+    useGetTournamentDetailsQuery(tournamentId);
   const navigate = useNavigate();
   const tournamentEntries = tournamentDetails?.[0]?.TournamentEntriesModel;
   const tournamentPrizeKeys = tournamentDetails?.[0]?.TournamentPrizeKeysModel;
   const currentTime = BigInt(new Date().getTime()) / 1000n;
   return (
-    <tr className="h-10">
+    <tr
+      className="h-8 hover:bg-terminal-green/50 hover:cursor-pointer border border-terminal-green/50"
+      onClick={() => {
+        navigate(`/tournament/${Number(tournamentId)}`);
+      }}
+    >
       <td className="px-2 max-w-20">
         <p className="overflow-hidden whitespace-nowrap text-ellipsis">
           {feltToString(BigInt(name!))}
@@ -31,20 +36,10 @@ const LiveRow = ({
       </td>
       {/* <td>{`${gamesPlayed} / ${entries}`}</td> */}
       <td>0/0</td>
-      <td>{winners_count}</td>
+      <td>{winnersCount}</td>
       {/* <td>{prizes}</td> */}
       <td>0</td>
-      <td>{formatTime(Number(end_time) - Number(currentTime))}</td>
-      <td>
-        <Button
-          variant="outline"
-          onClick={() => {
-            navigate(`/tournament/${Number(tournament_id)}`);
-          }}
-        >
-          View
-        </Button>
-      </td>
+      <td>{formatTime(Number(endTime) - Number(currentTime))}</td>
     </tr>
   );
 };

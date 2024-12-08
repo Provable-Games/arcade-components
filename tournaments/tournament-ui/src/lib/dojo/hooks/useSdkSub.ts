@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { BigNumberish } from "starknet";
 import { SubscriptionQueryType } from "@dojoengine/sdk";
 import { useDojo } from "@/DojoContext";
-import { TournamentSchemaType } from "@/generated/models.gen";
+import { SchemaType } from "@/generated/models.gen";
 import { useDojoStore } from "@/hooks/useDojoStore";
 
-export type TournamentSubQuery = SubscriptionQueryType<TournamentSchemaType>;
+export type TournamentSubQuery = SubscriptionQueryType<SchemaType>;
 
 export type EntityResult = {
   entityId: BigNumberish;
-} & Partial<TournamentSchemaType["tournament"]>;
+} & Partial<SchemaType["tournament"]>;
 
 export type UseSdkSubEntitiesResult = {
   entities: EntityResult[] | null;

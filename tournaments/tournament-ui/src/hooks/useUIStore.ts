@@ -9,12 +9,10 @@ export type ScreenPage =
   | "register token"
   | "guide";
 
-export type InputDialog =
-  | "gated token"
-  | "gated tournaments"
-  | "gated addresses"
-  | "entry fee"
-  | "prize";
+export type DialogConfig = {
+  type: string;
+  props?: Record<string, any>;
+};
 
 type State = {
   username: string;
@@ -23,10 +21,23 @@ type State = {
   setShowProfile: (value: boolean) => void;
   screen: ScreenPage;
   setScreen: (value: ScreenPage) => void;
-  inputDialog: InputDialog | null;
-  setInputDialog: (value: InputDialog | null) => void;
+  inputDialog: DialogConfig | null;
+  setInputDialog: (value: DialogConfig | null) => void;
   formData: FormData;
   setFormData: (value: FormData) => void;
+  resetFormData: () => void; // Add this new type
+};
+
+const initialFormData: FormData = {
+  tournamentName: "",
+  tournamentDescription: "",
+  startTime: undefined,
+  endTime: undefined,
+  submissionPeriod: 0,
+  scoreboardSize: 0,
+  gatedType: new CairoOption(CairoOptionVariant.None),
+  entryFee: new CairoOption(CairoOptionVariant.None),
+  prizes: [],
 };
 
 const useUIStore = create<State>((set) => ({
@@ -37,19 +48,10 @@ const useUIStore = create<State>((set) => ({
   screen: "overview",
   setScreen: (value: ScreenPage) => set({ screen: value }),
   inputDialog: null,
-  setInputDialog: (value: InputDialog | null) => set({ inputDialog: value }),
-  formData: {
-    tournamentName: "",
-    tournamentDescription: "",
-    startTime: undefined,
-    endTime: undefined,
-    submissionPeriod: 0,
-    scoreboardSize: 0,
-    gatedType: new CairoOption(CairoOptionVariant.None),
-    entryFee: new CairoOption(CairoOptionVariant.None),
-    prizes: [],
-  },
+  setInputDialog: (value: DialogConfig | null) => set({ inputDialog: value }),
+  formData: initialFormData,
   setFormData: (value: FormData) => set({ formData: value }),
+  resetFormData: () => set({ formData: initialFormData }),
 }));
 
 export default useUIStore;

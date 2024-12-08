@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/buttons/Button";
 import { PlusIcon } from "@/components/Icons";
 import { Distribution, Prize } from "@/lib/types";
-import useUIStore from "@/hooks/useUIStore";
 import { CairoCustomEnum } from "starknet";
 import { useDojoStore } from "@/hooks/useDojoStore";
 import { displayAddress } from "@/lib/utils";
 
-const Prizes = () => {
-  const { formData, setFormData, setInputDialog } = useUIStore();
+interface PrizeProps {
+  onSubmit: (prizes: Prize[]) => void;
+}
+
+const Prizes = ({ onSubmit }: PrizeProps) => {
   const state = useDojoStore((state) => state);
 
   const [totalAmount, setTotalAmount] = useState<number>(0);
@@ -298,6 +300,8 @@ const Prizes = () => {
                   }`}
                   placeholder="SHARE"
                   disabled={distribution.position === 0}
+                  max={100}
+                  min={0}
                 />
               </div>
             </div>
@@ -326,11 +330,7 @@ const Prizes = () => {
             alert("Prize distribution must total 100%");
             return;
           }
-          setFormData({
-            ...formData,
-            prizes: [...formData.prizes, ...prizes],
-          });
-          setInputDialog(null);
+          onSubmit(prizes);
         }}
         disabled={totalPercentage !== 100}
       >

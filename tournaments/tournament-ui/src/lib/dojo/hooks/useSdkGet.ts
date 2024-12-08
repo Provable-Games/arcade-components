@@ -3,6 +3,7 @@ import { BigNumberish } from "starknet";
 import { QueryType } from "@dojoengine/sdk";
 import { useDojo } from "@/DojoContext";
 import { SchemaType } from "@/generated/models.gen";
+import { useDojoStore } from "@/hooks/useDojoStore";
 
 export type TournamentGetQuery = QueryType<SchemaType>;
 
@@ -36,8 +37,10 @@ export const useSdkGetEntities = ({
   const {
     setup: { sdk },
   } = useDojo();
+
   const [isLoading, setIsLoading] = useState(false);
   const [entities, setEntities] = useState<EntityResult[] | null>(null);
+  const { setEntities: setStoreEntities } = useDojoStore((state) => state);
 
   const fetchEntities = useCallback(async () => {
     try {
@@ -50,7 +53,16 @@ export const useSdkGetEntities = ({
             return;
           }
           if (resp.data) {
-            setEntities(resp.data);
+            setStoreEntities(resp.data);
+            setEntities(
+              resp.data.map(
+                (e: any) =>
+                  ({
+                    entityId: e.entityId,
+                    ...e.models.tournament,
+                  } as EntityResult)
+              )
+            );
           }
         },
         limit,

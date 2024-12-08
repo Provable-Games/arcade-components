@@ -16,16 +16,17 @@ import InputDialog from "@/components/dialogs/inputs/InputDialog";
 import {
   useGetTournamentCountsQuery,
   useGetTokensQuery,
+  useSubscribeTournamentCountsQuery,
 } from "@/hooks/useSdkQueries";
 import { useDojoSystem } from "@/hooks/useDojoSystem";
 import { useSystemCalls } from "@/useSystemCalls";
 import { useControllerMenu } from "@/hooks/useController";
 import { useDojo } from "@/DojoContext";
-import { addAddressPadding } from "starknet";
+import { Toaster } from "@/components/ui/toaster";
 
 function App() {
   const {
-    setup: { sdk },
+    setup: { sdk, selectedChainConfig },
   } = useDojo();
   const { account } = useAccount();
   const { openMenu } = useControllerMenu();
@@ -34,12 +35,18 @@ function App() {
   const { getEthBalance, getLordsBalance } = useSystemCalls();
   const [tokenBalance, setTokenBalance] = useState<Record<string, bigint>>({});
 
-  // useGetTournamentCountsQuery(tournament_mock.contractAddress);
-  // useGetTokensQuery();
+  const isMainnet = selectedChainConfig.chainId === "SN_MAINNET";
+
+  // Getters
+  useGetTournamentCountsQuery(tournament_mock.contractAddress);
+  useGetTokensQuery();
+
+  // Subscriptions
+  useSubscribeTournamentCountsQuery(tournament_mock.contractAddress);
 
   const { inputDialog } = useUIStore();
 
-  const menuItems: Menu[] = useMemo(
+  const testMenuItems: Menu[] = useMemo(
     () => [
       {
         id: 1,
@@ -86,30 +93,58 @@ function App() {
     ],
     []
   );
-  const menuDisabled = useMemo(
+
+  const mainMenuItems: Menu[] = useMemo(
+    () => [
+      {
+        id: 1,
+        label: "Overview",
+        screen: "overview" as ScreenPage,
+        path: "/",
+        disabled: false,
+      },
+      {
+        id: 2,
+        label: "My Tournaments",
+        screen: "my tournaments" as ScreenPage,
+        path: "/my-tournaments",
+        disabled: false,
+      },
+      {
+        id: 3,
+        label: "Create",
+        screen: "create" as ScreenPage,
+        path: "/create",
+        disabled: false,
+      },
+      {
+        id: 4,
+        label: "Guide",
+        screen: "guide" as ScreenPage,
+        path: "/guide",
+        disabled: false,
+      },
+    ],
+    []
+  );
+
+  const testMenuDisabled = useMemo(
     () => [false, false, false, false, false, false],
     []
   );
 
-  const getTestETHBalance = async () => {
-    const balance = await getEthBalance(account?.address!);
-    if (balance !== undefined) {
-      setTokenBalance((prev) => ({
-        ...prev,
-        eth: balance as bigint,
-      }));
-    }
-  };
+  const mainMenuDisabled = useMemo(
+    () => [false, false, false, false, false],
+    []
+  );
 
-  const getTestLordsBalance = async () => {
-    const balance = await getLordsBalance(account?.address!);
-    if (balance !== undefined) {
-      setTokenBalance((prev) => ({
-        ...prev,
-        lords: balance as bigint,
-      }));
-    }
-  };
+  const menuItems = useMemo(() => {
+    return isMainnet ? mainMenuItems : testMenuItems;
+  }, [isMainnet]);
+
+  const menuDisabled = useMemo(() => {
+    return isMainnet ? mainMenuDisabled : testMenuDisabled;
+  }, [isMainnet]);
 
   // Memoize these functions to prevent recreating on every render
   const getBalances = useCallback(async () => {
@@ -133,21 +168,19 @@ function App() {
     }
   }, [account]);
 
-  const getTokenBalances = async () => {
-    const balances = await sdk.getTokenBalances(
-      [account?.address!],
-      [addAddressPadding(eth_mock?.contractAddress!)]
-    );
-    console.log(balances);
-  };
+  // const getTokenBalances = async () => {
+  //   const balances = await sdk.getTokenBalances(
+  //     [account?.address!],
+  //     [addAddressPadding(eth_mock?.contractAddress!)]
+  //   );
+  //   console.log(balances);
+  // };
 
-  useEffect(() => {
-    if (account) {
-      getTokenBalances();
-    }
-  }, [account]);
-
-  console.log("rerun");
+  // useEffect(() => {
+  //   if (account) {
+  //     getTokenBalances();
+  //   }
+  // }, [account]);
 
   return (
     <div
@@ -178,6 +211,7 @@ function App() {
           <Route path="/loot-survivor" element={<LootSurvivor />} />
         </Routes>
         {inputDialog && <InputDialog />}
+        <Toaster />
       </div>
     </div>
   );

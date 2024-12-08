@@ -2,12 +2,13 @@ import { Premium } from "../../lib/types";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useNavigate } from "react-router-dom";
 import { CairoOption } from "starknet";
-import { feltToString, formatTime } from "../../lib/utils";
+import { feltToString } from "@/lib/utils";
 import useModel from "../../useModel.ts";
 import { Models, PrizesModel } from "../../generated/models.gen";
 import { useGetTournamentDetailsQuery } from "@/hooks/useSdkQueries.ts";
 
-interface UpcomingRowProps {
+interface CreatedRowProps {
+  entityId: any;
   tournamentId?: any;
   name?: any;
   startTime?: any;
@@ -17,7 +18,8 @@ interface UpcomingRowProps {
   prizeKeys?: any;
 }
 
-const UpcomingRow = ({
+const CreatedRow = ({
+  entityId,
   tournamentId,
   name,
   startTime,
@@ -25,13 +27,14 @@ const UpcomingRow = ({
   entryPremium,
   entries,
   prizeKeys,
-}: UpcomingRowProps) => {
+}: CreatedRowProps) => {
   const navigate = useNavigate();
   const startTimestamp = Number(startTime) * 1000;
-  const startDate = new Intl.DateTimeFormat(undefined, {
+  const startDate = new Date(startTimestamp);
+  const displayStartDate = new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(startTimestamp));
+  }).format(startDate);
   const { entities: tournamentDetails } =
     useGetTournamentDetailsQuery(tournamentId);
   const entryIndex =
@@ -41,9 +44,40 @@ const UpcomingRow = ({
     tournamentDetails && entryIndex !== -1
       ? tournamentDetails[entryIndex].TournamentEntriesModel
       : { entry_count: 0 };
+
+  const tournamentModel = useModel(entityId, Models.TournamentModel);
+
+  // Calculate dates
+  const endDate = new Date(Number(tournamentModel?.end_time) * 1000);
+  const submissionEndDate = new Date(
+    (Number(tournamentModel?.end_time) +
+      Number(tournamentModel?.submission_period)) *
+      1000
+  );
+
+  const started = Boolean(
+    tournamentModel?.start_time && startDate.getTime() < Date.now()
+  );
+  const ended = Boolean(
+    tournamentModel?.end_time && endDate.getTime() <= Date.now()
+  );
+  const submissionEnded = Boolean(
+    tournamentModel?.submission_period &&
+      submissionEndDate.getTime() <= Date.now()
+  );
+
+  const isLive = started && !ended;
+  const isSubmissionLive = ended && !submissionEnded;
+  const status = !started
+    ? "Upcoming"
+    : isLive
+    ? "Live"
+    : isSubmissionLive
+    ? "Submission Live"
+    : "Ended";
   return (
     <tr
-      className="h-10 hover:bg-terminal-green/50 hover:cursor-pointer border border-terminal-green/50"
+      className="h-6 hover:bg-terminal-green/50 hover:cursor-pointer border border-terminal-green/50"
       onClick={() => {
         navigate(`/tournament/${Number(tournamentId)}`);
       }}
@@ -56,8 +90,8 @@ const UpcomingRow = ({
       <td className="text-xl">
         {BigInt(tournamentEntries?.entry_count ?? 0).toString()}
       </td>
-      <td>{startDate}</td>
-      <td>{formatTime(Number(endTime) - Number(startTime))}</td>
+      <td>{displayStartDate}</td>
+      <td>{status}</td>
       <td>
         {entryPremium === "None"
           ? "-"
@@ -92,4 +126,4 @@ const UpcomingRow = ({
   );
 };
 
-export default UpcomingRow;
+export default CreatedRow;
